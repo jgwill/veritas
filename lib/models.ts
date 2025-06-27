@@ -6,12 +6,15 @@
 
 import type {
   DigitalModel,
+  DigitalElement,
   DecisionMakingModel,
   PerformanceReviewModel,
-  DigitalElement,
+  BusinessAnalysisModel,
   DecisionMakingElement,
   PerformanceReviewElement,
   BusinessAnalysisElement,
+  DigitalThinkingModelType,
+  ComparisonMatrix,
   CreateModelRequest,
   CreateElementRequest,
   ModelStatistics,
@@ -21,7 +24,6 @@ import type {
   ElementResponse,
 } from "./types"
 import {
-  DigitalThinkingModelType,
   ElementStatus,
   PerformanceTrend,
   PriorityLevel,
@@ -33,61 +35,12 @@ import { isDecisionMakingModel, isPerformanceReviewModel, isBusinessAnalysisMode
 const modelsCache: DigitalModel[] = []
 let initialized = false
 
-// Initialize models from sample files
+// Initialize models - simplified version without file system
 async function initializeModels(): Promise<void> {
-  if (initialized || typeof window !== 'undefined') return
+  if (initialized) return
   
-  try {
-    // Only load fs and path on server side using dynamic imports
-    const [fs, path] = await Promise.all([
-      import('fs/promises').catch(() => null),
-      import('path').catch(() => null)
-    ]);
-    
-    if (!fs || !path) {
-      console.log("Node.js modules not available, starting with empty models")
-      initialized = true
-      return
-    }
-    
-    const samplesDir = path.join(process.cwd(), "samples")
-    
-    try {
-      const files = await fs.readdir(samplesDir)
-      const jsonFiles = files.filter((file) => file.endsWith(".json"))
-
-      for (const file of jsonFiles) {
-        try {
-          const filePath = path.join(samplesDir, file)
-          const content = await fs.readFile(filePath, "utf-8")
-          const modelData = JSON.parse(content)
-
-          // Extract ID from filename or use the model's ID
-          const fileId = file.match(/([a-f0-9-]{36})/)?.[1]
-          if (fileId) {
-            modelData.id = fileId
-          }
-
-          // Ensure required fields exist
-          if (!modelData.dtCreated) {
-            modelData.dtCreated = new Date().toISOString()
-          }
-          if (!modelData.dtModified) {
-            modelData.dtModified = new Date().toISOString()
-          }
-
-          modelsCache.push(modelData)
-        } catch (error) {
-          console.error(`Error loading model from ${file}:`, error)
-        }
-      }
-    } catch (error) {
-      console.log("No samples directory found, starting with empty models")
-    }
-  } catch (error) {
-    console.error("Error initializing models:", error)
-  }
-
+  // For now, start with empty models
+  // TODO: Implement proper file system loading for server-side only
   initialized = true
 }
 
