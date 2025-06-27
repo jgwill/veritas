@@ -8,36 +8,54 @@ TandT helps individuals and organizations make better decisions and track perfor
 
 ## 🔄 Model Types
 
-### Digital Decision Making
-**Purpose**: Binary decision analysis for scenarios requiring YES/NO outcomes
+### Digital Decision Making Models
+**Purpose**: Binary decision analysis for YES/NO scenarios requiring element hierarchy determination
+
+**Core Algorithm**: Pairwise comparisons with dominance factor calculations
 
 **Key Features**:
-- Binary evaluation system (Acceptable/Unacceptable)
-- Element hierarchy through pairwise comparisons
+- Binary evaluation system (1=Acceptable, 0=Unacceptable)
+- **Requires pairwise comparison matrix** for element hierarchy building
+- Dominance factor calculations to identify mandatory vs optional elements
 - Decision framework: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
-- Identifies mandatory vs optional elements
+- **Output**: Clear YES/NO decision with supporting element hierarchy
+
+**Technical Implementation**:
+- Comparison matrix storage and validation
+- Dominance calculation algorithms
+- Consistency checking for transitivity
+- Hierarchical element ranking
 
 **Use Cases**:
-- Housing selection decisions
-- Investment opportunities
-- Hiring decisions
-- Product feature prioritization
+- Housing selection decisions (mandatory vs nice-to-have features)
+- Investment opportunities (essential vs desirable criteria)
+- Hiring decisions (must-have vs preferred qualifications)
+- Strategic planning (critical vs optional factors)
 
-### Digital Performance Review
-**Purpose**: Performance tracking and trend analysis over time
+### Digital Performance Review Models  
+**Purpose**: Performance tracking and trend analysis over time **without dominance calculations**
+
+**Core Algorithm**: Performance trend tracking with priority identification
 
 **Key Features**:
 - Dual evaluation system:
-  - Acceptability assessment (Acceptable/Unacceptable)
-  - Performance trend tracking (Getting Better/Staying Same/Getting Worse)
-- Historical performance data
-- Trend visualization and analysis
+  - Acceptability assessment (1=Acceptable, 0=Unacceptable)
+  - Performance trend tracking (-1=Getting Worse, 0=Staying Same, 1=Getting Better)
+- **NO pairwise comparisons or dominance calculations**
+- Focus on identifying primary improvement areas
+- **Output**: Performance dashboard with improvement priorities
+
+**Technical Implementation**:
+- Performance trend storage and analysis
+- Priority calculation based on acceptability + trend
+- Historical performance tracking
+- Improvement recommendation algorithms
 
 **Use Cases**:
-- Employee performance reviews
-- Project health monitoring
-- System performance tracking
-- Continuous improvement initiatives
+- Employee performance reviews (competency tracking)
+- Project health monitoring (milestone progress)
+- System performance tracking (metric trends)
+- Business unit assessments (KPI monitoring)
 
 ## 🎛️ Application Modes
 
