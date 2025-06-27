@@ -1,38 +1,91 @@
 # TandT Application Roadmap
 
 ## Project Overview
-TandT (Thinking and Tracking) is a sophisticated decision-making and performance evaluation application that supports two distinct model types:
+TandT (Thinking and Tracking) is a sophisticated decision-making and performance evaluation application that supports two distinct model types with fundamentally different evaluation methodologies:
 
 ### Model Types
 
 #### 1. Digital Decision Making Models
-- **Purpose**: Analyze elements required for binary decisions (YES/NO)
-- **Evaluation Method**: Binary acceptability assessment (Acceptable = 1, Unacceptable = 0)
-- **Use Case**: Decision scenarios where you need to determine if specific elements are mandatory
+- **Purpose**: Binary decision analysis for YES/NO scenarios requiring element hierarchy determination
+- **Core Algorithm**: Pairwise comparisons with dominance factor calculations
+- **Evaluation Method**: Binary acceptability assessment only (Acceptable = 1, Unacceptable = 0)
+- **Key Feature**: Builds element hierarchy through systematic pairwise comparisons
 - **Question Framework**: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
-- **Example**: Housing decisions, investment choices, hiring decisions
+- **Output**: Clear YES/NO decision with mandatory vs optional element classification
+- **Use Cases**: Housing decisions, investment choices, hiring decisions, strategic planning
+- **Technical Requirements**: Comparison matrix, dominance calculations, consistency validation
 
 #### 2. Digital Performance Review Models  
-- **Purpose**: Track performance trends and acceptability over time
+- **Purpose**: Performance tracking and trend analysis over time without dominance calculations
+- **Core Algorithm**: Performance trend tracking with priority identification
 - **Evaluation Methods**: 
   - Binary acceptability (Acceptable = 1, Unacceptable = 0)
   - Performance trend tracking (Getting Better = 1, Stay Same = 0, Getting Worse = -1)
-- **Use Case**: Performance monitoring, progress tracking, continuous improvement
-- **Example**: Employee performance, project health, system metrics
+- **Key Feature**: **NO pairwise comparisons or dominance calculations**
+- **Focus**: Identify primary improvement areas and track performance trends
+- **Output**: Performance dashboard with improvement priorities
+- **Use Cases**: Employee performance reviews, project health monitoring, system metrics tracking
+- **Technical Requirements**: Trend analysis, priority scoring, performance dashboards
 
 ## Application Modes
 
 ### Editing Mode
 - Build and modify model structures
-- Add/remove/edit elements
-- Configure comparison matrices
-- Set up model parameters
+- Add/remove/edit elements  
+- **For Decision Making Models**: Configure pairwise comparison matrices
+- **For Performance Review Models**: Set up evaluation criteria (no comparisons)
+- Set up model parameters and metadata
 
 ### Analyzing Mode
-- Visual evaluation interface
+- Visual evaluation interface with model-type specific controls
 - Real-time element assessment
-- Performance trend tracking (Performance Review models only)
-- Results visualization
+- **For Decision Making Models**: Binary acceptability evaluation only
+- **For Performance Review Models**: Binary acceptability + performance trend tracking
+- Results visualization tailored to model type
+
+## Technical Architecture Differentiation
+
+### Decision Making Models Technical Stack
+```
+Editing Mode:
+├── Element Management (Add/Edit/Delete)
+├── Pairwise Comparison Matrix Interface
+├── Comparison Progress Tracking
+└── Consistency Validation
+
+Analyzing Mode:
+├── Binary Acceptability Assessment (TwoFlag: 1/0)
+├── Dominance Factor Display
+├── Element Hierarchy Visualization
+└── YES/NO Decision Output
+
+Data Layer:
+├── Comparison Matrix Storage (JSON)
+├── Dominance Factor Calculations
+├── Consistency Validation Rules
+└── Decision Logic Processing
+```
+
+### Performance Review Models Technical Stack
+```
+Editing Mode:
+├── Element Management (Add/Edit/Delete)
+├── Evaluation Criteria Setup
+├── No Comparison Matrix Required
+└── Performance Baseline Definition
+
+Analyzing Mode:
+├── Binary Acceptability Assessment (TwoFlag: 1/0)
+├── Performance Trend Tracking (ThreeFlag: -1/0/1)
+├── Priority Level Indicators
+└── Performance Dashboard Output
+
+Data Layer:
+├── Performance Trend Storage
+├── Priority Calculation Algorithms
+├── Historical Performance Tracking
+└── Improvement Recommendation Engine
+```
 
 ## Technical Architecture
 
@@ -58,32 +111,48 @@ TandT (Thinking and Tracking) is a sophisticated decision-making and performance
 ### Phase 1: Core Infrastructure ✅
 - [x] Basic model CRUD operations
 - [x] Element management
-- [x] Comparison matrix functionality
-- [x] Results visualization
+- [x] Basic comparison matrix functionality
+- [x] Basic results visualization
 
-### Phase 2: Model Type Differentiation ✅
-- [x] Implement distinct model types
-- [x] Binary vs dual evaluation systems
-- [x] Mode switching (Editing/Analyzing)
-- [x] Visual evaluation interface
+### Phase 2: Model Type Differentiation 🔄 (Current - CRITICAL)
+- [ ] **MISSING**: Clear model type separation in data models
+- [ ] **MISSING**: Decision Making specific comparison interface
+- [ ] **MISSING**: Performance Review specific trend tracking
+- [ ] **MISSING**: Model type-specific creation flows
+- [ ] **MISSING**: Analyzing mode with proper model type handling
+- [ ] **MISSING**: Dominance calculations for Decision Making models
+- [ ] **MISSING**: Performance priority algorithms for Review models
 
-### Phase 3: Enhanced User Experience (Current)
-- [ ] Improved visual design matching mockups
-- [ ] Advanced filtering and sorting
-- [ ] Bulk operations
-- [ ] Export/import functionality
+### Phase 3: Analyzing Mode Implementation 🔄 (Current - HIGH PRIORITY)
+- [ ] **Decision Making Analyzing Interface**:
+  - [ ] Binary acceptability evaluation (TwoFlag)
+  - [ ] Real-time dominance factor display
+  - [ ] Element hierarchy visualization
+  - [ ] YES/NO decision output
+- [ ] **Performance Review Analyzing Interface**:
+  - [ ] Binary acceptability evaluation (TwoFlag)
+  - [ ] Performance trend tracking (ThreeFlag: -1/0/1)
+  - [ ] Priority level indicators
+  - [ ] Performance dashboard output
 
-### Phase 4: Advanced Features (Planned)
-- [ ] Real-time collaboration
-- [ ] Advanced analytics and reporting
-- [ ] Template system
-- [ ] Integration APIs
+### Phase 4: Enhanced User Experience (Next)
+- [ ] Improved visual design matching screenshots
+- [ ] Advanced filtering and sorting by model type
+- [ ] Bulk operations for elements
+- [ ] Export/import functionality with model type preservation
+- [ ] Mode switching animations and transitions
 
-### Phase 5: Production Readiness (Future)
-- [ ] Database integration
-- [ ] User authentication
-- [ ] Performance optimization
-- [ ] Deployment automation
+### Phase 5: Advanced Features (Planned)
+- [ ] Model templates for common use cases
+- [ ] Advanced analytics and reporting per model type
+- [ ] Historical performance tracking
+- [ ] Integration APIs for external systems
+
+### Phase 6: Production Readiness (Future)
+- [ ] Database integration with proper model type schemas
+- [ ] User authentication and multi-tenant support
+- [ ] Performance optimization for large models
+- [ ] Deployment automation and scaling
 
 ## Key Features
 
