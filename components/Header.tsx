@@ -118,19 +118,19 @@ export default function Header({ currentMode, onSetMode, modelType, modelName, m
       <div className="relative ml-auto flex-1 md:grow-0">
         <div className="flex items-center gap-2">
           <ModeButton
-            label={ModelMode.Modeling}
+            label={ModelMode.EDITING}
             currentMode={currentMode}
             onClick={onSetMode}
             icon={<PlusCircle className="h-5 w-5" />}
           />
           <ModeButton
-            label={ModelMode.Analyzing}
+            label={ModelMode.ANALYZING}
             currentMode={currentMode}
             onClick={onSetMode}
             icon={<Search className="h-5 w-5" />}
           />
           <ModeButton
-            label={ModelMode.Results}
+            label={ModelMode.RESULTS}
             currentMode={currentMode}
             onClick={onSetMode}
             icon={<BarChart className="h-5 w-5" />}
