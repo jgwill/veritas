@@ -639,15 +639,6 @@ function calculateTotalComparisons(elementCount: number): number {
   return elementCount > 1 ? (elementCount * (elementCount - 1)) / 2 : 0
 }
 
-// Type guard functions
-function isDecisionMakingModel(model: DigitalModel): model is DecisionMakingModel {
-  return model.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING
-}
-
-function isPerformanceReviewModel(model: DigitalModel): model is PerformanceReviewModel {
-  return model.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW
-}
-
 export function getModelStats(model: DigitalModel) {
   const totalElements = model.model.length
   if (totalElements === 0) {
@@ -664,10 +655,9 @@ export function getModelStats(model: DigitalModel) {
   if (isDecisionMakingModel(model)) {
     const evaluatedElements = model.model.filter((el) => el.twoFlagAnswered).length
     const comparisonsNeeded = (totalElements * (totalElements - 1)) / 2
-    const comparisonsMade =
-      model.model.reduce((acc, el) => {
-        return acc + Object.values(el.comparationTableData).filter((v) => v !== 0).length
-      }, 0) / 2
+    const comparisonsMade = model.model.reduce((acc, el) => {
+      return acc + Object.values(el.comparationTableData).filter(v => v !== 0).length
+    }, 0) / 2;
 
     return {
       totalElements,
