@@ -1,160 +1,90 @@
-import type { DecisionMakingModel, ComparisonMatrix, DecisionResult, ElementHierarchy } from "../types"
+import type { DecisionMakingModel, DigitalElement, ComparisonMatrix, DecisionResult } from "../types"
+import { crypto } from "crypto"
+import { ElementStatus, PerformanceTrend } from "../constants"
 
 export class DecisionMakingService {
   /**
-   * Calculate dominance factors for all elements based on pairwise comparisons
+   * Create a new Decision Making model
    */
-  static calculateDominanceFactors(model: DecisionMakingModel): DecisionMakingModel {
-    const elements = model.model
-    const n = elements.length
-
-    // Initialize dominance factors
-    elements.forEach((element) => {
-      element.dominanceFactor = 0
-      element.dominantElementItIS = false
-    })
-
-    // Calculate dominance based on comparison data
-    elements.forEach((element) => {
-      const comparisons = element.comparationTableData || {}
-      let dominanceScore = 0
-      let totalComparisons = 0
-
-      Object.entries(comparisons).forEach(([otherElementId, value]) => {
-        if (value === 1)
-          dominanceScore += 1 // This element dominates
-        else if (value === -1) dominanceScore -= 1 // Other element dominates
-        totalComparisons += 1
-      })
-
-      if (totalComparisons > 0) {
-        element.dominanceFactor = dominanceScore / totalComparisons
-        element.dominantElementItIS = element.dominanceFactor > 0.5
-      }
-    })
-
-    return model
+  static createModel(modelName: string, digitalTopic: string, note?: string): DecisionMakingModel {
+    return {
+      id: crypto.randomUUID(),
+      modelName,
+      digitalTopic,
+      digitalThinkingModelType: "DECISION_MAKING",
+      twoOnly: true,
+      decided: false,
+      valid: false,
+      autoSaveModel: true,
+      hasIssue: false,
+      note,
+      dtCreated: new Date().toISOString(),
+      dtModified: new Date().toISOString(),
+      model: [],
+      comparisonMatrix: {
+        totalComparisons: 0,
+        completedComparisons: 0,
+        consistencyScore: 0,
+        matrix: {},
+      },
+      dominanceResults: [],
+    }
   }
 
   /**
-   * Generate comparison matrix for the model
+   * Add element to Decision Making model
    */
-  static generateComparisonMatrix(model: DecisionMakingModel): ComparisonMatrix {
-    const elements = model.model
-    const n = elements.length
-    const totalPairs = (n * (n - 1)) / 2
-
-    let completedComparisons = 0
-    const pairs: any[] = []
-
-    for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
-        const element1 = elements[i]
-        const element2 = elements[j]
-
-        const comparison = element1.comparationTableData?.[element2.idug]
-        const isCompleted = comparison !== undefined && comparison !== 0
-
-        if (isCompleted) completedComparisons++
-
-        pairs.push({
-          element1Id: element1.idug,
-          element2Id: element2.idug,
-          value: comparison || 0,
-          completed: isCompleted,
-        })
-      }
-    }
+  static addElement(
+    model: DecisionMakingModel,
+    nameElement: string,
+    displayName: string,
+    description: string,
+  ): DigitalElement {
+    const sortNo = model.model.length + 1
 
     return {
-      completed: completedComparisons === totalPairs,
-      totalComparisons: totalPairs,
-      completedComparisons,
-      consistencyScore: this.calculateConsistencyScore(model),
-      pairs,
+      idug: crypto.randomUUID(),
+      nameElement,
+      displayName,
+      description,
+      sortNo,
+      status: ElementStatus.ACTIVE,
+      twoFlag: false,
+      twoFlagAnswered: false,
+      threeFlag: PerformanceTrend.STAYING_SAME,
+      threeFlagAnswered: false,
+      dominanceFactor: 0,
+      dominantElementItIS: false,
+      comparationCompleted: false,
+      question: false,
+      comparationTableData: {},
     }
   }
 
   /**
-   * Calculate consistency score for the comparison matrix
+   * Evaluate element acceptability
    */
-  static calculateConsistencyScore(model: DecisionMakingModel): number {
-    const elements = model.model
-    let consistentComparisons = 0
-    let totalTriads = 0
-
-    // Check transitivity: if A > B and B > C, then A should > C
-    for (let i = 0; i < elements.length; i++) {
-      for (let j = 0; j < elements.length; j++) {
-        for (let k = 0; k < elements.length; k++) {
-          if (i !== j && j !== k && i !== k) {
-            const aOverB = elements[i].comparationTableData?.[elements[j].idug]
-            const bOverC = elements[j].comparationTableData?.[elements[k].idug]
-            const aOverC = elements[i].comparationTableData?.[elements[k].idug]
-
-            if (aOverB && bOverC && aOverC) {
-              totalTriads++
-              // Check if transitivity holds
-              if (
-                (aOverB > 0 && bOverC > 0 && aOverC > 0) ||
-                (aOverB < 0 && bOverC < 0 && aOverC > 0) ||
-                (aOverB > 0 && bOverC < 0) ||
-                (aOverB < 0 && bOverC > 0)
-              ) {
-                consistentComparisons++
-              }
-            }
-          }
-        }
-      }
+  static evaluateElementAcceptability(
+    model: DecisionMakingModel,
+    elementId: string,
+    isAcceptable: boolean,
+  ): DecisionMakingModel {
+    const element = model.model.find((e) => e.idug === elementId)
+    if (!element) {
+      throw new Error("Element not found")
     }
 
-    return totalTriads > 0 ? consistentComparisons / totalTriads : 1
-  }
-
-  /**
-   * Generate decision result based on current model state
-   */
-  static generateDecisionResult(model: DecisionMakingModel): DecisionResult {
-    const elements = model.model
-    const evaluatedElements = elements.filter((e) => e.twoFlagAnswered)
-    const acceptableElements = evaluatedElements.filter((e) => e.twoFlag)
-    const unacceptableElements = evaluatedElements.filter((e) => !e.twoFlag)
-
-    // Calculate hierarchy based on dominance factors
-    const hierarchy: ElementHierarchy[] = elements
-      .map((element, index) => ({
-        element,
-        rank: index + 1,
-        dominanceScore: element.dominanceFactor,
-        isMandatory: element.dominantElementItIS && element.twoFlag,
-      }))
-      .sort((a, b) => b.dominanceScore - a.dominanceScore)
-      .map((item, index) => ({ ...item, rank: index + 1 }))
-
-    // Determine mandatory elements (high dominance + acceptable)
-    const mandatoryElements = hierarchy.filter((h) => h.isMandatory).map((h) => h.element)
-
-    // Decision logic: YES if all mandatory elements are acceptable
-    const unacceptableMandatory = mandatoryElements.filter((e) => !e.twoFlag)
-    const decision: "YES" | "NO" = unacceptableMandatory.length === 0 ? "YES" : "NO"
-
-    // Calculate confidence based on evaluation completeness and consistency
-    const evaluationCompleteness = evaluatedElements.length / elements.length
-    const consistencyScore = this.calculateConsistencyScore(model)
-    const confidence = evaluationCompleteness * 0.7 + consistencyScore * 0.3
+    element.twoFlag = isAcceptable
+    element.twoFlagAnswered = true
 
     return {
-      decision,
-      confidence: Math.round(confidence * 100),
-      mandatoryElements,
-      optionalElements: acceptableElements.filter((e) => !mandatoryElements.includes(e)),
-      hierarchy: hierarchy,
+      ...model,
+      dtModified: new Date().toISOString(),
     }
   }
 
   /**
-   * Process a pairwise comparison
+   * Process pairwise comparison
    */
   static processComparison(
     model: DecisionMakingModel,
@@ -165,24 +95,119 @@ export class DecisionMakingService {
     const element1 = model.model.find((e) => e.idug === element1Id)
     const element2 = model.model.find((e) => e.idug === element2Id)
 
-    if (!element1 || !element2) return model
+    if (!element1 || !element2) {
+      throw new Error("Elements not found")
+    }
 
-    // Initialize comparison tables if they don't exist
-    if (!element1.comparationTableData) element1.comparationTableData = {}
-    if (!element2.comparationTableData) element2.comparationTableData = {}
+    // Initialize comparison matrix if needed
+    if (!model.comparisonMatrix.matrix[element1Id]) {
+      model.comparisonMatrix.matrix[element1Id] = {}
+    }
+    if (!model.comparisonMatrix.matrix[element2Id]) {
+      model.comparisonMatrix.matrix[element2Id] = {}
+    }
 
-    // Set comparison values
-    // If decision is YES (element1 without element2 = YES), then element1 dominates
-    const value = decision === "YES" ? 1 : -1
-    element1.comparationTableData[element2Id] = value
-    element2.comparationTableData[element1Id] = -value
+    // Store comparison result (1 for YES, 0 for NO)
+    const value = decision === "YES" ? 1 : 0
+    model.comparisonMatrix.matrix[element1Id][element2Id] = value
+    model.comparisonMatrix.matrix[element2Id][element1Id] = 1 - value // Inverse
 
-    // Update completion status
-    const totalPossibleComparisons = model.model.length - 1
-    element1.comparationCompleted = Object.keys(element1.comparationTableData).length >= totalPossibleComparisons
-    element2.comparationCompleted = Object.keys(element2.comparationTableData).length >= totalPossibleComparisons
+    // Update comparison counts
+    model.comparisonMatrix.completedComparisons++
 
     // Recalculate dominance factors
-    return this.calculateDominanceFactors(model)
+    this.calculateDominanceFactors(model)
+
+    return {
+      ...model,
+      dtModified: new Date().toISOString(),
+    }
+  }
+
+  /**
+   * Calculate dominance factors for all elements
+   */
+  static calculateDominanceFactors(model: DecisionMakingModel): void {
+    const elements = model.model
+    const matrix = model.comparisonMatrix.matrix
+
+    elements.forEach((element) => {
+      let dominanceSum = 0
+      let comparisonCount = 0
+
+      elements.forEach((otherElement) => {
+        if (element.idug !== otherElement.idug) {
+          const comparison = matrix[element.idug]?.[otherElement.idug]
+          if (comparison !== undefined) {
+            dominanceSum += comparison
+            comparisonCount++
+          }
+        }
+      })
+
+      element.dominanceFactor = comparisonCount > 0 ? dominanceSum / comparisonCount : 0
+      element.dominantElementItIS = element.dominanceFactor > 0.5
+    })
+
+    // Update dominance results
+    model.dominanceResults = elements
+      .map((element) => ({
+        elementId: element.idug,
+        dominanceFactor: element.dominanceFactor,
+        rank: 0,
+        isDominant: element.dominantElementItIS,
+      }))
+      .sort((a, b) => b.dominanceFactor - a.dominanceFactor)
+      .map((result, index) => ({ ...result, rank: index + 1 }))
+  }
+
+  /**
+   * Generate comparison matrix data
+   */
+  static generateComparisonMatrix(model: DecisionMakingModel): ComparisonMatrix {
+    const elementCount = model.model.length
+    const totalComparisons = elementCount > 1 ? (elementCount * (elementCount - 1)) / 2 : 0
+
+    return {
+      ...model.comparisonMatrix,
+      totalComparisons,
+    }
+  }
+
+  /**
+   * Validate model completeness
+   */
+  static validateModel(model: DecisionMakingModel): boolean {
+    const hasElements = model.model.length > 0
+    const allEvaluated = model.model.every((e) => e.twoFlagAnswered)
+    const matrix = this.generateComparisonMatrix(model)
+    const comparisonsComplete = matrix.completedComparisons >= matrix.totalComparisons
+
+    return hasElements && allEvaluated && comparisonsComplete
+  }
+
+  /**
+   * Generate decision result
+   */
+  static generateDecisionResult(model: DecisionMakingModel): DecisionResult {
+    const acceptableElements = model.model.filter((e) => e.twoFlag && e.twoFlagAnswered)
+    const dominantElements = model.dominanceResults.filter((r) => r.isDominant)
+
+    const mandatoryElements = dominantElements
+      .filter((d) => acceptableElements.some((e) => e.idug === d.elementId))
+      .map((d) => d.elementId)
+
+    const optionalElements = acceptableElements.filter((e) => !mandatoryElements.includes(e.idug)).map((e) => e.idug)
+
+    const decision = mandatoryElements.length > 0 ? "YES" : "NO"
+    const confidence = mandatoryElements.length / acceptableElements.length
+
+    return {
+      decision,
+      confidence,
+      mandatoryElements,
+      optionalElements,
+      reasoning: `Decision based on ${mandatoryElements.length} mandatory elements out of ${acceptableElements.length} acceptable elements.`,
+    }
   }
 }

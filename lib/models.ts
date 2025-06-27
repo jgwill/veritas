@@ -1,344 +1,462 @@
-// TandT Models Library - Unified Model Management
-// Integrates with enhanced type system and services
+// TandT Models Library - Complete Model Management System
+// Handles CRUD operations, statistics, and data persistence
 
-import {
+import { promises as fs } from "fs"
+import path from "path"
+import type {
   DigitalModel,
   DecisionMakingModel,
-  PerformanceReviewModel,
-  DigitalThinkingModelType,
+  DigitalElement,
+  DecisionMakingElement,
+  PerformanceReviewElement,
+  BusinessAnalysisElement,
   CreateModelRequest,
-  isDecisionMakingModel,
-  isPerformanceReviewModel
-} from './types'
-import { DecisionMakingService } from './services/decision-making'
-import { PerformanceReviewService } from './services/performance-review'
+  CreateElementRequest,
+  ModelStatistics,
+  DashboardStats,
+  ActivityEntry,
+  ModelResponse,
+  ElementResponse,
+} from "./types"
+import {
+  DigitalThinkingModelType,
+  ElementStatus,
+  PerformanceTrend,
+  PriorityLevel,
+  MODEL_TYPE_LABELS,
+} from "./constants"
 
-export interface DigitalElement {
-  idug: string
-  nameElement: string
-  displayName: string
-  description: string
-  sortNo: number
-  status: number
-  twoFlag: boolean
-  twoFlagAnswered: boolean
-  threeFlag: number
-  threeFlagAnswered: boolean
-  dominanceFactor: number
-  dominantElementItIS: boolean
-  comparationCompleted: boolean
-  question: boolean
-  comparationTableData: Record<string, number>
-}
+// In-memory storage for models (in production, this would be a database)
+const modelsCache: DigitalModel[] = []
+let initialized = false
 
-// Sample data storage (in production, this would be a database)
-let modelsStorage: DigitalModel[] = []
+// Initialize models from sample files
+async function initializeModels(): Promise<void> {
+  if (initialized) return
 
-/**
- * Load models from samples directory
- */
-export function loadModelsFromSamples(): DigitalModel[] {
-  // This would normally load from JSON files in samples/
-  // For now, return the in-memory storage
-  return modelsStorage
-}
+  try {
+    const samplesDir = path.join(process.cwd(), "samples")
+    const files = await fs.readdir(samplesDir)
+    const jsonFiles = files.filter((file) => file.endsWith(".json"))
 
-/**
- * Create a new model based on type
- */
-export function createModel(request: CreateModelRequest): DigitalModel {
-  let newModel: DigitalModel
+    for (const file of jsonFiles) {
+      try {
+        const filePath = path.join(samplesDir, file)
+        const content = await fs.readFile(filePath, "utf-8")
+        const modelData = JSON.parse(content)
 
-  if (request.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING) {
-    newModel = DecisionMakingService.createModel(
-      request.modelName,
-      request.digitalTopic,
-      request.note
-    )
-  } else if (request.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW) {
-    newModel = PerformanceReviewService.createModel(
-      request.modelName,
-      request.digitalTopic,
-      request.note
-    )
-  } else {
-    throw new Error('Invalid model type')
+        // Extract ID from filename or use the model's ID
+        const fileId = file.match(/([a-f0-9-]{36})/)?.[1]
+        if (fileId) {
+          modelData.id = fileId
+        }
+
+        // Ensure required fields exist
+        if (!modelData.dtCreated) {
+          modelData.dtCreated = new Date().toISOString()
+        }
+        if (!modelData.dtModified) {
+          modelData.dtModified = new Date().toISOString()
+        }
+
+        modelsCache.push(modelData as DigitalModel)
+      } catch (error) {
+        console.warn(`Failed to load sample file ${file}:`, error)
+      }
+    }
+
+    initialized = true
+  } catch (error) {
+    console.warn("Failed to initialize models from samples:", error)
+    initialized = true // Mark as initialized even if failed to prevent repeated attempts
   }
-
-  // Add to storage
-  modelsStorage.push(newModel)
-  
-  return newModel
 }
 
-/**
- * Get model by ID
- */
-export function getModelById(id: string): DigitalModel | undefined {
-  return modelsStorage.find(model => model.id === id)
+// Get all models
+export async function getAllModels(): Promise<DigitalModel[]> {
+  await initializeModels()
+  return [...modelsCache]
 }
 
-/**
- * Update existing model
- */
-export function updateModel(updatedModel: DigitalModel): DigitalModel {
-  const index = modelsStorage.findIndex(model => model.id === updatedModel.id)
-  if (index === -1) {
-    throw new Error('Model not found')
+// Get model by ID
+export async function getModelById(id: string): Promise<DigitalModel | null> {
+  await initializeModels()
+  return modelsCache.find((model) => model.id === id) || null
+}
+
+// Create new model
+export async function createModel(request: CreateModelRequest): Promise<ModelResponse> {
+  try {
+    await initializeModels()
+
+    const newModel: DigitalModel = {
+      id: generateId(),
+      modelName: request.modelName,
+      digitalTopic: request.digitalTopic,
+      digitalThinkingModelType: request.digitalThinkingModelType,
+      decided: false,
+      valid: false,
+      autoSaveModel: true,
+      hasIssue: false,
+      note: request.note || "",
+      dtCreated: new Date().toISOString(),
+      dtModified: new Date().toISOString(),
+      model: [],
+      // Type-specific properties
+      ...(request.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING
+        ? { twoOnly: true, comparisonMatrix: createEmptyComparisonMatrix() }
+        : request.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW
+          ? { twoOnly: false, performanceDashboard: createEmptyPerformanceDashboard() }
+          : { twoOnly: false, businessMetrics: [], analysisResults: [] }),
+    } as DigitalModel
+
+    modelsCache.push(newModel)
+
+    return {
+      success: true,
+      model: newModel,
+      message: "Model created successfully",
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to create model",
+    }
   }
-
-  // Update timestamp
-  updatedModel.dtModified = new Date().toISOString()
-  
-  modelsStorage[index] = updatedModel
-  return updatedModel
 }
 
-/**
- * Delete model by ID
- */
-export function deleteModel(id: string): boolean {
-  const index = modelsStorage.findIndex(model => model.id === id)
-  if (index === -1) {
-    return false
-  }
+// Update model
+export async function updateModel(id: string, updates: Partial<DigitalModel>): Promise<ModelResponse> {
+  try {
+    await initializeModels()
 
-  modelsStorage.splice(index, 1)
-  return true
+    const modelIndex = modelsCache.findIndex((model) => model.id === id)
+    if (modelIndex === -1) {
+      return {
+        success: false,
+        error: "Model not found",
+      }
+    }
+
+    modelsCache[modelIndex] = {
+      ...modelsCache[modelIndex],
+      ...updates,
+      dtModified: new Date().toISOString(),
+    }
+
+    return {
+      success: true,
+      model: modelsCache[modelIndex],
+      message: "Model updated successfully",
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update model",
+    }
+  }
 }
 
-/**
- * Add element to model
- */
-export function addElementToModel(
-  modelId: string,
-  nameElement: string,
-  displayName: string,
-  description: string
-): DigitalModel {
-  const model = getModelById(modelId)
-  if (!model) {
-    throw new Error('Model not found')
+// Delete model
+export async function deleteModel(id: string): Promise<ModelResponse> {
+  try {
+    await initializeModels()
+
+    const modelIndex = modelsCache.findIndex((model) => model.id === id)
+    if (modelIndex === -1) {
+      return {
+        success: false,
+        error: "Model not found",
+      }
+    }
+
+    const deletedModel = modelsCache.splice(modelIndex, 1)[0]
+
+    return {
+      success: true,
+      model: deletedModel,
+      message: "Model deleted successfully",
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete model",
+    }
   }
+}
 
-  let newElement
+// Add element to model
+export async function addElementToModel(modelId: string, request: CreateElementRequest): Promise<ElementResponse> {
+  try {
+    await initializeModels()
 
-  if (isDecisionMakingModel(model)) {
-    newElement = DecisionMakingService.addElement(
-      model,
-      nameElement,
-      displayName,
-      description
-    )
+    const model = modelsCache.find((m) => m.id === modelId)
+    if (!model) {
+      return {
+        success: false,
+        error: "Model not found",
+      }
+    }
+
+    const newElement: DigitalElement = createNewElement(model.digitalThinkingModelType, request)
     model.model.push(newElement)
-  } else if (isPerformanceReviewModel(model)) {
-    newElement = PerformanceReviewService.addElement(
-      model,
-      nameElement,
-      displayName,
-      description
-    )
-    model.model.push(newElement)
-  } else {
-    throw new Error('Invalid model type')
-  }
+    model.dtModified = new Date().toISOString()
 
-  return updateModel(model)
+    return {
+      success: true,
+      element: newElement,
+      message: "Element added successfully",
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to add element",
+    }
+  }
 }
 
-/**
- * Evaluate element acceptability
- */
-export function evaluateElementAcceptability(
+// Update element
+export async function updateElement(
   modelId: string,
   elementId: string,
-  isAcceptable: boolean
-): DigitalModel {
-  const model = getModelById(modelId)
-  if (!model) {
-    throw new Error('Model not found')
+  updates: Partial<DigitalElement>,
+): Promise<ElementResponse> {
+  try {
+    await initializeModels()
+
+    const model = modelsCache.find((m) => m.id === modelId)
+    if (!model) {
+      return {
+        success: false,
+        error: "Model not found",
+      }
+    }
+
+    const elementIndex = model.model.findIndex((e) => e.idug === elementId)
+    if (elementIndex === -1) {
+      return {
+        success: false,
+        error: "Element not found",
+      }
+    }
+
+    model.model[elementIndex] = {
+      ...model.model[elementIndex],
+      ...updates,
+      dtModified: new Date().toISOString(),
+    }
+    model.dtModified = new Date().toISOString()
+
+    return {
+      success: true,
+      element: model.model[elementIndex],
+      message: "Element updated successfully",
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update element",
+    }
   }
-
-  let updatedModel: DigitalModel
-
-  if (isDecisionMakingModel(model)) {
-    updatedModel = DecisionMakingService.evaluateElementAcceptability(
-      model,
-      elementId,
-      isAcceptable
-    )
-  } else if (isPerformanceReviewModel(model)) {
-    updatedModel = PerformanceReviewService.evaluateElementAcceptability(
-      model,
-      elementId,
-      isAcceptable
-    )
-  } else {
-    throw new Error('Invalid model type')
-  }
-
-  return updateModel(updatedModel)
 }
 
-/**
- * Evaluate element performance (Performance Review only)
- */
-export function evaluateElementPerformance(
-  modelId: string,
-  elementId: string,
-  performanceTrend: number
-): DigitalModel {
-  const model = getModelById(modelId)
-  if (!model) {
-    throw new Error('Model not found')
-  }
+// Get model statistics
+export async function getModelStatistics(modelId: string): Promise<ModelStatistics | null> {
+  await initializeModels()
 
-  if (!isPerformanceReviewModel(model)) {
-    throw new Error('Performance evaluation only available for Performance Review models')
-  }
+  const model = modelsCache.find((m) => m.id === modelId)
+  if (!model) return null
 
-  const updatedModel = PerformanceReviewService.evaluateElementPerformance(
-    model,
-    elementId,
-    performanceTrend
-  )
-
-  return updateModel(updatedModel)
-}
-
-/**
- * Process pairwise comparison (Decision Making only)
- */
-export function processComparison(
-  modelId: string,
-  element1Id: string,
-  element2Id: string,
-  decisionValue: 'YES' | 'NO'
-): DigitalModel {
-  const model = getModelById(modelId)
-  if (!model) {
-    throw new Error('Model not found')
-  }
-
-  if (!isDecisionMakingModel(model)) {
-    throw new Error('Pairwise comparison only available for Decision Making models')
-  }
-
-  const updatedModel = DecisionMakingService.processComparison(
-    model,
-    element1Id,
-    element2Id,
-    decisionValue
-  )
-
-  return updateModel(updatedModel)
-}
-
-/**
- * Calculate dominance factors (Decision Making only)
- */
-export function calculateDominanceFactors(modelId: string): DigitalModel {
-  const model = getModelById(modelId)
-  if (!model) {
-    throw new Error('Model not found')
-  }
-
-  if (!isDecisionMakingModel(model)) {
-    throw new Error('Dominance calculation only available for Decision Making models')
-  }
-
-  DecisionMakingService.calculateDominanceFactors(model)
-  return updateModel(model)
-}
-
-/**
- * Get model statistics
- */
-export function getModelStats(model: DigitalModel) {
   const totalElements = model.model.length
-  const evaluatedElements = model.model.filter(e => e.twoFlagAnswered).length
-  
-  const baseStats = {
+  const evaluatedElements = model.model.filter((e) => e.twoFlagAnswered).length
+  const evaluationProgress = totalElements > 0 ? (evaluatedElements / totalElements) * 100 : 0
+
+  const baseStats: ModelStatistics = {
     totalElements,
     evaluatedElements,
-    evaluationProgress: totalElements > 0 ? evaluatedElements / totalElements : 0
+    evaluationProgress,
+    modelType: model.digitalThinkingModelType.toString(),
+    modelTypeName: MODEL_TYPE_LABELS[model.digitalThinkingModelType] || "Unknown",
+    isValid: model.valid,
+    hasIssues: model.hasIssue,
+    lastModified: model.dtModified,
   }
 
-  if (isDecisionMakingModel(model)) {
-    const matrix = DecisionMakingService.generateComparisonMatrix(model)
+  // Add type-specific statistics
+  if (model.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING) {
+    const decisionModel = model as DecisionMakingModel
+    const totalComparisons = calculateTotalComparisons(totalElements)
+    const completedComparisons = decisionModel.comparisonMatrix?.completedComparisons || 0
+
     return {
       ...baseStats,
-      modelType: 'Decision Making',
-      totalComparisons: matrix.totalComparisons,
-      completedComparisons: matrix.completedComparisons,
-      comparisonProgress: matrix.totalComparisons > 0 ? matrix.completedComparisons / matrix.totalComparisons : 0,
-      consistencyScore: matrix.consistencyScore,
-      isValid: DecisionMakingService.validateModel(model)
+      totalComparisons,
+      completedComparisons,
+      comparisonProgress: totalComparisons > 0 ? (completedComparisons / totalComparisons) * 100 : 0,
+      consistencyScore: decisionModel.comparisonMatrix?.consistencyScore || 0,
+      dominantElements: model.model.filter((e) => (e as DecisionMakingElement).dominantElementItIS).length,
     }
-  } else if (isPerformanceReviewModel(model)) {
-    const stats = PerformanceReviewService.getEvaluationStats(model)
+  }
+
+  if (model.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW) {
+    const performanceElements = model.model.filter((e) => e.threeFlagAnswered).length
+    const improvingElements = model.model.filter((e) => e.threeFlag === PerformanceTrend.GETTING_BETTER).length
+    const decliningElements = model.model.filter((e) => e.threeFlag === PerformanceTrend.GETTING_WORSE).length
+    const highPriorityElements = model.model.filter(
+      (e) =>
+        (e as PerformanceReviewElement).priorityLevel === PriorityLevel.HIGH ||
+        (e as PerformanceReviewElement).priorityLevel === PriorityLevel.CRITICAL,
+    ).length
+
     return {
       ...baseStats,
-      modelType: 'Performance Review',
-      performanceEvaluated: stats.performanceEvaluated,
-      performanceProgress: stats.performanceProgress,
-      overallProgress: stats.overallProgress,
-      isValid: PerformanceReviewService.validateModel(model)
+      performanceEvaluated: performanceElements,
+      performanceProgress: totalElements > 0 ? (performanceElements / totalElements) * 100 : 0,
+      improvingElements,
+      decliningElements,
+      highPriorityElements,
     }
   }
 
   return baseStats
 }
 
-/**
- * Initialize with sample data
- */
-export function initializeWithSampleData(): void {
-  // Decision Making Model Sample
-  const housingModel = DecisionMakingService.createModel(
-    'habitav1b24042419',
-    'lieu habitat qui convient v1b',
-    'Housing decision model for selecting suitable living space'
-  )
+// Get dashboard statistics
+export async function getDashboardStats(): Promise<DashboardStats> {
+  await initializeModels()
 
-  // Add sample elements
-  const elements = [
-    { name: 'VoisinageCalmeNuit', display: 'Calme la nuit', desc: 'Bruits naturels et tranquillité' },
-    { name: 'Cuisinepratique', display: 'Cuisine pratique', desc: 'Spacieuse et fonctionnelle pour deux personnes' },
-    { name: 'BonneAeration', display: 'Bonne aération', desc: 'Aération et ventilation optimales' },
-    { name: 'LumiereNaturelle', display: 'Lumière naturelle', desc: 'Fenêtres exposées au sud pour une bonne luminosité' }
-  ]
+  const totalModels = modelsCache.length
+  const decisionMakingModels = modelsCache.filter(
+    (m) => m.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING,
+  ).length
+  const performanceReviewModels = modelsCache.filter(
+    (m) => m.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW,
+  ).length
+  const businessAnalysisModels = modelsCache.filter(
+    (m) => m.digitalThinkingModelType === DigitalThinkingModelType.BUSINESS_ANALYSIS,
+  ).length
+  const completedModels = modelsCache.filter((m) => m.decided && m.valid).length
+  const modelsInProgress = modelsCache.filter((m) => !m.decided || !m.valid).length
 
-  elements.forEach(el => {
-    const newElement = DecisionMakingService.addElement(housingModel, el.name, el.display, el.desc)
-    housingModel.model.push(newElement)
-  })
+  // Generate recent activity (mock data for now)
+  const recentActivity: ActivityEntry[] = modelsCache
+    .sort((a, b) => new Date(b.dtModified).getTime() - new Date(a.dtModified).getTime())
+    .slice(0, 5)
+    .map((model) => ({
+      id: generateId(),
+      type: "model_updated" as const,
+      modelId: model.id,
+      modelName: model.modelName,
+      timestamp: model.dtModified,
+      description: `Updated ${model.modelName}`,
+    }))
 
-  modelsStorage.push(housingModel)
-
-  // Performance Review Model Sample
-  const businessModel = PerformanceReviewService.createModel(
-    'ModelDigitalPerformanceReview',
-    'Digital Performance Review Model',
-    'Business performance assessment model'
-  )
-
-  const businessElements = [
-    { name: 'MarketMatch', display: 'Match between business offering and Market', desc: '' },
-    { name: 'MarketShare', display: 'Current Market Share', desc: '' },
-    { name: 'Competition', display: 'Competition', desc: '' },
-    { name: 'ManagementEffectiveness', display: 'Managerial Effectiveness', desc: '' }
-  ]
-
-  businessElements.forEach(el => {
-    const newElement = PerformanceReviewService.addElement(businessModel, el.name, el.display, el.desc)
-    businessModel.model.push(newElement)
-  })
-
-  modelsStorage.push(businessModel)
+  return {
+    totalModels,
+    decisionMakingModels,
+    performanceReviewModels,
+    businessAnalysisModels,
+    completedModels,
+    modelsInProgress,
+    recentActivity,
+  }
 }
 
-// Initialize with sample data
-initializeWithSampleData()
+// Helper functions
+function generateId(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c == "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
 
-export type { DigitalModel }
+function createNewElement(modelType: DigitalThinkingModelType, request: CreateElementRequest): DigitalElement {
+  const baseElement = {
+    idug: generateId(),
+    nameElement: request.nameElement,
+    displayName: request.displayName,
+    description: request.description,
+    sortNo: 0,
+    status: ElementStatus.ACTIVE,
+    twoFlag: false,
+    twoFlagAnswered: false,
+    question: false,
+    dtCreated: new Date().toISOString(),
+    dtModified: new Date().toISOString(),
+  }
+
+  switch (modelType) {
+    case DigitalThinkingModelType.DECISION_MAKING:
+      return {
+        ...baseElement,
+        threeFlag: 0,
+        threeFlagAnswered: false,
+        dominanceFactor: 0,
+        dominantElementItIS: false,
+        comparationCompleted: false,
+        comparationTableData: {},
+      } as DecisionMakingElement
+
+    case DigitalThinkingModelType.PERFORMANCE_REVIEW:
+      return {
+        ...baseElement,
+        threeFlag: PerformanceTrend.STAYING_SAME,
+        threeFlagAnswered: false,
+        dominanceFactor: 0,
+        dominantElementItIS: false,
+        comparationCompleted: false,
+        comparationTableData: {},
+        priorityLevel: PriorityLevel.MEDIUM,
+        improvementRequired: false,
+        performanceHistory: [],
+      } as PerformanceReviewElement
+
+    case DigitalThinkingModelType.BUSINESS_ANALYSIS:
+      return {
+        ...baseElement,
+        threeFlag: PerformanceTrend.STAYING_SAME,
+        threeFlagAnswered: false,
+        dominanceFactor: 0,
+        dominantElementItIS: false,
+        comparationCompleted: false,
+        comparationTableData: {},
+        businessImpact: PriorityLevel.MEDIUM,
+        riskLevel: PriorityLevel.MEDIUM,
+        costImplication: 0,
+        timeToImplement: 0,
+      } as BusinessAnalysisElement
+
+    default:
+      throw new Error(`Unsupported model type: ${modelType}`)
+  }
+}
+
+function createEmptyComparisonMatrix() {
+  return {
+    totalComparisons: 0,
+    completedComparisons: 0,
+    consistencyScore: 0,
+    matrix: {},
+    pairs: [],
+  }
+}
+
+function createEmptyPerformanceDashboard() {
+  return {
+    overallScore: 0,
+    trendDirection: PerformanceTrend.STAYING_SAME,
+    acceptableElements: [],
+    unacceptableElements: [],
+    improvingElements: [],
+    decliningElements: [],
+    priorityAreas: [],
+    lastUpdated: new Date().toISOString(),
+  }
+}
+
+function calculateTotalComparisons(elementCount: number): number {
+  return elementCount > 1 ? (elementCount * (elementCount - 1)) / 2 : 0
+}
+
+// Export all functions

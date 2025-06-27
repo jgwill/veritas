@@ -3,77 +3,56 @@
 // React Integration Hook for TandT Event Management System
 // Provides clean React patterns for the sophisticated event architecture
 
-import { useEffect, useCallback, useRef, useState } from 'react'
-import {
-  tandtEventManager,
-  ModelEventArgs,
-  ElementEventArgs,
-  ModeEventArgs,
-  ValidationEventArgs,
-  ProgressEventArgs,
-  ModelEventHandler,
-  ElementEventHandler,
-  ModeEventHandler,
-  ValidationEventHandler,
-  ProgressEventHandler,
-  MODEL_EVENTS,
-  ELEMENT_EVENTS,
-  MODE_EVENTS,
-  VALIDATION_EVENTS,
-  PROGRESS_EVENTS,
-  ModelViewMode,
-  ValidationIssue,
-  ModelProgress
-} from '@/lib/events/model-events'
-import { DigitalModel, BaseDigitalElement } from '@/lib/types'
+import { useEffect, useCallback, useRef, useState } from "react"
+import { eventManager, type ModelEvent, type ModelEventType } from "../events/model-events"
+import type { DigitalModel, BaseDigitalElement } from "../lib/types"
 
 // Hook for Model Events
 export function useModelEvents() {
   const [activeModelId, setActiveModelId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const subscribeToEvent = useCallback((eventType: string, handler: ModelEventHandler) => {
-    tandtEventManager.subscribeToModelEvents(eventType, handler)
-    return () => tandtEventManager.unsubscribeFromModelEvents(eventType, handler)
+  const subscribeToEvent = useCallback((eventType: string, handler: (args: any) => void) => {
+    return eventManager.subscribe(eventType, handler)
   }, [])
 
   const fireEditModelAction = useCallback((model: DigitalModel, sender?: string) => {
-    tandtEventManager.fireEditModelAction(model, sender)
+    eventManager.emit({ type: "EDIT_MODEL_ACTION", model, sender })
   }, [])
 
   const fireModelListUpdated = useCallback((models: DigitalModel[], sender?: string) => {
-    tandtEventManager.fireModelListUpdated(models, sender)
+    eventManager.emit({ type: "MODEL_LIST_UPDATED", models, sender })
   }, [])
 
   const fireClosingModelAction = useCallback((model: DigitalModel, sender?: string) => {
-    tandtEventManager.fireClosingModelAction(model, sender)
+    eventManager.emit({ type: "CLOSING_MODEL_ACTION", model, sender })
   }, [])
 
   // Subscribe to global state changes
   useEffect(() => {
-    const handleEditAction = (args: ModelEventArgs) => {
+    const handleEditAction = (args: any) => {
       setActiveModelId(args.model.id)
     }
 
-    const handleCloseAction = (args: ModelEventArgs) => {
+    const handleCloseAction = (args: any) => {
       if (activeModelId === args.model.id) {
         setActiveModelId(null)
       }
     }
 
-    const unsubscribeEdit = subscribeToEvent(MODEL_EVENTS.EDIT_MODEL_ACTION, handleEditAction)
-    const unsubscribeClose = subscribeToEvent(MODEL_EVENTS.CLOSING_MODEL_ACTION, handleCloseAction)
+    const unsubscribeEdit = subscribeToEvent("EDIT_MODEL_ACTION", handleEditAction)
+    const unsubscribeClose = subscribeToEvent("CLOSING_MODEL_ACTION", handleCloseAction)
 
     return () => {
-      unsubscribeEdit()
-      unsubscribeClose()
+      if (unsubscribeEdit) unsubscribeEdit()
+      if (unsubscribeClose) unsubscribeClose()
     }
   }, [subscribeToEvent, activeModelId])
 
   // Track refreshing state
   useEffect(() => {
     const checkRefreshing = () => {
-      setIsRefreshing(tandtEventManager.isRefreshingModels)
+      setIsRefreshing(eventManager.isRefreshingModels)
     }
 
     const interval = setInterval(checkRefreshing, 100)
@@ -87,8 +66,8 @@ export function useModelEvents() {
     fireEditModelAction,
     fireModelListUpdated,
     fireClosingModelAction,
-    startRefresh: () => tandtEventManager.startModelRefresh(),
-    endRefresh: () => tandtEventManager.endModelRefresh()
+    startRefresh: () => eventManager.startModelRefresh(),
+    endRefresh: () => eventManager.endModelRefresh(),
   }
 }
 
@@ -97,38 +76,37 @@ export function useElementEvents(modelId?: string) {
   const [lastUpdatedElement, setLastUpdatedElement] = useState<BaseDigitalElement | null>(null)
   const [lastEvaluatedElement, setLastEvaluatedElement] = useState<BaseDigitalElement | null>(null)
 
-  const subscribeToEvent = useCallback((eventType: string, handler: ElementEventHandler) => {
-    tandtEventManager.subscribeToElementEvents(eventType, handler)
-    return () => tandtEventManager.unsubscribeFromElementEvents(eventType, handler)
+  const subscribeToEvent = useCallback((eventType: string, handler: (args: any) => void) => {
+    return eventManager.subscribe(eventType, handler)
   }, [])
 
   const fireElementUpdated = useCallback((element: BaseDigitalElement, model: DigitalModel, sender?: string) => {
-    tandtEventManager.fireElementUpdated(element, model, sender)
+    eventManager.emit({ type: "ELEMENT_UPDATED", element, model, sender })
   }, [])
 
   const fireElementEvaluated = useCallback((element: BaseDigitalElement, model: DigitalModel, sender?: string) => {
-    tandtEventManager.fireElementEvaluated(element, model, sender)
+    eventManager.emit({ type: "ELEMENT_EVALUATED", element, model, sender })
   }, [])
 
   useEffect(() => {
-    const handleElementUpdated = (args: ElementEventArgs) => {
+    const handleElementUpdated = (args: any) => {
       if (!modelId || args.model.id === modelId) {
         setLastUpdatedElement(args.element)
       }
     }
 
-    const handleElementEvaluated = (args: ElementEventArgs) => {
+    const handleElementEvaluated = (args: any) => {
       if (!modelId || args.model.id === modelId) {
         setLastEvaluatedElement(args.element)
       }
     }
 
-    const unsubscribeUpdated = subscribeToEvent(ELEMENT_EVENTS.ELEMENT_UPDATED, handleElementUpdated)
-    const unsubscribeEvaluated = subscribeToEvent(ELEMENT_EVENTS.ELEMENT_EVALUATED, handleElementEvaluated)
+    const unsubscribeUpdated = subscribeToEvent("ELEMENT_UPDATED", handleElementUpdated)
+    const unsubscribeEvaluated = subscribeToEvent("ELEMENT_EVALUATED", handleElementEvaluated)
 
     return () => {
-      unsubscribeUpdated()
-      unsubscribeEvaluated()
+      if (unsubscribeUpdated) unsubscribeUpdated()
+      if (unsubscribeEvaluated) unsubscribeEvaluated()
     }
   }, [subscribeToEvent, modelId])
 
@@ -137,45 +115,46 @@ export function useElementEvents(modelId?: string) {
     lastEvaluatedElement,
     subscribeToEvent,
     fireElementUpdated,
-    fireElementEvaluated
+    fireElementEvaluated,
   }
 }
 
 // Hook for Mode Events
 export function useModeEvents(modelId?: string) {
-  const [currentMode, setCurrentMode] = useState<ModelViewMode>('unset')
-  const [previousMode, setPreviousMode] = useState<ModelViewMode | undefined>()
+  const [currentMode, setCurrentMode] = useState<string>("unset")
+  const [previousMode, setPreviousMode] = useState<string | undefined>()
 
-  const subscribeToEvent = useCallback((eventType: string, handler: ModeEventHandler) => {
-    tandtEventManager.subscribeToModeEvents(eventType, handler)
-    return () => tandtEventManager.unsubscribeFromModeEvents(eventType, handler)
+  const subscribeToEvent = useCallback((eventType: string, handler: (args: any) => void) => {
+    return eventManager.subscribe(eventType, handler)
   }, [])
 
-  const fireEditModeChanged = useCallback((mode: ModelViewMode, targetModelId: string, sender?: string) => {
-    tandtEventManager.fireEditModeChanged(mode, targetModelId, sender)
+  const fireEditModeChanged = useCallback((mode: string, targetModelId: string, sender?: string) => {
+    eventManager.emit({ type: "EDIT_MODE_CHANGED", mode, modelId: targetModelId, sender })
   }, [])
 
   useEffect(() => {
-    const handleModeChanged = (args: ModeEventArgs) => {
+    const handleModeChanged = (args: any) => {
       if (!modelId || args.modelId === modelId) {
         setCurrentMode(args.mode)
         setPreviousMode(args.previousMode)
       }
     }
 
-    const unsubscribe = subscribeToEvent(MODE_EVENTS.EDIT_MODE_CHANGED, handleModeChanged)
+    const unsubscribe = subscribeToEvent("EDIT_MODE_CHANGED", handleModeChanged)
 
     // Initialize with global state
-    setCurrentMode(tandtEventManager.getCurrentMode)
+    setCurrentMode(eventManager.getCurrentMode())
 
-    return unsubscribe
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [subscribeToEvent, modelId])
 
   return {
     currentMode,
     previousMode,
     subscribeToEvent,
-    fireEditModeChanged
+    fireEditModeChanged,
   }
 }
 
@@ -183,161 +162,128 @@ export function useModeEvents(modelId?: string) {
 export function useValidationEvents(modelId?: string) {
   const [validationState, setValidationState] = useState<{
     isValid: boolean
-    issues: ValidationIssue[]
+    issues: any[]
   }>({ isValid: true, issues: [] })
 
-  const subscribeToEvent = useCallback((eventType: string, handler: ValidationEventHandler) => {
-    tandtEventManager.subscribeToModelEvents(eventType, handler as any)
-    return () => tandtEventManager.unsubscribeFromModelEvents(eventType, handler as any)
+  const subscribeToEvent = useCallback((eventType: string, handler: (args: any) => void) => {
+    return eventManager.subscribe(eventType, handler)
   }, [])
 
-  const fireValidationChanged = useCallback((
-    targetModelId: string, 
-    isValid: boolean, 
-    issues: ValidationIssue[], 
-    sender?: string
-  ) => {
-    tandtEventManager.fireModelValidationChanged(targetModelId, isValid, issues, sender)
-  }, [])
+  const fireValidationChanged = useCallback(
+    (targetModelId: string, isValid: boolean, issues: any[], sender?: string) => {
+      eventManager.emit({ type: "VALIDATION_CHANGED", modelId: targetModelId, isValid, issues, sender })
+    },
+    [],
+  )
 
   useEffect(() => {
-    const handleValidationChanged = (args: ValidationEventArgs) => {
+    const handleValidationChanged = (args: any) => {
       if (!modelId || args.modelId === modelId) {
         setValidationState({
           isValid: args.isValid,
-          issues: args.issues
+          issues: args.issues,
         })
       }
     }
 
-    const unsubscribe = subscribeToEvent(VALIDATION_EVENTS.VALIDATION_CHANGED, handleValidationChanged as any)
+    const unsubscribe = subscribeToEvent("VALIDATION_CHANGED", handleValidationChanged)
 
-    return unsubscribe
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [subscribeToEvent, modelId])
 
   return {
     isValid: validationState.isValid,
     issues: validationState.issues,
     subscribeToEvent,
-    fireValidationChanged
+    fireValidationChanged,
   }
 }
 
 // Hook for Progress Events
 export function useProgressEvents(modelId?: string) {
-  const [progress, setProgress] = useState<ModelProgress | null>(null)
+  const [progress, setProgress] = useState<any | null>(null)
 
-  const subscribeToEvent = useCallback((eventType: string, handler: ProgressEventHandler) => {
-    tandtEventManager.subscribeToModelEvents(eventType, handler as any)
-    return () => tandtEventManager.unsubscribeFromModelEvents(eventType, handler as any)
+  const subscribeToEvent = useCallback((eventType: string, handler: (args: any) => void) => {
+    return eventManager.subscribe(eventType, handler)
   }, [])
 
-  const fireProgressUpdated = useCallback((
-    targetModelId: string, 
-    progressData: ModelProgress, 
-    sender?: string
-  ) => {
-    tandtEventManager.fireProgressUpdated(targetModelId, progressData, sender)
+  const fireProgressUpdated = useCallback((targetModelId: string, progressData: any, sender?: string) => {
+    eventManager.emit({ type: "PROGRESS_UPDATED", modelId: targetModelId, progress: progressData, sender })
   }, [])
 
   useEffect(() => {
-    const handleProgressUpdated = (args: ProgressEventArgs) => {
+    const handleProgressUpdated = (args: any) => {
       if (!modelId || args.modelId === modelId) {
         setProgress(args.progress)
       }
     }
 
-    const unsubscribe = subscribeToEvent(PROGRESS_EVENTS.PROGRESS_UPDATED, handleProgressUpdated as any)
+    const unsubscribe = subscribeToEvent("PROGRESS_UPDATED", handleProgressUpdated)
 
-    return unsubscribe
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [subscribeToEvent, modelId])
 
   return {
     progress,
     subscribeToEvent,
-    fireProgressUpdated
+    fireProgressUpdated,
   }
 }
 
 // Comprehensive Hook - Combines All Event Types
-export function useTandTEvents(modelId?: string) {
-  const modelEvents = useModelEvents()
-  const elementEvents = useElementEvents(modelId)
-  const modeEvents = useModeEvents(modelId)
-  const validationEvents = useValidationEvents(modelId)
-  const progressEvents = useProgressEvents(modelId)
+export function useTandTEvents(
+  eventType: ModelEventType | "ALL",
+  callback: (event: ModelEvent) => void,
+  dependencies: any[] = [],
+) {
+  const subscriptionIdRef = useRef<string | null>(null)
 
-  // Cross-event derived state
-  const isModelActive = modelEvents.activeModelId === modelId
-  const canAnalyze = modeEvents.currentMode === 'analyzing'
-  const canEdit = modeEvents.currentMode === 'editing'
+  useEffect(() => {
+    // Subscribe to events
+    subscriptionIdRef.current = eventManager.subscribe(eventType, callback)
 
-  return {
-    // Individual event hooks
-    model: modelEvents,
-    element: elementEvents,
-    mode: modeEvents,
-    validation: validationEvents,
-    progress: progressEvents,
+    // Cleanup subscription on unmount or dependency change
+    return () => {
+      if (subscriptionIdRef.current) {
+        eventManager.unsubscribe(subscriptionIdRef.current)
+        subscriptionIdRef.current = null
+      }
+    }
+  }, [eventType, ...dependencies])
 
-    // Derived state
-    isModelActive,
-    canAnalyze,
-    canEdit,
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (subscriptionIdRef.current) {
+        eventManager.unsubscribe(subscriptionIdRef.current)
+      }
+    }
+  }, [])
+}
 
-    // Global utilities
-    eventManager: tandtEventManager
+/**
+ * Hook for emitting TandT model events
+ */
+export function useEmitTandTEvent() {
+  return (event: ModelEvent) => {
+    eventManager.emit(event)
   }
 }
 
-// Hook for Custom Event Subscription with Cleanup
-export function useCustomTandTEvent<T>(
-  eventType: string,
-  handler: (args: T) => void,
-  dependencies: any[] = []
-) {
-  const handlerRef = useRef(handler)
-  
-  // Update handler ref when dependencies change
-  useEffect(() => {
-    handlerRef.current = handler
-  }, dependencies)
-
-  useEffect(() => {
-    const wrappedHandler = (args: T) => {
-      handlerRef.current(args)
-    }
-
-    // Generic subscription - assumes model events for simplicity
-    tandtEventManager.subscribeToModelEvents(eventType, wrappedHandler as any)
-
-    return () => {
-      tandtEventManager.unsubscribeFromModelEvents(eventType, wrappedHandler as any)
-    }
-  }, [eventType])
+/**
+ * Hook for getting model event history
+ */
+export function useModelHistory(modelId: string) {
+  return eventManager.getModelHistory(modelId)
 }
 
-// Development Utilities
-export function useTandTEventLogger() {
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return
-
-    const logEvent = (eventType: string) => (args: any) => {
-      console.group(`🔄 TandT Event: ${eventType}`)
-      console.log('Event Args:', args)
-      console.log('Timestamp:', new Date().toLocaleTimeString())
-      console.groupEnd()
-    }
-
-    // Subscribe to all major events for development logging
-    const unsubscribers = [
-      tandtEventManager.subscribeToModelEvents(MODEL_EVENTS.EDIT_MODEL_ACTION, logEvent('EDIT_MODEL')),
-      tandtEventManager.subscribeToModeEvents(MODE_EVENTS.EDIT_MODE_CHANGED, logEvent('MODE_CHANGED')),
-      tandtEventManager.subscribeToElementEvents(ELEMENT_EVENTS.ELEMENT_EVALUATED, logEvent('ELEMENT_EVALUATED'))
-    ]
-
-    return () => {
-      unsubscribers.forEach(unsub => unsub())
-    }
-  }, [])
-} 
+/**
+ * Hook for getting recent events
+ */
+export function useRecentEvents(limit = 50) {
+  return eventManager.getRecentEvents(limit)
+}
