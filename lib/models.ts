@@ -1,8 +1,8 @@
 // TandT Models Library - Complete Model Management System
 // Handles CRUD operations, statistics, and data persistence
 
-import { promises as fs } from "fs"
-import path from "path"
+// NOTE: Node-only modules are loaded dynamically to prevent Next.js client bundle errors.
+
 import type {
   DigitalModel,
   DecisionMakingModel,
@@ -32,11 +32,26 @@ let initialized = false
 
 // Initialize models from sample files
 async function initializeModels(): Promise<void> {
-  if (initialized) return
-
   try {
+    // Skip file-system initialization on the client/browser to avoid bundling fs/path.
+    if (typeof window !== "undefined") {
+      initialized = true
+      return
+    }
+
+    // Dynamically import Node-only modules.
+    const { promises: fs } = await import("fs")
+    const path = await import("path")
+
     const samplesDir = path.join(process.cwd(), "samples")
-    const files = await fs.readdir(samplesDir)
+    let files: string[] = []
+    try {
+      files = await fs.readdir(samplesDir)
+    } catch {
+      // samples directory may not exist in production; ignore.
+      files = []
+    }
+
     const jsonFiles = files.filter((file) => file.endsWith(".json"))
 
     for (const file of jsonFiles) {
@@ -47,17 +62,10 @@ async function initializeModels(): Promise<void> {
 
         // Extract ID from filename or use the model's ID
         const fileId = file.match(/([a-f0-9-]{36})/)?.[1]
-        if (fileId) {
-          modelData.id = fileId
-        }
+        if (fileId) modelData.id = fileId
 
-        // Ensure required fields exist
-        if (!modelData.dtCreated) {
-          modelData.dtCreated = new Date().toISOString()
-        }
-        if (!modelData.dtModified) {
-          modelData.dtModified = new Date().toISOString()
-        }
+        modelData.dtCreated ||= new Date().toISOString()
+        modelData.dtModified ||= new Date().toISOString()
 
         modelsCache.push(modelData as DigitalModel)
       } catch (error) {
@@ -68,7 +76,7 @@ async function initializeModels(): Promise<void> {
     initialized = true
   } catch (error) {
     console.warn("Failed to initialize models from samples:", error)
-    initialized = true // Mark as initialized even if failed to prevent repeated attempts
+    initialized = true // Prevent repeated attempts
   }
 }
 
