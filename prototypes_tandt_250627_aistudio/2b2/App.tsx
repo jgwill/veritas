@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { AppMode, DigitalModel, DigitalElement } from './types';
 import Header from './components/Header';

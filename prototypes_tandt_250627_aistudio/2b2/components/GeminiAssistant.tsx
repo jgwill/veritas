@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { suggestElementsFromTopic } from '../services/geminiService';
 

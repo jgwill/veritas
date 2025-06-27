@@ -19,4 +19,4 @@ Migrate the most valuable UI/logic patterns from AI-Studio prototype into the Ne
 9. Manual smoke test: create Decision & Performance models, complete flows, ensure UI parity with screenshots.
 
 ## Evolution Log
-- 2025-06-27 15:00 – Initial ledger created, captured current state and migration plan. 
+- 2025-06-27 15:00 – Initial ledger created, captured current state and migration plan.

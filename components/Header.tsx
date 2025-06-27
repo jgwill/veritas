@@ -156,4 +156,4 @@ export default function Header({ currentMode, onSetMode, modelType, modelName, m
       </DropdownMenu>
     </header>
   )
-} 
+}

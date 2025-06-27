@@ -85,4 +85,4 @@ export default function GeminiAssistant({ onAddElements }: GeminiAssistantProps)
       </Card>
     </div>
   )
-} 
+}

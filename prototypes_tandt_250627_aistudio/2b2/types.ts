@@ -1,4 +1,3 @@
-
 export interface DigitalElement {
   SortNo: number;
   TelescopedModel: null | any; // Define further if needed

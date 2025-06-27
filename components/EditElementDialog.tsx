@@ -87,4 +87,4 @@ export default function EditElementDialog({ isOpen, onClose, element, onSave }: 
       </DialogContent>
     </Dialog>
   )
-} 
+}

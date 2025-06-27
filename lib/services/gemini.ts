@@ -17,4 +17,4 @@ export async function suggestElementsFromTopic(topic: string): Promise<Suggested
     displayName: `${baseName} ${idx + 1}`,
     description: `Auto-generated suggestion related to ${topic}.`,
   }))
-} 
+}
