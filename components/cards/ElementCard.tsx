@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   type DigitalElement,
-  DigitalThinkingModelType,
   isDecisionMakingElement,
   isPerformanceReviewElement,
 } from "@/lib/types"
-import { ModelMode, PerformanceTrend } from "@/lib/constants"
+import { ModelMode, PerformanceTrend, DigitalThinkingModelType } from "@/lib/constants"
 import { Pencil, TrendingUp, TrendingDown, Minus, Check, X } from "lucide-react"
 
 interface ElementCardProps {
