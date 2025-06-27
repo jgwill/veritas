@@ -3,241 +3,213 @@
 import type React from "react"
 
 import { useState } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Target, TrendingUp, Crown, Users } from "lucide-react"
-import { DigitalThinkingModelType, type CreateModelRequest } from "@/lib/types"
+import { type CreateModelRequest, DigitalThinkingModelType } from "@/lib/types"
+import { createModel } from "@/lib/actions"
+import { Target, TrendingUp, Loader2 } from "lucide-react"
 
 interface CreateModelDialogProps {
-  onCreateModel: (model: CreateModelRequest) => Promise<any>
-  isLoading?: boolean
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onModelCreated: () => void
 }
 
-export default function CreateModelDialog({ onCreateModel, isLoading }: CreateModelDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [modelName, setModelName] = useState("")
-  const [digitalTopic, setDigitalTopic] = useState("")
-  const [note, setNote] = useState("")
-  const [selectedType, setSelectedType] = useState<DigitalThinkingModelType | null>(null)
-  const [creating, setCreating] = useState(false)
+export function CreateModelDialog({ open, onOpenChange, onModelCreated }: CreateModelDialogProps) {
+  const [formData, setFormData] = useState<CreateModelRequest>({
+    modelName: "",
+    digitalTopic: "",
+    digitalThinkingModelType: DigitalThinkingModelType.DECISION_MAKING,
+    note: "",
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!modelName.trim() || !digitalTopic.trim() || selectedType === null) {
-      return
-    }
-
-    setCreating(true)
+    setLoading(true)
+    setError(null)
 
     try {
-      const createRequest: CreateModelRequest = {
-        modelName: modelName.trim(),
-        digitalTopic: digitalTopic.trim(),
-        digitalThinkingModelType: selectedType,
-        note: note.trim(),
+      const result = await createModel(formData)
+      if (result.success) {
+        onModelCreated()
+        resetForm()
+      } else {
+        setError(result.error || "Failed to create model")
       }
-
-      await onCreateModel(createRequest)
-
-      // Reset form
-      setModelName("")
-      setDigitalTopic("")
-      setNote("")
-      setSelectedType(null)
-      setOpen(false)
-    } catch (error) {
-      console.error("Error creating model:", error)
+    } catch (err) {
+      setError("An unexpected error occurred")
     } finally {
-      setCreating(false)
+      setLoading(false)
     }
   }
 
-  const modelTypes = [
-    {
-      type: DigitalThinkingModelType.DECISION_MAKING,
-      title: "Decision Making Model",
-      description: "Binary decision analysis for YES/NO scenarios requiring element hierarchy determination",
-      icon: <Target className="h-5 w-5" />,
-      features: [
-        "Pairwise element comparisons",
-        "Dominance factor calculations",
-        "Element hierarchy ranking",
-        "Binary acceptability evaluation",
-        "YES/NO decision output",
-      ],
-      useCases: ["Housing decisions", "Investment choices", "Strategic planning", "Hiring decisions"],
-      badge: "Decision",
-      color: "blue",
-    },
-    {
-      type: DigitalThinkingModelType.PERFORMANCE_REVIEW,
-      title: "Performance Review Model",
-      description: "Performance tracking and trend analysis over time without dominance calculations",
-      icon: <TrendingUp className="h-5 w-5" />,
-      features: [
-        "Performance trend tracking",
-        "Priority identification",
-        "Binary acceptability evaluation",
-        "Performance dashboard output",
-        "No pairwise comparisons",
-      ],
-      useCases: [
-        "Employee performance reviews",
-        "Project health monitoring",
-        "System metrics tracking",
-        "Business performance assessment",
-      ],
-      badge: "Performance",
-      color: "green",
-    },
-  ]
+  const resetForm = () => {
+    setFormData({
+      modelName: "",
+      digitalTopic: "",
+      digitalThinkingModelType: DigitalThinkingModelType.DECISION_MAKING,
+      note: "",
+    })
+    setError(null)
+  }
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm()
+    }
+    onOpenChange(newOpen)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Create New Model
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New TandT Model</DialogTitle>
-          <DialogDescription>
-            Choose a model type and provide basic information to get started with your thinking framework.
-          </DialogDescription>
+          <DialogTitle>Create New Digital Thinking Model</DialogTitle>
+          <DialogDescription>Choose the type of model that best fits your analysis needs</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Model Type Selection */}
           <div className="space-y-4">
             <Label className="text-base font-semibold">Model Type</Label>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {modelTypes.map((modelType) => (
+            <RadioGroup
+              value={formData.digitalThinkingModelType.toString()}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  digitalThinkingModelType: Number.parseInt(value) as DigitalThinkingModelType,
+                }))
+              }
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card
-                  key={modelType.type}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedType === modelType.type ? "ring-2 ring-primary border-primary" : "hover:border-gray-300"
+                  className={`cursor-pointer transition-all ${
+                    formData.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING
+                      ? "ring-2 ring-blue-500 bg-blue-50"
+                      : "hover:bg-gray-50"
                   }`}
-                  onClick={() => setSelectedType(modelType.type)}
                 >
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {modelType.icon}
-                        <CardTitle className="text-lg">{modelType.title}</CardTitle>
-                      </div>
-                      <Badge variant={modelType.color === "blue" ? "default" : "secondary"}>{modelType.badge}</Badge>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value={DigitalThinkingModelType.DECISION_MAKING.toString()}
+                        id="decision-making"
+                      />
+                      <Label htmlFor="decision-making" className="flex items-center gap-2 cursor-pointer">
+                        <Target className="h-5 w-5 text-blue-600" />
+                        <CardTitle className="text-blue-800">Digital Decision Making</CardTitle>
+                      </Label>
                     </div>
-                    <CardDescription className="text-sm">{modelType.description}</CardDescription>
+                    <CardDescription>For binary YES/NO decisions with element hierarchy analysis</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                        <Crown className="h-3 w-3" />
-                        Key Features
-                      </h4>
-                      <ul className="text-xs space-y-1 text-muted-foreground">
-                        {modelType.features.map((feature, index) => (
-                          <li key={index} className="flex items-center gap-1">
-                            <span className="w-1 h-1 bg-current rounded-full flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        Use Cases
-                      </h4>
-                      <ul className="text-xs space-y-1 text-muted-foreground">
-                        {modelType.useCases.map((useCase, index) => (
-                          <li key={index} className="flex items-center gap-1">
-                            <span className="w-1 h-1 bg-current rounded-full flex-shrink-0" />
-                            {useCase}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <CardContent className="pt-0">
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Binary acceptability evaluation (1/0)</li>
+                      <li>• Pairwise element comparisons</li>
+                      <li>• Dominance factor calculations</li>
+                      <li>• Decision recommendation with confidence</li>
+                    </ul>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-            {selectedType === null && (
-              <p className="text-sm text-muted-foreground">Please select a model type to continue.</p>
-            )}
+
+                <Card
+                  className={`cursor-pointer transition-all ${
+                    formData.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW
+                      ? "ring-2 ring-green-500 bg-green-50"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value={DigitalThinkingModelType.PERFORMANCE_REVIEW.toString()}
+                        id="performance-review"
+                      />
+                      <Label htmlFor="performance-review" className="flex items-center gap-2 cursor-pointer">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        <CardTitle className="text-green-800">Digital Performance Review</CardTitle>
+                      </Label>
+                    </div>
+                    <CardDescription>For continuous performance tracking and improvement analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Acceptability + performance trend tracking</li>
+                      <li>• Historical performance data</li>
+                      <li>• Improvement/decline identification</li>
+                      <li>• Performance dashboard and recommendations</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            </RadioGroup>
           </div>
 
-          {/* Model Information */}
-          {selectedType !== null && (
-            <div className="space-y-4 border-t pt-6">
-              <h3 className="text-lg font-semibold">Model Information</h3>
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="modelName">Model Name *</Label>
+              <Input
+                id="modelName"
+                value={formData.modelName}
+                onChange={(e) => setFormData((prev) => ({ ...prev, modelName: e.target.value }))}
+                placeholder="e.g., Housing Decision Model"
+                required
+              />
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="modelName">Model Name *</Label>
-                  <Input
-                    id="modelName"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="e.g., Housing Decision v1"
-                    required
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="digitalTopic">Digital Topic *</Label>
+              <Input
+                id="digitalTopic"
+                value={formData.digitalTopic}
+                onChange={(e) => setFormData((prev) => ({ ...prev, digitalTopic: e.target.value }))}
+                placeholder="e.g., Choosing the right apartment"
+                required
+              />
+            </div>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="digitalTopic">Digital Topic *</Label>
-                  <Input
-                    id="digitalTopic"
-                    value={digitalTopic}
-                    onChange={(e) => setDigitalTopic(e.target.value)}
-                    placeholder="e.g., Find suitable living space"
-                    required
-                  />
-                </div>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="note">Notes (Optional)</Label>
+            <Textarea
+              id="note"
+              value={formData.note || ""}
+              onChange={(e) => setFormData((prev) => ({ ...prev, note: e.target.value }))}
+              placeholder="Additional context or requirements for this model..."
+              rows={3}
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="note">Notes</Label>
-                <Textarea
-                  id="note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Optional description or notes about this model..."
-                  rows={3}
-                />
-              </div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
-        </form>
 
-        <DialogFooter className="border-t pt-6">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={!modelName.trim() || !digitalTopic.trim() || selectedType === null || creating || isLoading}
-          >
-            {creating || isLoading ? "Creating..." : "Create Model"}
-          </Button>
-        </DialogFooter>
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || !formData.modelName || !formData.digitalTopic}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Model"
+              )}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

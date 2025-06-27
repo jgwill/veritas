@@ -60,6 +60,7 @@ export class PerformanceReviewService {
       threeFlagAnswered: false,
       priority: 1,
       performanceHistory: [],
+      dtModified: new Date().toISOString(),
     }
 
     model.model.push(newElement)
@@ -166,31 +167,23 @@ export class PerformanceReviewService {
    */
   static generatePerformanceDashboard(model: PerformanceReviewModel): PerformanceDashboard {
     const elements = model.model
-
-    // Categorize elements
-    const acceptableElements = elements.filter((e) => e.twoFlag && e.twoFlagAnswered)
-    const unacceptableElements = elements.filter((e) => !e.twoFlag && e.twoFlagAnswered)
-    const improvingElements = elements.filter((e) => e.threeFlag === 1)
-    const decliningElements = elements.filter((e) => e.threeFlag === -1)
-
-    // Calculate overall score
     const evaluatedElements = elements.filter((e) => e.twoFlagAnswered)
-    const overallScore = evaluatedElements.length > 0 ? acceptableElements.length / evaluatedElements.length : 0
 
-    // Generate priority areas
-    const priorityAreas: PriorityArea[] = elements
-      .filter((e) => e.twoFlagAnswered && e.threeFlagAnswered)
-      .map((element) => ({
-        element,
-        priorityLevel: element.priority || this.updateElementPriority(element),
-        reason: this.generatePriorityReason(element),
-        actionRequired: element.priority === 3 || false,
-      }))
-      .sort((a, b) => {
-        // Sort by priority: HIGH > MEDIUM > LOW
-        const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 }
-        return priorityOrder[b.priorityLevel] - priorityOrder[a.priorityLevel]
-      })
+    const acceptableElements = evaluatedElements.filter((e) => e.twoFlag)
+    const unacceptableElements = evaluatedElements.filter((e) => !e.twoFlag)
+
+    const improvingElements = evaluatedElements.filter(
+      (e) => e.threeFlagAnswered && e.threeFlag === PerformanceTrend.GETTING_BETTER,
+    )
+    const decliningElements = evaluatedElements.filter(
+      (e) => e.threeFlagAnswered && e.threeFlag === PerformanceTrend.GETTING_WORSE,
+    )
+
+    // Calculate overall score based on acceptability and trends
+    const overallScore = this.calculateOverallScore(elements)
+
+    // Identify priority areas
+    const priorityAreas = this.identifyPriorityAreas(elements)
 
     return {
       overallScore,
@@ -203,37 +196,112 @@ export class PerformanceReviewService {
   }
 
   /**
-   * Generate improvement plan
+   * Calculate overall performance score
    */
-  static generateImprovementPlan(model: PerformanceReviewModel): ImprovementPlan {
-    const dashboard = this.generatePerformanceDashboard(model)
+  static calculateOverallScore(elements: PerformanceReviewElement[]): number {
+    if (elements.length === 0) return 0
 
-    const highPriorityActions: ActionItem[] = dashboard.priorityAreas
-      .filter((area) => area.priorityLevel === PriorityLevel.HIGH)
-      .map((area) => ({
-        elementId: area.element.idug,
-        action: this.generateActionItem(area.element),
-        priority: PriorityLevel.HIGH,
-        timeframe: "Immediate (1-2 weeks)",
-      }))
+    const evaluatedElements = elements.filter((e) => e.twoFlagAnswered)
+    if (evaluatedElements.length === 0) return 0
 
-    const mediumPriorityActions: ActionItem[] = dashboard.priorityAreas
-      .filter((area) => area.priorityLevel === PriorityLevel.MEDIUM)
-      .map((area) => ({
-        elementId: area.element.idug,
-        action: this.generateActionItem(area.element),
-        priority: PriorityLevel.MEDIUM,
-        timeframe: "Short-term (1-3 months)",
-      }))
+    let totalScore = 0
+    evaluatedElements.forEach((element) => {
+      let elementScore = element.twoFlag ? 1 : 0 // Base acceptability score
 
-    const lowPriorityActions: ActionItem[] = dashboard.priorityAreas
-      .filter((area) => area.priorityLevel === PriorityLevel.LOW)
-      .map((area) => ({
-        elementId: area.element.idug,
-        action: this.generateActionItem(area.element),
-        priority: PriorityLevel.LOW,
-        timeframe: "Long-term (3-6 months)",
-      }))
+      // Add performance trend bonus/penalty
+      if (element.threeFlagAnswered) {
+        if (element.threeFlag === PerformanceTrend.GETTING_BETTER) {
+          elementScore += 0.2 // Bonus for improvement
+        } else if (element.threeFlag === PerformanceTrend.GETTING_WORSE) {
+          elementScore -= 0.2 // Penalty for decline
+        }
+      }
+
+      totalScore += Math.max(0, Math.min(1, elementScore)) // Clamp between 0 and 1
+    })
+
+    return Math.round((totalScore / evaluatedElements.length) * 100)
+  }
+
+  /**
+   * Identify priority areas that need attention
+   */
+  static identifyPriorityAreas(elements: PerformanceReviewElement[]): PriorityArea[] {
+    const priorityAreas: PriorityArea[] = []
+
+    elements.forEach((element) => {
+      if (!element.twoFlagAnswered) return
+
+      let priorityLevel: PriorityLevel = PriorityLevel.LOW
+      let reason = ""
+      let actionRequired = false
+
+      // High priority: Unacceptable and getting worse
+      if (!element.twoFlag && element.threeFlagAnswered && element.threeFlag === PerformanceTrend.GETTING_WORSE) {
+        priorityLevel = PriorityLevel.HIGH
+        reason = "Unacceptable performance and declining trend"
+        actionRequired = true
+      }
+      // High priority: Unacceptable but stable/improving
+      else if (!element.twoFlag) {
+        priorityLevel = PriorityLevel.HIGH
+        reason = "Currently unacceptable performance"
+        actionRequired = true
+      }
+      // Medium priority: Acceptable but declining
+      else if (element.twoFlag && element.threeFlagAnswered && element.threeFlag === PerformanceTrend.GETTING_WORSE) {
+        priorityLevel = PriorityLevel.MEDIUM
+        reason = "Acceptable but showing declining trend"
+        actionRequired = true
+      }
+      // Low priority: Acceptable and stable
+      else if (element.twoFlag && (!element.threeFlagAnswered || element.threeFlag === PerformanceTrend.STAY_SAME)) {
+        priorityLevel = PriorityLevel.LOW
+        reason = "Acceptable performance, monitor for changes"
+        actionRequired = false
+      }
+
+      // Only add to priority areas if action is required or it's declining
+      if (actionRequired || (element.threeFlagAnswered && element.threeFlag === PerformanceTrend.GETTING_WORSE)) {
+        priorityAreas.push({
+          element,
+          priorityLevel,
+          reason,
+          actionRequired,
+        })
+      }
+    })
+
+    // Sort by priority level (High -> Medium -> Low)
+    return priorityAreas.sort((a, b) => {
+      const priorityOrder = { [PriorityLevel.HIGH]: 3, [PriorityLevel.MEDIUM]: 2, [PriorityLevel.LOW]: 1 }
+      return priorityOrder[b.priorityLevel] - priorityOrder[a.priorityLevel]
+    })
+  }
+
+  /**
+   * Generate improvement plan based on priority areas
+   */
+  static generateImprovementPlan(priorityAreas: PriorityArea[]): ImprovementPlan {
+    const highPriorityActions: ActionItem[] = []
+    const mediumPriorityActions: ActionItem[] = []
+    const lowPriorityActions: ActionItem[] = []
+
+    priorityAreas.forEach((area) => {
+      const action = this.generateActionItem(area)
+
+      switch (area.priorityLevel) {
+        case PriorityLevel.HIGH:
+          highPriorityActions.push(action)
+          break
+        case PriorityLevel.MEDIUM:
+          mediumPriorityActions.push(action)
+          break
+        case PriorityLevel.LOW:
+          lowPriorityActions.push(action)
+          break
+      }
+    })
 
     return {
       highPriorityActions,
@@ -243,61 +311,100 @@ export class PerformanceReviewService {
   }
 
   /**
-   * Generate priority reason explanation
+   * Generate specific action item for a priority area
    */
-  static generatePriorityReason(element: PerformanceReviewElement): string {
-    const isAcceptable = element.twoFlag
-    const trend = element.threeFlag
+  static generateActionItem(area: PriorityArea): ActionItem {
+    const element = area.element
+    let action = ""
+    let timeframe = ""
 
-    if (!isAcceptable && trend === PerformanceTrend.GETTING_WORSE) {
-      return "Unacceptable performance that is declining - requires immediate attention"
-    }
-    if (!isAcceptable && trend === PerformanceTrend.STAY_SAME) {
-      return "Consistently unacceptable performance - needs improvement plan"
-    }
-    if (!isAcceptable && trend === PerformanceTrend.GETTING_BETTER) {
-      return "Improving but still unacceptable - monitor progress closely"
-    }
-    if (isAcceptable && trend === PerformanceTrend.GETTING_WORSE) {
-      return "Declining performance - prevent further deterioration"
-    }
-    if (isAcceptable && trend === PerformanceTrend.STAY_SAME) {
-      return "Stable acceptable performance - maintain current level"
-    }
-    if (isAcceptable && trend === PerformanceTrend.GETTING_BETTER) {
-      return "Strong performance trending upward - continue current approach"
+    switch (area.priorityLevel) {
+      case PriorityLevel.HIGH:
+        if (!element.twoFlag) {
+          action = `Immediate intervention required for "${element.displayName}". Develop action plan to address unacceptable performance.`
+          timeframe = "Immediate (1-2 weeks)"
+        } else {
+          action = `Address declining trend in "${element.displayName}" before it becomes unacceptable.`
+          timeframe = "Short-term (2-4 weeks)"
+        }
+        break
+
+      case PriorityLevel.MEDIUM:
+        action = `Monitor and implement preventive measures for "${element.displayName}" to prevent further decline.`
+        timeframe = "Medium-term (1-2 months)"
+        break
+
+      case PriorityLevel.LOW:
+        action = `Continue monitoring "${element.displayName}" and maintain current performance levels.`
+        timeframe = "Long-term (3+ months)"
+        break
     }
 
-    return "Performance status requires evaluation"
+    return {
+      elementId: element.idug,
+      action,
+      priority: area.priorityLevel,
+      timeframe,
+    }
   }
 
   /**
-   * Generate action item recommendation
+   * Update element performance evaluation
    */
-  static generateActionItem(element: PerformanceReviewElement): string {
-    const isAcceptable = element.twoFlag
-    const trend = element.threeFlag
+  static updateElementPerformance(
+    model: PerformanceReviewModel,
+    elementId: string,
+    isAcceptable: boolean,
+    performanceTrend?: PerformanceTrend,
+    note?: string,
+  ): PerformanceReviewModel {
+    const element = model.model.find((e) => e.idug === elementId)
+    if (!element) return model
 
-    if (!isAcceptable && trend === PerformanceTrend.GETTING_WORSE) {
-      return `Immediate intervention required for ${element.displayName}. Investigate root causes and implement corrective measures.`
-    }
-    if (!isAcceptable && trend === PerformanceTrend.STAY_SAME) {
-      return `Develop improvement plan for ${element.displayName}. Set specific targets and timeline for enhancement.`
-    }
-    if (!isAcceptable && trend === PerformanceTrend.GETTING_BETTER) {
-      return `Continue improvement efforts for ${element.displayName}. Monitor progress and adjust strategies as needed.`
-    }
-    if (isAcceptable && trend === PerformanceTrend.GETTING_WORSE) {
-      return `Investigate declining trend in ${element.displayName}. Identify and address contributing factors.`
-    }
-    if (isAcceptable && trend === PerformanceTrend.STAY_SAME) {
-      return `Maintain current performance level for ${element.displayName}. Review periodically for optimization opportunities.`
-    }
-    if (isAcceptable && trend === PerformanceTrend.GETTING_BETTER) {
-      return `Sustain positive momentum in ${element.displayName}. Document best practices for replication.`
+    // Update acceptability
+    element.twoFlag = isAcceptable
+    element.twoFlagAnswered = true
+
+    // Update performance trend if provided
+    if (performanceTrend !== undefined) {
+      element.threeFlag = performanceTrend
+      element.threeFlagAnswered = true
     }
 
-    return `Review and evaluate ${element.displayName} performance status.`
+    // Update modification timestamp
+    element.dtModified = new Date().toISOString()
+
+    // Add to performance history if it exists
+    if ("performanceHistory" in element) {
+      const historyEntry = {
+        date: new Date().toISOString(),
+        acceptability: isAcceptable,
+        performance: performanceTrend || PerformanceTrend.STAY_SAME,
+        note,
+      }
+
+      if (!element.performanceHistory) {
+        element.performanceHistory = []
+      }
+      element.performanceHistory.push(historyEntry)
+    }
+
+    return model
+  }
+
+  /**
+   * Get performance trends over time for an element
+   */
+  static getPerformanceTrends(element: PerformanceReviewElement): Array<{
+    date: string
+    acceptability: boolean
+    performance: number
+    note?: string
+  }> {
+    if ("performanceHistory" in element && element.performanceHistory) {
+      return element.performanceHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    }
+    return []
   }
 
   /**
