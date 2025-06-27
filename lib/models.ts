@@ -7,6 +7,7 @@
 import type {
   DigitalModel,
   DecisionMakingModel,
+  PerformanceReviewModel,
   DigitalElement,
   DecisionMakingElement,
   PerformanceReviewElement,
@@ -79,6 +80,12 @@ async function initializeModels(): Promise<void> {
     console.warn("Failed to initialize models from samples:", error)
     initialized = true // Prevent repeated attempts
   }
+}
+
+// Load models from samples directory - exported function
+export async function loadModelsFromSamples(): Promise<DigitalModel[]> {
+  await initializeModels()
+  return [...modelsCache]
 }
 
 // Get all models
@@ -266,6 +273,162 @@ export async function updateElement(
       success: false,
       error: error instanceof Error ? error.message : "Failed to update element",
     }
+  }
+}
+
+// Evaluate element acceptability - exported function
+export async function evaluateElementAcceptability(
+  modelId: string,
+  elementId: string,
+  isAcceptable: boolean,
+): Promise<DigitalModel | null> {
+  try {
+    const model = await getModelById(modelId)
+    if (!model) {
+      return null
+    }
+
+    const elementIndex = model.model.findIndex((e) => e.idug === elementId)
+    if (elementIndex === -1) {
+      return null
+    }
+
+    model.model[elementIndex].twoFlag = isAcceptable
+    model.model[elementIndex].twoFlagAnswered = true
+    model.model[elementIndex].dtModified = new Date().toISOString()
+    model.dtModified = new Date().toISOString()
+
+    const updateResult = await updateModel(modelId, model)
+    return updateResult.success ? updateResult.model || null : null
+  } catch (error) {
+    console.error("Error evaluating element acceptability:", error)
+    return null
+  }
+}
+
+// Evaluate element performance - exported function
+export async function evaluateElementPerformance(
+  modelId: string,
+  elementId: string,
+  performanceTrend: number,
+): Promise<DigitalModel | null> {
+  try {
+    const model = await getModelById(modelId)
+    if (!model) {
+      return null
+    }
+
+    // Only allow performance evaluation for Performance Review models
+    if (model.digitalThinkingModelType !== DigitalThinkingModelType.PERFORMANCE_REVIEW) {
+      throw new Error("Performance evaluation only available for Performance Review models")
+    }
+
+    const elementIndex = model.model.findIndex((e) => e.idug === elementId)
+    if (elementIndex === -1) {
+      return null
+    }
+
+    model.model[elementIndex].threeFlag = performanceTrend as PerformanceTrend
+    model.model[elementIndex].threeFlagAnswered = true
+    model.model[elementIndex].dtModified = new Date().toISOString()
+    model.dtModified = new Date().toISOString()
+
+    const updateResult = await updateModel(modelId, model)
+    return updateResult.success ? updateResult.model || null : null
+  } catch (error) {
+    console.error("Error evaluating element performance:", error)
+    return null
+  }
+}
+
+// Process pairwise comparison - exported function
+export async function processComparison(
+  modelId: string,
+  element1Id: string,
+  element2Id: string,
+  decisionValue: "YES" | "NO",
+): Promise<DigitalModel | null> {
+  try {
+    const model = await getModelById(modelId)
+    if (!model) {
+      return null
+    }
+
+    // Only allow comparisons for Decision Making models
+    if (model.digitalThinkingModelType !== DigitalThinkingModelType.DECISION_MAKING) {
+      throw new Error("Pairwise comparison only available for Decision Making models")
+    }
+
+    const element1 = model.model.find((e) => e.idug === element1Id)
+    const element2 = model.model.find((e) => e.idug === element2Id)
+
+    if (!element1 || !element2) {
+      return null
+    }
+
+    const comparisonValue = decisionValue === "YES" ? 1 : -1
+
+    // Update element1's comparison data
+    if (!element1.comparationTableData) {
+      element1.comparationTableData = {}
+    }
+    element1.comparationTableData[element2Id] = comparisonValue
+
+    // Update element2's comparison data (inverse)
+    if (!element2.comparationTableData) {
+      element2.comparationTableData = {}
+    }
+    element2.comparationTableData[element1Id] = -comparisonValue
+
+    // Mark comparison as completed
+    element1.comparationCompleted = true
+    element2.comparationCompleted = true
+
+    model.dtModified = new Date().toISOString()
+
+    const updateResult = await updateModel(modelId, model)
+    return updateResult.success ? updateResult.model || null : null
+  } catch (error) {
+    console.error("Error processing comparison:", error)
+    return null
+  }
+}
+
+// Calculate dominance factors - exported function
+export async function calculateDominanceFactors(modelId: string): Promise<DigitalModel | null> {
+  try {
+    const model = await getModelById(modelId)
+    if (!model) {
+      return null
+    }
+
+    // Only calculate dominance for Decision Making models
+    if (model.digitalThinkingModelType !== DigitalThinkingModelType.DECISION_MAKING) {
+      throw new Error("Dominance calculation only available for Decision Making models")
+    }
+
+    const elements = model.model as DecisionMakingElement[]
+
+    // Calculate dominance factors for each element
+    elements.forEach((element) => {
+      const comparisons = Object.values(element.comparationTableData || {})
+      if (comparisons.length > 0) {
+        const totalScore = comparisons.reduce((sum, value) => sum + value, 0)
+        element.dominanceFactor = totalScore / comparisons.length
+        element.dominantElementItIS = element.dominanceFactor > 0
+      } else {
+        element.dominanceFactor = 0
+        element.dominantElementItIS = false
+      }
+    })
+
+    model.dtModified = new Date().toISOString()
+
+    const updateResult = await updateModel(modelId, model)
+    return updateResult.success ? updateResult.model || null : null
+  } catch (error) {
+    console.error("Error calculating dominance factors:", error)
+    return null
   }
 }
 
@@ -468,6 +631,15 @@ function calculateTotalComparisons(elementCount: number): number {
   return elementCount > 1 ? (elementCount * (elementCount - 1)) / 2 : 0
 }
 
+// Type guard functions
+function isDecisionMakingModel(model: DigitalModel): model is DecisionMakingModel {
+  return model.digitalThinkingModelType === DigitalThinkingModelType.DECISION_MAKING
+}
+
+function isPerformanceReviewModel(model: DigitalModel): model is PerformanceReviewModel {
+  return model.digitalThinkingModelType === DigitalThinkingModelType.PERFORMANCE_REVIEW
+}
+
 export function getModelStats(model: DigitalModel) {
   const totalElements = model.model.length
   if (totalElements === 0) {
@@ -484,10 +656,10 @@ export function getModelStats(model: DigitalModel) {
   if (isDecisionMakingModel(model)) {
     const evaluatedElements = model.model.filter((el) => el.twoFlagAnswered).length
     const comparisonsNeeded = (totalElements * (totalElements - 1)) / 2
-    const comparisonsMade = model.model.reduce((acc, el) => {
-      return acc + Object.values(el.comparationTableData).filter(v => v !== 0).length
-    }, 0) / 2;
-
+    const comparisonsMade =
+      model.model.reduce((acc, el) => {
+        return acc + Object.values(el.comparationTableData).filter((v) => v !== 0).length
+      }, 0) / 2
 
     return {
       totalElements,

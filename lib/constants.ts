@@ -1,6 +1,7 @@
 // TandT Application Constants
-// Core constants and enums used throughout the application
+// Centralized configuration and enums for the Digital Thinking Models
 
+// Core Model Types
 export enum DigitalThinkingModelType {
   DECISION_MAKING = 1,
   PERFORMANCE_REVIEW = 2,
@@ -9,25 +10,27 @@ export enum DigitalThinkingModelType {
   GENERIC_TWO_ONLY = 5,
 }
 
+// Element Status
 export enum ElementStatus {
-  INACTIVE = 0,
   ACTIVE = 1,
+  INACTIVE = 0,
   PENDING = 2,
-  EVALUATED = 3,
-  ARCHIVED = 4,
 }
 
+// Acceptability Flags
 export enum AcceptabilityFlag {
   UNACCEPTABLE = 0,
   ACCEPTABLE = 1,
 }
 
+// Performance Trends
 export enum PerformanceTrend {
   GETTING_WORSE = -1,
   STAYING_SAME = 0,
   GETTING_BETTER = 1,
 }
 
+// Priority Levels
 export enum PriorityLevel {
   LOW = 1,
   MEDIUM = 2,
@@ -35,6 +38,7 @@ export enum PriorityLevel {
   CRITICAL = 4,
 }
 
+// Model Modes
 export enum ModelMode {
   EDITING = "editing",
   ANALYZING = "analyzing",
@@ -42,71 +46,200 @@ export enum ModelMode {
 }
 
 // Model Type Labels
-export const MODEL_TYPE_LABELS = {
+export const MODEL_TYPE_LABELS: Record<DigitalThinkingModelType, string> = {
   [DigitalThinkingModelType.DECISION_MAKING]: "Digital Decision Making",
   [DigitalThinkingModelType.PERFORMANCE_REVIEW]: "Digital Performance Review",
   [DigitalThinkingModelType.BUSINESS_ANALYSIS]: "Business Analysis",
   [DigitalThinkingModelType.GENERIC]: "Generic Model",
   [DigitalThinkingModelType.GENERIC_TWO_ONLY]: "Generic Two-Flag Model",
-} as const
+}
 
-// Status Labels
-export const ELEMENT_STATUS_LABELS = {
-  [ElementStatus.INACTIVE]: "Inactive",
+// Model Type Descriptions
+export const MODEL_TYPE_DESCRIPTIONS: Record<DigitalThinkingModelType, string> = {
+  [DigitalThinkingModelType.DECISION_MAKING]:
+    "Analyze decision scenarios using pairwise comparisons to determine element hierarchy and mandatory factors.",
+  [DigitalThinkingModelType.PERFORMANCE_REVIEW]:
+    "Track performance trends over time with binary acceptability and performance direction evaluation.",
+  [DigitalThinkingModelType.BUSINESS_ANALYSIS]:
+    "Comprehensive business analysis with impact assessment, risk evaluation, and implementation planning.",
+  [DigitalThinkingModelType.GENERIC]: "General-purpose model with flexible evaluation criteria.",
+  [DigitalThinkingModelType.GENERIC_TWO_ONLY]: "Simplified model with binary evaluation only.",
+}
+
+// Element Status Labels
+export const ELEMENT_STATUS_LABELS: Record<ElementStatus, string> = {
   [ElementStatus.ACTIVE]: "Active",
+  [ElementStatus.INACTIVE]: "Inactive",
   [ElementStatus.PENDING]: "Pending",
-  [ElementStatus.EVALUATED]: "Evaluated",
-  [ElementStatus.ARCHIVED]: "Archived",
-} as const
+}
 
-export const PERFORMANCE_TREND_LABELS = {
+// Performance Trend Labels
+export const PERFORMANCE_TREND_LABELS: Record<PerformanceTrend, string> = {
   [PerformanceTrend.GETTING_WORSE]: "Getting Worse",
   [PerformanceTrend.STAYING_SAME]: "Staying Same",
   [PerformanceTrend.GETTING_BETTER]: "Getting Better",
-} as const
+}
 
-export const PRIORITY_LEVEL_LABELS = {
+// Priority Level Labels
+export const PRIORITY_LEVEL_LABELS: Record<PriorityLevel, string> = {
   [PriorityLevel.LOW]: "Low",
   [PriorityLevel.MEDIUM]: "Medium",
   [PriorityLevel.HIGH]: "High",
   [PriorityLevel.CRITICAL]: "Critical",
-} as const
+}
 
-// Default Values
-export const DEFAULT_ELEMENT_STATUS = ElementStatus.ACTIVE
-export const DEFAULT_PERFORMANCE_TREND = PerformanceTrend.STAYING_SAME
-export const DEFAULT_PRIORITY_LEVEL = PriorityLevel.MEDIUM
+// Model Mode Labels
+export const MODEL_MODE_LABELS: Record<ModelMode, string> = {
+  [ModelMode.EDITING]: "Editing",
+  [ModelMode.ANALYZING]: "Analyzing",
+  [ModelMode.RESULTS]: "Results",
+}
 
-// Validation Constants
-export const MIN_MODEL_NAME_LENGTH = 3
-export const MAX_MODEL_NAME_LENGTH = 100
-export const MIN_ELEMENT_NAME_LENGTH = 2
-export const MAX_ELEMENT_NAME_LENGTH = 80
-export const MAX_DESCRIPTION_LENGTH = 500
+// Color Schemes for UI
+export const MODEL_TYPE_COLORS: Record<DigitalThinkingModelType, string> = {
+  [DigitalThinkingModelType.DECISION_MAKING]: "blue",
+  [DigitalThinkingModelType.PERFORMANCE_REVIEW]: "green",
+  [DigitalThinkingModelType.BUSINESS_ANALYSIS]: "purple",
+  [DigitalThinkingModelType.GENERIC]: "gray",
+  [DigitalThinkingModelType.GENERIC_TWO_ONLY]: "slate",
+}
 
-// UI Constants
-export const ITEMS_PER_PAGE = 10
-export const DEBOUNCE_DELAY = 300
-export const AUTO_SAVE_DELAY = 2000
-
-// Colors for UI
-export const STATUS_COLORS = {
-  [ElementStatus.INACTIVE]: "gray",
-  [ElementStatus.ACTIVE]: "blue",
-  [ElementStatus.PENDING]: "yellow",
-  [ElementStatus.EVALUATED]: "green",
-  [ElementStatus.ARCHIVED]: "red",
-} as const
-
-export const TREND_COLORS = {
+export const PERFORMANCE_TREND_COLORS: Record<PerformanceTrend, string> = {
   [PerformanceTrend.GETTING_WORSE]: "red",
   [PerformanceTrend.STAYING_SAME]: "yellow",
   [PerformanceTrend.GETTING_BETTER]: "green",
-} as const
+}
 
-export const PRIORITY_COLORS = {
-  [PriorityLevel.LOW]: "gray",
-  [PriorityLevel.MEDIUM]: "blue",
+export const PRIORITY_LEVEL_COLORS: Record<PriorityLevel, string> = {
+  [PriorityLevel.LOW]: "green",
+  [PriorityLevel.MEDIUM]: "yellow",
   [PriorityLevel.HIGH]: "orange",
   [PriorityLevel.CRITICAL]: "red",
-} as const
+}
+
+// Application Configuration
+export const APP_CONFIG = {
+  name: "TandT Digital Thinking",
+  version: "1.0.0",
+  description: "Advanced Digital Thinking Models for Decision Making and Performance Review",
+  maxElementsPerModel: 50,
+  maxModelsPerUser: 100,
+  autoSaveInterval: 30000, // 30 seconds
+  defaultModelType: DigitalThinkingModelType.DECISION_MAKING,
+}
+
+// API Configuration
+export const API_CONFIG = {
+  baseUrl: "/api",
+  timeout: 30000,
+  retryAttempts: 3,
+  retryDelay: 1000,
+}
+
+// UI Configuration
+export const UI_CONFIG = {
+  defaultTheme: "light",
+  compactView: false,
+  showDescriptions: true,
+  autoSave: true,
+  notifications: true,
+  animationDuration: 200,
+  debounceDelay: 300,
+}
+
+// Validation Rules
+export const VALIDATION_RULES = {
+  modelName: {
+    minLength: 3,
+    maxLength: 100,
+    required: true,
+  },
+  digitalTopic: {
+    minLength: 5,
+    maxLength: 200,
+    required: true,
+  },
+  elementName: {
+    minLength: 2,
+    maxLength: 50,
+    required: true,
+  },
+  elementDisplayName: {
+    minLength: 3,
+    maxLength: 100,
+    required: true,
+  },
+  elementDescription: {
+    minLength: 0,
+    maxLength: 500,
+    required: false,
+  },
+  note: {
+    minLength: 0,
+    maxLength: 1000,
+    required: false,
+  },
+}
+
+// Error Messages
+export const ERROR_MESSAGES = {
+  REQUIRED_FIELD: "This field is required",
+  INVALID_LENGTH: "Invalid length for this field",
+  INVALID_FORMAT: "Invalid format",
+  MODEL_NOT_FOUND: "Model not found",
+  ELEMENT_NOT_FOUND: "Element not found",
+  UNAUTHORIZED: "Unauthorized access",
+  SERVER_ERROR: "Server error occurred",
+  NETWORK_ERROR: "Network error occurred",
+  VALIDATION_ERROR: "Validation error",
+}
+
+// Success Messages
+export const SUCCESS_MESSAGES = {
+  MODEL_CREATED: "Model created successfully",
+  MODEL_UPDATED: "Model updated successfully",
+  MODEL_DELETED: "Model deleted successfully",
+  ELEMENT_CREATED: "Element created successfully",
+  ELEMENT_UPDATED: "Element updated successfully",
+  ELEMENT_DELETED: "Element deleted successfully",
+  EVALUATION_SAVED: "Evaluation saved successfully",
+  COMPARISON_SAVED: "Comparison saved successfully",
+}
+
+// Feature Flags
+export const FEATURE_FLAGS = {
+  enableGeminiAssistant: true,
+  enableAdvancedAnalytics: true,
+  enableExportFeatures: true,
+  enableCollaboration: false,
+  enableNotifications: true,
+  enableAutoSave: true,
+  enableDarkMode: true,
+  enableMobileView: true,
+}
+
+// Export all constants
+export default {
+  DigitalThinkingModelType,
+  ElementStatus,
+  AcceptabilityFlag,
+  PerformanceTrend,
+  PriorityLevel,
+  ModelMode,
+  MODEL_TYPE_LABELS,
+  MODEL_TYPE_DESCRIPTIONS,
+  ELEMENT_STATUS_LABELS,
+  PERFORMANCE_TREND_LABELS,
+  PRIORITY_LEVEL_LABELS,
+  MODEL_MODE_LABELS,
+  MODEL_TYPE_COLORS,
+  PERFORMANCE_TREND_COLORS,
+  PRIORITY_LEVEL_COLORS,
+  APP_CONFIG,
+  API_CONFIG,
+  UI_CONFIG,
+  VALIDATION_RULES,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  FEATURE_FLAGS,
+}

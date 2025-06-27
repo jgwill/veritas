@@ -24,6 +24,9 @@ import {
   getDashboardStats,
 } from "./models"
 
+// Export createModel for compatibility
+export { createModel }
+
 // Model Management Actions
 export async function fetchAllModels(): Promise<ModelsResponse> {
   try {
