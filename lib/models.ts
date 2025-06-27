@@ -38,9 +38,17 @@ async function initializeModels(): Promise<void> {
   if (initialized || typeof window !== 'undefined') return
   
   try {
-    // Only load fs and path on server side
-    const fs = await import('fs/promises')
-    const path = await import('path')
+    // Only load fs and path on server side using dynamic imports
+    const [fs, path] = await Promise.all([
+      import('fs/promises').catch(() => null),
+      import('path').catch(() => null)
+    ]);
+    
+    if (!fs || !path) {
+      console.log("Node.js modules not available, starting with empty models")
+      initialized = true
+      return
+    }
     
     const samplesDir = path.join(process.cwd(), "samples")
     
