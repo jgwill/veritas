@@ -468,4 +468,55 @@ function calculateTotalComparisons(elementCount: number): number {
   return elementCount > 1 ? (elementCount * (elementCount - 1)) / 2 : 0
 }
 
+export function getModelStats(model: DigitalModel) {
+  const totalElements = model.model.length
+  if (totalElements === 0) {
+    return {
+      totalElements: 0,
+      evaluatedElements: 0,
+      evaluationProgress: 0,
+      comparisonProgress: 0, // for decision making
+      performanceProgress: 0, // for performance review
+      isValid: false,
+    }
+  }
+
+  if (isDecisionMakingModel(model)) {
+    const evaluatedElements = model.model.filter((el) => el.twoFlagAnswered).length
+    const comparisonsNeeded = (totalElements * (totalElements - 1)) / 2
+    const comparisonsMade = model.model.reduce((acc, el) => {
+      return acc + Object.values(el.comparationTableData).filter(v => v !== 0).length
+    }, 0) / 2;
+
+
+    return {
+      totalElements,
+      evaluatedElements,
+      evaluationProgress: totalElements > 0 ? evaluatedElements / totalElements : 0,
+      comparisonProgress: comparisonsNeeded > 0 ? comparisonsMade / comparisonsNeeded : 0,
+      isValid: comparisonsMade >= comparisonsNeeded,
+    }
+  }
+
+  if (isPerformanceReviewModel(model)) {
+    const evaluatedElements = model.model.filter((el) => el.threeFlagAnswered).length
+    return {
+      totalElements,
+      evaluatedElements,
+      evaluationProgress: totalElements > 0 ? evaluatedElements / totalElements : 0,
+      performanceProgress: totalElements > 0 ? evaluatedElements / totalElements : 0,
+      isValid: true, // Performance models don't have a strict validity gate like comparisons
+    }
+  }
+
+  return {
+    totalElements,
+    evaluatedElements: 0,
+    evaluationProgress: 0,
+    comparisonProgress: 0,
+    performanceProgress: 0,
+    isValid: false,
+  }
+}
+
 // Export all functions
