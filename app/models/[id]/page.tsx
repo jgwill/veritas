@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Plus, Settings, BarChart3, Table } from "lucide-react"
+import { ArrowLeft, Plus, Settings, BarChart3, Table, Edit, Eye } from "lucide-react"
 import Link from "next/link"
 import ElementManager from "@/components/ElementManager"
 import ComparisonMatrix from "@/components/ComparisonMatrix"
 import ResultsView from "@/components/ResultsView"
+import AnalyzingGrid from "@/components/AnalyzingGrid"
 
 interface DigitalModel {
   id: string
@@ -44,12 +45,15 @@ interface DigitalElement {
   comparationTableData: Record<string, number>
 }
 
+type AppMode = "editing" | "analyzing"
+
 export default function ModelEditor() {
   const params = useParams()
   const modelId = params.id as string
   const [model, setModel] = useState<DigitalModel | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("elements")
+  const [appMode, setAppMode] = useState<AppMode>("editing")
 
   useEffect(() => {
     if (modelId) {
@@ -81,6 +85,12 @@ export default function ModelEditor() {
     return type === 1 ? "Decision Making" : "Performance Review"
   }
 
+  const getModelTypeDescription = (type: number) => {
+    return type === 1
+      ? "Binary decision-making with acceptable/unacceptable evaluation"
+      : "Performance tracking with trend analysis and acceptability evaluation"
+  }
+
   const getCompletionStats = () => {
     if (!model) return { completed: 0, total: 0 }
 
@@ -97,6 +107,15 @@ export default function ModelEditor() {
       total: totalComparisons,
       elements: totalElements,
       completedElements,
+    }
+  }
+
+  const toggleMode = () => {
+    setAppMode(appMode === "editing" ? "analyzing" : "editing")
+    if (appMode === "editing") {
+      setActiveTab("analyzing")
+    } else {
+      setActiveTab("elements")
     }
   }
 
@@ -146,17 +165,27 @@ export default function ModelEditor() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">{model.digitalTopic}</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-2">
               <Badge variant="secondary">{getModelTypeLabel(model.digitalThinkingModelType)}</Badge>
               {model.twoOnly && <Badge variant="outline">Binary Mode</Badge>}
               {model.decided && <Badge variant="default">Decided</Badge>}
               {model.hasIssue && <Badge variant="destructive">Has Issues</Badge>}
+              <Badge variant={appMode === "editing" ? "default" : "secondary"}>
+                {appMode === "editing" ? "Editing Mode" : "Analyzing Mode"}
+              </Badge>
             </div>
+            <p className="text-sm text-muted-foreground">{getModelTypeDescription(model.digitalThinkingModelType)}</p>
           </div>
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
+          <div className="flex gap-2">
+            <Button variant={appMode === "editing" ? "default" : "outline"} size="sm" onClick={toggleMode}>
+              {appMode === "editing" ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {appMode === "editing" ? "Switch to Analyzing" : "Switch to Editing"}
+            </Button>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -185,34 +214,40 @@ export default function ModelEditor() {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="elements" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Elements
-          </TabsTrigger>
-          <TabsTrigger value="comparisons" className="flex items-center gap-2">
-            <Table className="w-4 h-4" />
-            Comparisons
-          </TabsTrigger>
-          <TabsTrigger value="results" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Results
-          </TabsTrigger>
-        </TabsList>
+      {appMode === "editing" ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="elements" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Elements
+            </TabsTrigger>
+            <TabsTrigger value="comparisons" className="flex items-center gap-2">
+              <Table className="w-4 h-4" />
+              Comparisons
+            </TabsTrigger>
+            <TabsTrigger value="results" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Results
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="elements" className="mt-6">
-          <ElementManager model={model} onModelUpdate={handleModelUpdate} />
-        </TabsContent>
+          <TabsContent value="elements" className="mt-6">
+            <ElementManager model={model} onModelUpdate={handleModelUpdate} />
+          </TabsContent>
 
-        <TabsContent value="comparisons" className="mt-6">
-          <ComparisonMatrix model={model} onModelUpdate={handleModelUpdate} />
-        </TabsContent>
+          <TabsContent value="comparisons" className="mt-6">
+            <ComparisonMatrix model={model} onModelUpdate={handleModelUpdate} />
+          </TabsContent>
 
-        <TabsContent value="results" className="mt-6">
-          <ResultsView model={model} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="results" className="mt-6">
+            <ResultsView model={model} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="mt-6">
+          <AnalyzingGrid model={model} onModelUpdate={handleModelUpdate} />
+        </div>
+      )}
     </div>
   )
 }
