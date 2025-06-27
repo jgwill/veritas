@@ -1,13 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-// Import the models array from the main route
-// In production, this would be replaced with database queries
-const models: any[] = []
+import { getModelById, updateModel, deleteModel } from "@/lib/models"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const modelId = params.id
-    const model = models.find((m) => m.id === modelId)
+    const model = getModelById(modelId)
 
     if (!model) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 })
@@ -25,15 +22,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const modelId = params.id
     const body = await request.json()
 
-    const modelIndex = models.findIndex((m) => m.id === modelId)
-    if (modelIndex === -1) {
+    const updatedModel = updateModel(modelId, body)
+
+    if (!updatedModel) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 })
     }
 
-    // Update model
-    models[modelIndex] = { ...models[modelIndex], ...body }
-
-    return NextResponse.json(models[modelIndex])
+    return NextResponse.json(updatedModel)
   } catch (error) {
     console.error("Error updating model:", error)
     return NextResponse.json({ error: "Failed to update model" }, { status: 500 })
@@ -43,14 +38,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const modelId = params.id
-    const modelIndex = models.findIndex((m) => m.id === modelId)
+    const deleted = deleteModel(modelId)
 
-    if (modelIndex === -1) {
+    if (!deleted) {
       return NextResponse.json({ error: "Model not found" }, { status: 404 })
     }
-
-    // Remove model
-    models.splice(modelIndex, 1)
 
     return NextResponse.json({ message: "Model deleted successfully" })
   } catch (error) {

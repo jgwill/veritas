@@ -1,131 +1,137 @@
-# TandT Application Development Roadmap
+# TandT Application Roadmap
 
-## Overview
+## Project Overview
+TandT (Thinking and Tracking) is a sophisticated decision-making and performance evaluation application that supports two distinct model types:
 
-TandT (Think and Think) is a sophisticated decision-making and performance review framework that implements two distinct model types with different evaluation methodologies.
+### Model Types
 
-## Model Types
+#### 1. Digital Decision Making Models
+- **Purpose**: Analyze elements required for binary decisions (YES/NO)
+- **Evaluation Method**: Binary acceptability assessment (Acceptable = 1, Unacceptable = 0)
+- **Use Case**: Decision scenarios where you need to determine if specific elements are mandatory
+- **Question Framework**: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
+- **Example**: Housing decisions, investment choices, hiring decisions
 
-### 1. Digital Decision Making Models
-**Purpose**: Evaluate elements/criteria to make binary decisions about real-world situations.
-
-**Evaluation Method**: 
-- **Pairwise Comparison**: Determine hierarchy by asking "If you have Element X but don't have Element Y, would the decision be YES or NO?"
-- **Binary Analysis**: Each element is evaluated as Acceptable (1) or Unacceptable (0)
-- **Use Case**: Decision-making scenarios like housing selection, job choices, investment decisions
-
-**Data Structure**:
-- `twoOnly: true`
-- `twoFlag: boolean` (true = acceptable, false = unacceptable)
-- `digitalThinkingModelType: 1`
-
-### 2. Digital Performance Review Models
-**Purpose**: Track performance changes over time across multiple criteria.
-
-**Evaluation Method**:
-- **Pairwise Comparison**: Same hierarchy determination as decision models
-- **Binary Analysis**: Acceptable (1) or Unacceptable (0)
-- **Performance Tracking**: Additional tri-state evaluation:
-  - `-1`: Getting Worse
-  - `0`: Staying the Same  
-  - `1`: Getting Better
-
-**Data Structure**:
-- `twoOnly: false`
-- `twoFlag: boolean` (acceptable/unacceptable)
-- `threeFlag: number` (-1, 0, 1 for performance trend)
-- `digitalThinkingModelType: 2`
+#### 2. Digital Performance Review Models  
+- **Purpose**: Track performance trends and acceptability over time
+- **Evaluation Methods**: 
+  - Binary acceptability (Acceptable = 1, Unacceptable = 0)
+  - Performance trend tracking (Getting Better = 1, Stay Same = 0, Getting Worse = -1)
+- **Use Case**: Performance monitoring, progress tracking, continuous improvement
+- **Example**: Employee performance, project health, system metrics
 
 ## Application Modes
 
 ### Editing Mode
-- Add/remove/modify elements
-- Set up pairwise comparisons
-- Configure model metadata
-- Build the decision framework
+- Build and modify model structures
+- Add/remove/edit elements
+- Configure comparison matrices
+- Set up model parameters
 
 ### Analyzing Mode
-- Evaluate elements using appropriate evaluation method
-- Visual grid interface with evaluation buttons
-- Real-time decision/performance tracking
-- Results and recommendations generation
-
-## Development Phases
-
-### Phase 1: Core Framework ✅
-- [x] Basic model creation and management
-- [x] Element management system
-- [x] Pairwise comparison engine
-- [x] JSON persistence layer
-- [x] API endpoints for CRUD operations
-
-### Phase 2: Model Type Differentiation 🚧
-- [ ] Implement distinct UI for Decision vs Performance models
-- [ ] Binary evaluation interface (green ✓ / red ✗ buttons)
-- [ ] Tri-state performance evaluation for Performance Review models
-- [ ] Mode switching (Editing ↔ Analyzing)
-- [ ] Visual grid layout matching original interface
-
-### Phase 3: Advanced Features
-- [ ] Real-time collaboration
-- [ ] Model templates and presets
-- [ ] Advanced analytics and reporting
-- [ ] Export/import functionality
-- [ ] Mobile responsive design
-
-### Phase 4: Enterprise Features
-- [ ] User authentication and authorization
-- [ ] Team collaboration features
-- [ ] Audit trails and version control
-- [ ] Integration APIs
-- [ ] Cloud deployment and scaling
+- Visual evaluation interface
+- Real-time element assessment
+- Performance trend tracking (Performance Review models only)
+- Results visualization
 
 ## Technical Architecture
 
-### Frontend Components
-- **ModelEditor**: Main editing interface with mode switching
-- **AnalyzingGrid**: Visual grid for element evaluation
-- **ElementCard**: Individual element display with evaluation controls
-- **ComparisonMatrix**: Pairwise comparison interface
-- **ResultsView**: Decision outcomes and performance trends
+### Frontend
+- **Framework**: Next.js 14+ with App Router
+- **UI Library**: shadcn/ui components with Tailwind CSS
+- **State Management**: React hooks and context
+- **Responsive Design**: Mobile-first approach
 
-### Backend Services
-- **ModelService**: CRUD operations and business logic
-- **EvaluationService**: Handle different evaluation types
-- **ComparisonService**: Pairwise comparison processing
-- **AnalyticsService**: Results calculation and recommendations
+### Backend
+- **API Routes**: Next.js API routes
+- **Data Storage**: JSON files (development), Database (production)
+- **Real-time Updates**: Optimistic UI updates
 
-### Data Layer
-- **Models**: DigitalModel, DigitalElement entities
-- **Repositories**: Data access patterns
-- **Validation**: Business rule enforcement
-- **Persistence**: JSON and database storage
+### Data Structure
+- **Models**: Core model configuration and metadata
+- **Elements**: Individual evaluation criteria
+- **Comparisons**: Pairwise comparison matrices
+- **Evaluations**: Assessment results and trends
+
+## Development Phases
+
+### Phase 1: Core Infrastructure ✅
+- [x] Basic model CRUD operations
+- [x] Element management
+- [x] Comparison matrix functionality
+- [x] Results visualization
+
+### Phase 2: Model Type Differentiation ✅
+- [x] Implement distinct model types
+- [x] Binary vs dual evaluation systems
+- [x] Mode switching (Editing/Analyzing)
+- [x] Visual evaluation interface
+
+### Phase 3: Enhanced User Experience (Current)
+- [ ] Improved visual design matching mockups
+- [ ] Advanced filtering and sorting
+- [ ] Bulk operations
+- [ ] Export/import functionality
+
+### Phase 4: Advanced Features (Planned)
+- [ ] Real-time collaboration
+- [ ] Advanced analytics and reporting
+- [ ] Template system
+- [ ] Integration APIs
+
+### Phase 5: Production Readiness (Future)
+- [ ] Database integration
+- [ ] User authentication
+- [ ] Performance optimization
+- [ ] Deployment automation
 
 ## Key Features
 
-### Decision Making Models
-- Binary element evaluation (Acceptable/Unacceptable)
-- Hierarchy-based decision logic
-- Clear YES/NO recommendations
-- Real-world applicability assessment
+### Model Management
+- Create, edit, and delete models
+- Model type selection and configuration
+- Template-based model creation
+- Model validation and error handling
 
-### Performance Review Models  
-- Dual evaluation system (Acceptable + Performance trend)
-- Performance tracking over time
-- Trend analysis and reporting
-- Continuous improvement insights
+### Element Evaluation
+- Visual card-based evaluation interface
+- Binary acceptability assessment
+- Performance trend tracking
+- Real-time status updates
 
-### Universal Features
-- Pairwise comparison for element hierarchy
+### Comparison Analysis
+- Pairwise comparison matrices
 - Dominance factor calculation
-- Visual progress tracking
-- Comprehensive results analysis
-- Model sharing and collaboration
+- Hierarchy determination
+- Consistency checking
+
+### Results and Analytics
+- Visual results dashboard
+- Progress tracking
+- Performance trends
+- Export capabilities
+
+## Technical Considerations
+
+### Data Persistence
+- Development: JSON file storage
+- Production: Database (PostgreSQL/MongoDB)
+- Caching: Redis for performance
+
+### Performance
+- Lazy loading for large models
+- Optimistic UI updates
+- Efficient comparison algorithms
+- Responsive design patterns
+
+### Security
+- Input validation and sanitization
+- API rate limiting
+- User authentication (future)
+- Data encryption (production)
 
 ## Success Metrics
-
-- **Usability**: Intuitive interface matching original design
-- **Accuracy**: Reliable decision-making outcomes
-- **Performance**: Fast evaluation and calculation
-- **Scalability**: Support for complex models (50+ elements)
-- **Reliability**: Consistent data persistence and retrieval
+- Model creation and completion rates
+- User engagement with evaluation interface
+- Decision accuracy improvements
+- Performance tracking effectiveness

@@ -1,137 +1,166 @@
-# TandT Application - Think and Think Decision Framework
+# TandT Application
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+A sophisticated decision-making and performance evaluation platform that supports two distinct analytical approaches: **Digital Decision Making** and **Digital Performance Review**.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/mias-projects-672bb145/v0-tand-t)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/SSJdaLJLOq5)
+## 🎯 Purpose
 
-## Overview
+TandT helps individuals and organizations make better decisions and track performance through structured evaluation methodologies. The application provides visual interfaces for analyzing complex scenarios with multiple criteria.
 
-TandT (Think and Think) is a sophisticated decision-making and performance review framework that implements systematic evaluation methodologies through digital thinking models. The application facilitates structured decision processes using pairwise element comparison, dominance factor calculation, and specialized evaluation modes.
+## 🔄 Model Types
 
-## Core Concepts
+### Digital Decision Making
+**Purpose**: Binary decision analysis for scenarios requiring YES/NO outcomes
 
-### Two Distinct Model Types
+**Key Features**:
+- Binary evaluation system (Acceptable/Unacceptable)
+- Element hierarchy through pairwise comparisons
+- Decision framework: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
+- Identifies mandatory vs optional elements
 
-#### 🎯 Digital Decision Making Models
-**Purpose**: Make binary decisions about real-world situations by evaluating critical elements.
+**Use Cases**:
+- Housing selection decisions
+- Investment opportunities
+- Hiring decisions
+- Product feature prioritization
 
-**How it works**:
-- Define elements/criteria relevant to your decision
-- Compare elements pairwise: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
-- Evaluate each element as **Acceptable** ✅ or **Unacceptable** ❌
-- Get clear YES/NO recommendations based on element hierarchy and evaluation
+### Digital Performance Review
+**Purpose**: Performance tracking and trend analysis over time
 
-**Use Cases**: Housing selection, job choices, investment decisions, vendor selection
-
-#### 📊 Digital Performance Review Models  
-**Purpose**: Track performance changes over time across multiple criteria.
-
-**How it works**:
-- Define performance criteria for evaluation
-- Same pairwise comparison for element hierarchy
+**Key Features**:
 - Dual evaluation system:
-  - **Acceptability**: Acceptable ✅ or Unacceptable ❌
-  - **Performance Trend**: Getting Better ⬆️, Staying Same ➡️, Getting Worse ⬇️
-- Track performance evolution and identify improvement areas
+  - Acceptability assessment (Acceptable/Unacceptable)
+  - Performance trend tracking (Getting Better/Staying Same/Getting Worse)
+- Historical performance data
+- Trend visualization and analysis
 
-**Use Cases**: Business performance reviews, project assessments, personal development tracking
+**Use Cases**:
+- Employee performance reviews
+- Project health monitoring
+- System performance tracking
+- Continuous improvement initiatives
 
-## Key Features
+## 🎛️ Application Modes
 
-### 🔄 Dual Mode Interface
-- **Editing Mode**: Build and modify your decision models
-- **Analyzing Mode**: Evaluate elements and get recommendations
+### Editing Mode
+Build and configure your evaluation models:
+- Add/remove/edit elements
+- Set up comparison matrices
+- Configure model parameters
+- Define evaluation criteria
 
-### 🎛️ Visual Evaluation Interface
-Clean grid layout with intuitive evaluation controls:
-- Green checkmark (✅) for Acceptable
-- Red X (❌) for Unacceptable  
-- Additional performance indicators for Performance Review models
+### Analyzing Mode
+Evaluate and assess your models:
+- Visual card-based evaluation interface
+- Real-time element assessment
+- Performance trend tracking
+- Results visualization
 
-### 🧮 Sophisticated Analysis Engine
-- **Pairwise Comparison**: Systematic element-by-element evaluation
-- **Dominance Factor Calculation**: Automatic scoring based on comparisons
-- **Hierarchy Generation**: Elements ranked by relative importance
-- **Smart Recommendations**: Clear decision outcomes based on evaluation
+## 🚀 Getting Started
 
-### 💾 Robust Data Management
-- JSON-based model persistence
-- Real-time auto-save functionality
-- Model sharing and collaboration
-- Import/export capabilities
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
 
-## Getting Started
+### Installation
 
-### 1. Create a New Model
-Choose between:
-- **Decision Making**: For binary decisions (housing, jobs, etc.)
-- **Performance Review**: For tracking performance over time
+\`\`\`bash
+# Clone the repository
+git clone <repository-url>
+cd tandt-application
 
-### 2. Define Your Elements
-Add the factors/criteria relevant to your decision or performance review.
+# Install dependencies
+npm install
 
-### 3. Set Up Comparisons
-Compare elements pairwise to establish their relative importance hierarchy.
+# Run the development server
+npm run dev
+\`\`\`
 
-### 4. Switch to Analyzing Mode
-Evaluate each element using the appropriate evaluation method for your model type.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-### 5. Get Recommendations
-Review the calculated results and recommendations based on your evaluations.
+### Sample Data
+The application includes sample models in the `samples/` directory:
+- `ModelDigitalPerformanceReview__*.json` - Performance Review model example
+- `habitav1b24042419__*.json` - Decision Making model example (housing selection)
 
-## Sample Models Included
+## 🏗️ Technical Stack
 
-The application comes with two example models:
+- **Framework**: Next.js 14+ with App Router
+- **UI Components**: shadcn/ui with Tailwind CSS
+- **Icons**: Lucide React
+- **Styling**: Tailwind CSS with custom design system
+- **Data Storage**: JSON files (development), Database ready (production)
 
-### 🏠 Housing Decision Model (`habitav1b24042419`)
-A comprehensive housing selection model with 16 criteria including:
-- Kitchen functionality and space
-- Natural lighting and ventilation
-- Neighborhood safety and quietness
-- Access to nature and amenities
-- Budget considerations
-- Internet connectivity
-- Storage and living space
+## 📊 Data Structure
 
-### 📈 Business Performance Review (`ModelDigitalPerformanceReview`)
-A business evaluation model with 9 key performance indicators:
-- Market positioning and share
-- Competition analysis
-- Operational capacity vs workload
-- Managerial effectiveness
-- Regulatory environment
-- Capital requirements
-- Business-market fit
+### Model Structure
+\`\`\`typescript
+interface DigitalModel {
+  id: string
+  modelName: string
+  digitalTopic: string
+  digitalThinkingModelType: number // 1 = Decision Making, 2 = Performance Review
+  twoOnly: boolean
+  decided: boolean
+  valid: boolean
+  model: DigitalElement[]
+}
+\`\`\`
 
-## Technical Architecture
+### Element Structure
+\`\`\`typescript
+interface DigitalElement {
+  idug: string
+  nameElement: string
+  displayName: string
+  description: string
+  twoFlag: boolean // Acceptability evaluation
+  threeFlag: number // Performance trend (-1, 0, 1)
+  dominanceFactor: number
+  comparationTableData: Record<string, number>
+}
+\`\`\`
 
-Built with modern web technologies:
-- **Frontend**: Next.js 14 with TypeScript
-- **UI**: Tailwind CSS with shadcn/ui components
-- **API**: RESTful endpoints for model management
-- **Data**: JSON persistence with planned database integration
-- **Deployment**: Vercel with automatic deployments
+## 🎨 User Interface
 
-## Development Roadmap
+The application features a clean, modern interface with:
+- **Dashboard**: Overview of all models with creation and management tools
+- **Model Editor**: Tabbed interface for elements, comparisons, and results
+- **Analyzing Grid**: Visual card-based evaluation interface
+- **Results View**: Charts and analytics for decision insights
 
-- ✅ **Phase 1**: Core framework and basic functionality
-- 🚧 **Phase 2**: Model type differentiation and visual interface
-- 📋 **Phase 3**: Advanced features and analytics
-- 🚀 **Phase 4**: Enterprise features and scaling
+## 🔧 API Endpoints
 
-## How It Works
+- `GET /api/models` - List all models
+- `POST /api/models` - Create new model
+- `GET /api/models/[id]` - Get specific model
+- `PUT /api/models/[id]` - Update model
+- `DELETE /api/models/[id]` - Delete model
+- `POST /api/models/[id]/elements/[elementId]/evaluate` - Evaluate element
 
-This repository stays in sync with your deployed chats on [v0.dev](https://v0.dev). Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## 🤝 Contributing
 
-## Deployment
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Your project is live at: **[https://vercel.com/mias-projects-672bb145/v0-tand-t](https://vercel.com/mias-projects-672bb145/v0-tand-t)**
+## 📝 License
 
-## Continue Building
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Continue building your app on: **[https://v0.dev/chat/projects/SSJdaLJLOq5](https://v0.dev/chat/projects/SSJdaLJLOq5)**
+## 🆘 Support
 
----
+For support and questions:
+- Create an issue in the repository
+- Check the documentation in the `docs/` directory
+- Review sample models in the `samples/` directory
 
-*TandT provides a systematic approach to decision-making and performance evaluation, helping you make better choices through structured analysis and clear recommendations.*
+## 🔮 Future Enhancements
+
+- Real-time collaboration features
+- Advanced analytics and reporting
+- Template system for common model types
+- Integration APIs for external systems
+- Mobile application
+- Cloud deployment options

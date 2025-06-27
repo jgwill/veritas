@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { v4 as uuidv4 } from "uuid"
+import { loadModelsFromSamples, createModel, type DigitalModel } from "@/lib/models"
 
 // In-memory storage for demo purposes
 // In production, this would be replaced with a database
-const models: any[] = [
+const models: DigitalModel[] = [
   {
     id: "1d807fb4-5293-471e-85f6-4c8dad6b3648",
     modelName: "habitav1b24042419",
@@ -124,29 +124,8 @@ const models: any[] = [
 
 export async function GET() {
   try {
-    // Calculate summary statistics for each model
-    const modelSummaries = models.map((model) => {
-      const elementCount = model.model.length
-      const totalComparisons = (elementCount * (elementCount - 1)) / 2
-      const completedComparisons =
-        model.model.reduce((sum: number, element: any) => {
-          return sum + Object.values(element.comparationTableData).filter((val: any) => val !== 0).length
-        }, 0) / 2 // Divide by 2 since each comparison is counted twice
-
-      return {
-        id: model.id,
-        modelName: model.modelName,
-        digitalTopic: model.digitalTopic,
-        digitalThinkingModelType: model.digitalThinkingModelType,
-        elementCount,
-        completedComparisons,
-        totalComparisons,
-        decided: model.decided,
-        lastModified: new Date().toISOString(), // Mock timestamp
-      }
-    })
-
-    return NextResponse.json(modelSummaries)
+    const models = loadModelsFromSamples()
+    return NextResponse.json(models)
   } catch (error) {
     console.error("Error fetching models:", error)
     return NextResponse.json({ error: "Failed to fetch models" }, { status: 500 })
@@ -156,30 +135,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { modelName, digitalTopic, digitalThinkingModelType, twoOnly, note } = body
 
     // Validate required fields
-    if (!modelName || !digitalTopic || !digitalThinkingModelType) {
+    if (!body.modelName || !body.digitalTopic || typeof body.digitalThinkingModelType !== "number") {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Create new model
-    const newModel = {
-      id: uuidv4(),
-      modelName,
-      digitalTopic,
-      digitalThinkingModelType,
-      twoOnly: twoOnly ?? true,
-      decided: false,
-      valid: true,
-      autoSaveModel: true,
-      hasIssue: false,
-      note: note || null,
-      model: [], // Empty elements array
-    }
-
-    // Add to storage
-    models.push(newModel)
+    const newModel = createModel({
+      modelName: body.modelName,
+      digitalTopic: body.digitalTopic,
+      digitalThinkingModelType: body.digitalThinkingModelType,
+      twoOnly: body.twoOnly || false,
+      decided: body.decided || false,
+      valid: body.valid || false,
+      autoSaveModel: body.autoSaveModel || true,
+      hasIssue: body.hasIssue || false,
+      note: body.note || "",
+      model: body.model || [],
+    })
 
     return NextResponse.json(newModel, { status: 201 })
   } catch (error) {

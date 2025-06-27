@@ -4,23 +4,41 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, BarChart3, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Plus, BarChart3, Target, TrendingUp, Users, Clock } from "lucide-react"
 import Link from "next/link"
 
-interface ModelSummary {
+interface DigitalModel {
   id: string
   modelName: string
   digitalTopic: string
   digitalThinkingModelType: number
-  elementCount: number
-  completedComparisons: number
-  totalComparisons: number
+  twoOnly: boolean
   decided: boolean
-  lastModified: string
+  valid: boolean
+  autoSaveModel: boolean
+  hasIssue: boolean
+  note?: string
+  model: Array<{
+    idug: string
+    nameElement: string
+    displayName: string
+    description: string
+    sortNo: number
+    status: number
+    twoFlag: boolean
+    twoFlagAnswered: boolean
+    threeFlag: number
+    threeFlagAnswered: boolean
+    dominanceFactor: number
+    dominantElementItIS: boolean
+    comparationCompleted: boolean
+    question: boolean
+    comparationTableData: Record<string, number>
+  }>
 }
 
 export default function Dashboard() {
-  const [models, setModels] = useState<ModelSummary[]>([])
+  const [models, setModels] = useState<DigitalModel[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -43,44 +61,40 @@ export default function Dashboard() {
     }
   }
 
-  const getModelTypeIcon = (type: number) => {
-    return type === 1 ? <FileText className="w-5 h-5" /> : <BarChart3 className="w-5 h-5" />
-  }
-
-  const getModelTypeLabel = (type: number) => {
-    return type === 1 ? "Decision Making" : "Performance Review"
-  }
-
-  const getModelTypeDescription = (type: number) => {
+  const getModelTypeInfo = (type: number) => {
     return type === 1
-      ? "Binary decision-making with acceptable/unacceptable evaluation"
-      : "Performance tracking with trend analysis"
+      ? {
+          label: "Decision Making",
+          description: "Binary decision analysis with acceptability evaluation",
+          icon: Target,
+          color: "bg-blue-500",
+        }
+      : {
+          label: "Performance Review",
+          description: "Performance tracking with trend analysis",
+          icon: TrendingUp,
+          color: "bg-green-500",
+        }
   }
 
-  const getCompletionBadge = (model: ModelSummary) => {
-    const percentage = model.totalComparisons > 0 ? (model.completedComparisons / model.totalComparisons) * 100 : 0
+  const getModelStats = (model: DigitalModel) => {
+    const totalElements = model.model.length
+    const evaluatedElements = model.model.filter((el) => el.twoFlagAnswered).length
+    const performanceTracked = model.model.filter((el) => el.threeFlagAnswered).length
+    const dominantElements = model.model.filter((el) => el.dominantElementItIS).length
 
-    if (percentage === 100) {
-      return (
-        <Badge variant="default" className="flex items-center gap-1">
-          <CheckCircle className="w-3 h-3" />
-          Complete
-        </Badge>
-      )
-    } else if (percentage > 0) {
-      return (
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {Math.round(percentage)}% Done
-        </Badge>
-      )
-    } else {
-      return (
-        <Badge variant="outline" className="flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          Not Started
-        </Badge>
-      )
+    const totalComparisons = (totalElements * (totalElements - 1)) / 2
+    const completedComparisons =
+      model.model.reduce((sum, el) => {
+        return sum + Object.values(el.comparationTableData).filter((val) => val !== 0).length
+      }, 0) / 2
+
+    return {
+      totalElements,
+      evaluatedElements,
+      performanceTracked,
+      dominantElements,
+      completionPercentage: totalComparisons > 0 ? Math.round((completedComparisons / totalComparisons) * 100) : 0,
     }
   }
 
@@ -99,120 +113,206 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto p-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">TandT Dashboard</h1>
           <p className="text-xl text-muted-foreground">
-            Think and Think - Systematic Decision Making & Performance Review
+            Thinking and Tracking - Decision Making & Performance Review Platform
           </p>
         </div>
         <Link href="/models/new">
-          <Button size="lg">
-            <Plus className="w-5 h-5 mr-2" />
-            New Model
+          <Button size="lg" className="gap-2">
+            <Plus className="w-5 h-5" />
+            Create New Model
           </Button>
         </Link>
       </div>
 
-      {/* Model Type Explanation */}
+      {/* Model Type Explanations */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              Decision Making Models
-            </CardTitle>
-            <CardDescription>
-              Make binary decisions about real-world situations by evaluating critical elements.
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-blue-900">Digital Decision Making</CardTitle>
+                <CardDescription className="text-blue-700">
+                  Binary decision analysis for YES/NO scenarios
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <ul className="text-sm space-y-1">
-              <li>• Binary evaluation: Acceptable ✅ or Unacceptable ❌</li>
-              <li>• Pairwise comparison for element hierarchy</li>
-              <li>• Clear YES/NO recommendations</li>
-              <li>• Use cases: Housing, jobs, investments</li>
+          <CardContent className="text-blue-800">
+            <ul className="space-y-2 text-sm">
+              <li>• Evaluate elements as Acceptable or Unacceptable</li>
+              <li>• Identify mandatory vs optional criteria</li>
+              <li>• Perfect for housing, investment, or hiring decisions</li>
+              <li>• Framework: "If you have X but not Y, would the decision be YES or NO?"</li>
             </ul>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-green-200 bg-green-50/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-green-600" />
-              Performance Review Models
-            </CardTitle>
-            <CardDescription>Track performance changes over time across multiple criteria.</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-green-900">Digital Performance Review</CardTitle>
+                <CardDescription className="text-green-700">Performance tracking with trend analysis</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <ul className="text-sm space-y-1">
-              <li>• Dual evaluation: Acceptability + Performance trend</li>
-              <li>• Track: Getting Better ⬆️, Same ➡️, Worse ⬇️</li>
-              <li>• Performance evolution analysis</li>
-              <li>• Use cases: Business reviews, project assessments</li>
+          <CardContent className="text-green-800">
+            <ul className="space-y-2 text-sm">
+              <li>• Dual evaluation: Acceptability + Performance trends</li>
+              <li>• Track Getting Better, Staying Same, or Getting Worse</li>
+              <li>• Ideal for employee reviews, project health, system metrics</li>
+              <li>• Historical performance data and trend visualization</li>
             </ul>
           </CardContent>
         </Card>
       </div>
 
-      {/* Models List */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Your Models</h2>
+      {/* Models Grid */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Your Models</h2>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1">
+              <BarChart3 className="w-3 h-3" />
+              {models.length} Total Models
+            </Badge>
+          </div>
+        </div>
 
         {models.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <div className="mb-4">
-                <FileText className="w-12 h-12 mx-auto text-muted-foreground" />
+                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Models Yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Get started by creating your first decision-making or performance review model. Choose from our two
+                  powerful evaluation methodologies.
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">No Models Yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first decision-making or performance review model to get started.
-              </p>
               <Link href="/models/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button size="lg" className="gap-2">
+                  <Plus className="w-5 h-5" />
                   Create Your First Model
                 </Button>
               </Link>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
-            {models.map((model) => (
-              <Card key={model.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        {getModelTypeIcon(model.digitalThinkingModelType)}
-                        <h3 className="text-xl font-semibold">{model.digitalTopic}</h3>
-                        <Badge variant="secondary">{getModelTypeLabel(model.digitalThinkingModelType)}</Badge>
-                        {getCompletionBadge(model)}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {models.map((model) => {
+              const typeInfo = getModelTypeInfo(model.digitalThinkingModelType)
+              const stats = getModelStats(model)
+              const IconComponent = typeInfo.icon
+
+              return (
+                <Card key={model.id} className="hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 ${typeInfo.color} rounded-lg`}>
+                          <IconComponent className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg leading-tight">{model.digitalTopic}</CardTitle>
+                          <CardDescription>{model.modelName}</CardDescription>
+                        </div>
                       </div>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {typeInfo.label}
+                        </Badge>
+                        {model.decided && (
+                          <Badge variant="default" className="text-xs">
+                            Decided
+                          </Badge>
+                        )}
+                        {model.hasIssue && (
+                          <Badge variant="destructive" className="text-xs">
+                            Issues
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
 
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {getModelTypeDescription(model.digitalThinkingModelType)}
-                      </p>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">{typeInfo.description}</p>
 
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <span>{model.elementCount} elements</span>
-                        <span>
-                          {model.completedComparisons}/{model.totalComparisons} comparisons
-                        </span>
-                        <span>Modified {new Date(model.lastModified).toLocaleDateString()}</span>
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold">{stats.totalElements}</div>
+                        <div className="text-xs text-muted-foreground">Elements</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold">{stats.completionPercentage}%</div>
+                        <div className="text-xs text-muted-foreground">Complete</div>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 ml-4">
-                      <Link href={`/models/${model.id}`}>
-                        <Button>Open Model</Button>
+                    {/* Progress Indicators */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span>
+                          Evaluated: {stats.evaluatedElements}/{stats.totalElements}
+                        </span>
+                        <span>{Math.round((stats.evaluatedElements / stats.totalElements) * 100) || 0}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(stats.evaluatedElements / stats.totalElements) * 100 || 0}%` }}
+                        />
+                      </div>
+
+                      {model.digitalThinkingModelType === 2 && (
+                        <>
+                          <div className="flex justify-between text-xs">
+                            <span>
+                              Performance Tracked: {stats.performanceTracked}/{stats.totalElements}
+                            </span>
+                            <span>{Math.round((stats.performanceTracked / stats.totalElements) * 100) || 0}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${(stats.performanceTracked / stats.totalElements) * 100 || 0}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
+                      <Link href={`/models/${model.id}`} className="flex-1">
+                        <Button variant="default" size="sm" className="w-full">
+                          Open Model
+                        </Button>
                       </Link>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    {/* Last Updated */}
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2 border-t">
+                      <Clock className="w-3 h-3" />
+                      <span>Model ID: {model.id.slice(0, 8)}...</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>

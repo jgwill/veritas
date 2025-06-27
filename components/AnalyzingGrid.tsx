@@ -4,7 +4,8 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { Check, X, TrendingUp, Minus, TrendingDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface DigitalModel {
   id: string
@@ -44,10 +45,15 @@ interface AnalyzingGridProps {
 }
 
 export default function AnalyzingGrid({ model, onModelUpdate }: AnalyzingGridProps) {
-  const [loading, setLoading] = useState(false)
+  const [evaluating, setEvaluating] = useState<string | null>(null)
 
-  const handleBinaryEvaluation = async (elementId: string, value: boolean) => {
-    setLoading(true)
+  const handleEvaluation = async (
+    elementId: string,
+    evaluationType: "acceptability" | "performance",
+    value: boolean | number,
+  ) => {
+    setEvaluating(elementId)
+
     try {
       const response = await fetch(`/api/models/${model.id}/elements/${elementId}/evaluate`, {
         method: "POST",
@@ -55,8 +61,8 @@ export default function AnalyzingGrid({ model, onModelUpdate }: AnalyzingGridPro
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          twoFlag: value,
-          twoFlagAnswered: true,
+          evaluationType,
+          value,
         }),
       })
 
@@ -64,72 +70,28 @@ export default function AnalyzingGrid({ model, onModelUpdate }: AnalyzingGridPro
         const updatedModel = await response.json()
         onModelUpdate(updatedModel)
       } else {
-        throw new Error("Failed to update evaluation")
+        console.error("Failed to update evaluation")
       }
     } catch (error) {
       console.error("Error updating evaluation:", error)
-      alert("Failed to update evaluation. Please try again.")
     } finally {
-      setLoading(false)
+      setEvaluating(null)
     }
   }
 
-  const handlePerformanceEvaluation = async (elementId: string, value: number) => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/models/${model.id}/elements/${elementId}/evaluate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          threeFlag: value,
-          threeFlagAnswered: true,
-        }),
-      })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-      } else {
-        throw new Error("Failed to update performance evaluation")
-      }
-    } catch (error) {
-      console.error("Error updating performance evaluation:", error)
-      alert("Failed to update performance evaluation. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const getAcceptabilityStatus = (element: DigitalElement) => {
+    if (!element.twoFlagAnswered) return "unanswered"
+    return element.twoFlag ? "acceptable" : "unacceptable"
   }
 
-  const getPerformanceIcon = (value: number) => {
-    switch (value) {
-      case 1:
-        return <TrendingUp className="w-4 h-4 text-green-600" />
-      case 0:
-        return <Minus className="w-4 h-4 text-yellow-600" />
-      case -1:
-        return <TrendingDown className="w-4 h-4 text-red-600" />
-      default:
-        return <Minus className="w-4 h-4 text-gray-400" />
-    }
+  const getPerformanceStatus = (element: DigitalElement) => {
+    if (!element.threeFlagAnswered) return "unanswered"
+    if (element.threeFlag === 1) return "improving"
+    if (element.threeFlag === 0) return "stable"
+    return "declining"
   }
 
-  const getPerformanceLabel = (value: number) => {
-    switch (value) {
-      case 1:
-        return "Getting Better"
-      case 0:
-        return "Staying Same"
-      case -1:
-        return "Getting Worse"
-      default:
-        return "Not Evaluated"
-    }
-  }
-
-  const isDecisionMaking = model.digitalThinkingModelType === 1
-  const isPerformanceReview = model.digitalThinkingModelType === 2
+  const isPerformanceReviewModel = model.digitalThinkingModelType === 2
 
   return (
     <div className="space-y-6">
@@ -137,16 +99,16 @@ export default function AnalyzingGrid({ model, onModelUpdate }: AnalyzingGridPro
         <div>
           <h2 className="text-2xl font-bold">Analyzing Mode</h2>
           <p className="text-muted-foreground">
-            {isDecisionMaking
-              ? "Evaluate each element as Acceptable or Unacceptable for your decision"
-              : "Evaluate acceptability and performance trend for each element"}
+            {isPerformanceReviewModel
+              ? "Evaluate acceptability and performance trends for each element"
+              : "Evaluate acceptability for each element to make your decision"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <Badge variant="outline">
             {model.model.filter((el) => el.twoFlagAnswered).length} / {model.model.length} Evaluated
           </Badge>
-          {isPerformanceReview && (
+          {isPerformanceReviewModel && (
             <Badge variant="outline">
               {model.model.filter((el) => el.threeFlagAnswered).length} / {model.model.length} Performance Tracked
             </Badge>
@@ -155,115 +117,158 @@ export default function AnalyzingGrid({ model, onModelUpdate }: AnalyzingGridPro
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {model.model.map((element) => (
-          <Card key={element.idug} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg leading-tight">{element.displayName}</CardTitle>
-                {element.dominantElementItIS && (
-                  <Badge variant="default" className="text-xs ml-2">
-                    Dominant
-                  </Badge>
+        {model.model
+          .sort((a, b) => a.sortNo - b.sortNo)
+          .map((element) => {
+            const acceptabilityStatus = getAcceptabilityStatus(element)
+            const performanceStatus = getPerformanceStatus(element)
+            const isEvaluating = evaluating === element.idug
+
+            return (
+              <Card
+                key={element.idug}
+                className={cn(
+                  "relative transition-all duration-200 hover:shadow-md",
+                  acceptabilityStatus === "acceptable" && "border-green-200 bg-green-50/50",
+                  acceptabilityStatus === "unacceptable" && "border-red-200 bg-red-50/50",
+                  element.dominantElementItIS && "ring-2 ring-blue-200",
                 )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {element.description || "No description provided"}
-              </p>
-
-              {/* Binary Evaluation (Acceptable/Unacceptable) */}
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Acceptability</div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={element.twoFlagAnswered && element.twoFlag ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1 h-12"
-                    onClick={() => handleBinaryEvaluation(element.idug, true)}
-                    disabled={loading}
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    Acceptable
-                  </Button>
-                  <Button
-                    variant={element.twoFlagAnswered && !element.twoFlag ? "destructive" : "outline"}
-                    size="sm"
-                    className="flex-1 h-12"
-                    onClick={() => handleBinaryEvaluation(element.idug, false)}
-                    disabled={loading}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Unacceptable
-                  </Button>
-                </div>
-              </div>
-
-              {/* Performance Evaluation (Only for Performance Review models) */}
-              {isPerformanceReview && (
-                <div className="space-y-2 border-t pt-3">
-                  <div className="text-sm font-medium">Performance Trend</div>
-                  <div className="grid grid-cols-3 gap-1">
-                    <Button
-                      variant={element.threeFlagAnswered && element.threeFlag === 1 ? "default" : "outline"}
-                      size="sm"
-                      className="h-10 text-xs"
-                      onClick={() => handlePerformanceEvaluation(element.idug, 1)}
-                      disabled={loading}
-                    >
-                      <TrendingUp className="w-3 h-3 mb-1" />
-                      Better
-                    </Button>
-                    <Button
-                      variant={element.threeFlagAnswered && element.threeFlag === 0 ? "secondary" : "outline"}
-                      size="sm"
-                      className="h-10 text-xs"
-                      onClick={() => handlePerformanceEvaluation(element.idug, 0)}
-                      disabled={loading}
-                    >
-                      <Minus className="w-3 h-3 mb-1" />
-                      Same
-                    </Button>
-                    <Button
-                      variant={element.threeFlagAnswered && element.threeFlag === -1 ? "destructive" : "outline"}
-                      size="sm"
-                      className="h-10 text-xs"
-                      onClick={() => handlePerformanceEvaluation(element.idug, -1)}
-                      disabled={loading}
-                    >
-                      <TrendingDown className="w-3 h-3 mb-1" />
-                      Worse
-                    </Button>
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg leading-tight">
+                      {element.displayName || element.nameElement}
+                    </CardTitle>
+                    {element.dominantElementItIS && (
+                      <Badge variant="secondary" className="text-xs">
+                        Dominant
+                      </Badge>
+                    )}
                   </div>
-                </div>
-              )}
+                </CardHeader>
 
-              {/* Status Indicators */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                <span>Dominance: {element.dominanceFactor}</span>
-                <div className="flex items-center gap-1">
-                  {element.twoFlagAnswered && (
-                    <Badge variant="outline" className="text-xs">
-                      {element.twoFlag ? "✓" : "✗"}
-                    </Badge>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{element.description}</p>
+
+                  {/* Acceptability Evaluation */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Acceptability</span>
+                      {acceptabilityStatus !== "unanswered" && (
+                        <Badge
+                          variant={acceptabilityStatus === "acceptable" ? "default" : "destructive"}
+                          className="text-xs"
+                        >
+                          {acceptabilityStatus === "acceptable" ? "Acceptable" : "Unacceptable"}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={acceptabilityStatus === "acceptable" ? "default" : "outline"}
+                        className={cn(
+                          "flex-1 h-10",
+                          acceptabilityStatus === "acceptable" && "bg-green-600 hover:bg-green-700",
+                        )}
+                        disabled={isEvaluating}
+                        onClick={() => handleEvaluation(element.idug, "acceptability", true)}
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Accept
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant={acceptabilityStatus === "unacceptable" ? "destructive" : "outline"}
+                        className="flex-1 h-10"
+                        disabled={isEvaluating}
+                        onClick={() => handleEvaluation(element.idug, "acceptability", false)}
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Performance Evaluation (Performance Review models only) */}
+                  {isPerformanceReviewModel && (
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Performance</span>
+                        {performanceStatus !== "unanswered" && (
+                          <Badge
+                            variant={
+                              performanceStatus === "improving"
+                                ? "default"
+                                : performanceStatus === "stable"
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                            className="text-xs"
+                          >
+                            {performanceStatus === "improving"
+                              ? "Improving"
+                              : performanceStatus === "stable"
+                                ? "Stable"
+                                : "Declining"}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1">
+                        <Button
+                          size="sm"
+                          variant={performanceStatus === "improving" ? "default" : "outline"}
+                          className={cn(
+                            "h-8 px-2",
+                            performanceStatus === "improving" && "bg-green-600 hover:bg-green-700",
+                          )}
+                          disabled={isEvaluating}
+                          onClick={() => handleEvaluation(element.idug, "performance", 1)}
+                        >
+                          <TrendingUp className="w-3 h-3" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant={performanceStatus === "stable" ? "secondary" : "outline"}
+                          className="h-8 px-2"
+                          disabled={isEvaluating}
+                          onClick={() => handleEvaluation(element.idug, "performance", 0)}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant={performanceStatus === "declining" ? "destructive" : "outline"}
+                          className="h-8 px-2"
+                          disabled={isEvaluating}
+                          onClick={() => handleEvaluation(element.idug, "performance", -1)}
+                        >
+                          <TrendingDown className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
-                  {isPerformanceReview && element.threeFlagAnswered && (
-                    <Badge variant="outline" className="text-xs">
-                      {getPerformanceIcon(element.threeFlag)}
-                    </Badge>
+
+                  {/* Dominance Factor Display */}
+                  {element.dominanceFactor > 0 && (
+                    <div className="text-xs text-muted-foreground">Dominance: {element.dominanceFactor.toFixed(2)}</div>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            )
+          })}
       </div>
 
       {model.model.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">No Elements to Analyze</h3>
-            <p className="text-muted-foreground mb-4">Switch to Editing mode to add elements to your model.</p>
+            <p className="text-muted-foreground mb-4">Switch to Editing mode to add elements to this model.</p>
           </CardContent>
         </Card>
       )}
