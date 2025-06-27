@@ -1,253 +1,474 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect, useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Plus, Settings, BarChart3, Table, Edit, Eye } from "lucide-react"
-import Link from "next/link"
-import ElementManager from "@/components/ElementManager"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { 
+  ArrowLeft,
+  Edit3, 
+  BarChart3, 
+  Target, 
+  TrendingUp,
+  Settings,
+  Play,
+  Crown,
+  Flag,
+  CheckCircle2,
+  AlertTriangle,
+  Clock
+} from "lucide-react"
+import { 
+  DigitalModel, 
+  isDecisionMakingModel, 
+  isPerformanceReviewModel,
+  DecisionMakingModel,
+  PerformanceReviewModel
+} from "@/lib/types"
+import { getModelById, getModelStats, updateModel } from "@/lib/models"
 import ComparisonMatrix from "@/components/ComparisonMatrix"
-import ResultsView from "@/components/ResultsView"
-import AnalyzingGrid from "@/components/AnalyzingGrid"
+import PerformanceDashboard from "@/components/PerformanceDashboard"
+import AnalyzingGrid from "@/components/enhanced/AnalyzingGrid"
+import ElementManager from "@/components/ElementManager"
 
-interface DigitalModel {
-  id: string
-  modelName: string
-  digitalTopic: string
-  digitalThinkingModelType: number
-  twoOnly: boolean
-  decided: boolean
-  valid: boolean
-  autoSaveModel: boolean
-  hasIssue: boolean
-  note?: string
-  model: DigitalElement[]
-}
+type ModelViewMode = 'editing' | 'analyzing'
 
-interface DigitalElement {
-  idug: string
-  nameElement: string
-  displayName: string
-  description: string
-  sortNo: number
-  status: number
-  twoFlag: boolean
-  twoFlagAnswered: boolean
-  threeFlag: number
-  threeFlagAnswered: boolean
-  dominanceFactor: number
-  dominantElementItIS: boolean
-  comparationCompleted: boolean
-  question: boolean
-  comparationTableData: Record<string, number>
-}
-
-type AppMode = "editing" | "analyzing"
-
-export default function ModelEditor() {
+export default function ModelPage() {
   const params = useParams()
+  const router = useRouter()
   const modelId = params.id as string
+
   const [model, setModel] = useState<DigitalModel | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("elements")
-  const [appMode, setAppMode] = useState<AppMode>("editing")
+  const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ModelViewMode>('editing')
 
+  // Load model data
   useEffect(() => {
+    const loadModel = async () => {
+      try {
+        setLoading(true)
+        const modelData = getModelById(modelId)
+        if (!modelData) {
+          setError('Model not found')
+          return
+        }
+        setModel(modelData)
+      } catch (err) {
+        setError('Failed to load model')
+        console.error('Error loading model:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     if (modelId) {
-      fetchModel()
+      loadModel()
     }
   }, [modelId])
 
-  const fetchModel = async () => {
-    try {
-      const response = await fetch(`/api/models/${modelId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setModel(data)
-      } else {
-        throw new Error("Failed to fetch model")
-      }
-    } catch (error) {
-      console.error("Error fetching model:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleModelUpdate = (updatedModel: DigitalModel) => {
     setModel(updatedModel)
+    updateModel(updatedModel)
   }
 
-  const getModelTypeLabel = (type: number) => {
-    return type === 1 ? "Decision Making" : "Performance Review"
-  }
-
-  const getModelTypeDescription = (type: number) => {
-    return type === 1
-      ? "Binary decision-making with acceptable/unacceptable evaluation"
-      : "Performance tracking with trend analysis and acceptability evaluation"
-  }
-
-  const getCompletionStats = () => {
-    if (!model) return { completed: 0, total: 0 }
-
-    const completedElements = model.model.filter((el) => el.comparationCompleted).length
-    const totalElements = model.model.length
-    const totalComparisons = (totalElements * (totalElements - 1)) / 2
-    const completedComparisons =
-      model.model.reduce((sum, el) => {
-        return sum + Object.values(el.comparationTableData).filter((val) => val !== 0).length
-      }, 0) / 2 // Divide by 2 since each comparison is counted twice
-
-    return {
-      completed: completedComparisons,
-      total: totalComparisons,
-      elements: totalElements,
-      completedElements,
-    }
-  }
-
-  const toggleMode = () => {
-    setAppMode(appMode === "editing" ? "analyzing" : "editing")
-    if (appMode === "editing") {
-      setActiveTab("analyzing")
-    } else {
-      setActiveTab("elements")
-    }
-  }
+  const stats = useMemo(() => 
+    model ? getModelStats(model) : null, 
+    [model]
+  )
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading model...</p>
+            <Clock className="h-8 w-8 mx-auto mb-4 animate-pulse" />
+            <p>Loading model...</p>
           </div>
         </div>
       </div>
     )
   }
 
-  if (!model) {
+  if (error || !model) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Model Not Found</h3>
-            <p className="text-muted-foreground mb-4">The requested model could not be found.</p>
-            <Link href="/">
-              <Button>Return to Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600">{error || 'Model not found'}</p>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/')}
+              className="mt-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
 
-  const stats = getCompletionStats()
+  const isDecisionMaking = isDecisionMakingModel(model)
+  const isPerformanceReview = isPerformanceReviewModel(model)
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Dashboard
+    <div className="container mx-auto px-4 py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push('/')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
-        </Link>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{model.digitalTopic}</h1>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="secondary">{getModelTypeLabel(model.digitalThinkingModelType)}</Badge>
-              {model.twoOnly && <Badge variant="outline">Binary Mode</Badge>}
-              {model.decided && <Badge variant="default">Decided</Badge>}
-              {model.hasIssue && <Badge variant="destructive">Has Issues</Badge>}
-              <Badge variant={appMode === "editing" ? "default" : "secondary"}>
-                {appMode === "editing" ? "Editing Mode" : "Analyzing Mode"}
-              </Badge>
+          
+          <div className="flex items-center gap-3">
+            {isDecisionMaking && <Target className="h-6 w-6 text-blue-600" />}
+            {isPerformanceReview && <TrendingUp className="h-6 w-6 text-green-600" />}
+            <div>
+              <h1 className="text-2xl font-bold">{model.modelName}</h1>
+              <p className="text-muted-foreground">{model.digitalTopic}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{getModelTypeDescription(model.digitalThinkingModelType)}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant={appMode === "editing" ? "default" : "outline"} size="sm" onClick={toggleMode}>
-              {appMode === "editing" ? <Edit className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-              {appMode === "editing" ? "Switch to Analyzing" : "Switch to Editing"}
-            </Button>
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
           </div>
         </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold">{stats.elements}</div>
-                <div className="text-sm text-muted-foreground">Elements</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.completed}</div>
-                <div className="text-sm text-muted-foreground">Comparisons</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
-                </div>
-                <div className="text-sm text-muted-foreground">Complete</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{model.model.filter((el) => el.dominantElementItIS).length}</div>
-                <div className="text-sm text-muted-foreground">Dominant</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3">
+          <Badge variant={isDecisionMaking ? "default" : "secondary"}>
+            {isDecisionMaking ? "Decision Making" : "Performance Review"}
+          </Badge>
+          
+          {/* Mode Toggle */}
+          <div className="flex rounded-lg border p-1">
+            <Button
+              variant={viewMode === 'editing' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('editing')}
+              className="gap-1"
+            >
+              <Edit3 className="h-3 w-3" />
+              Editing
+            </Button>
+            <Button
+              variant={viewMode === 'analyzing' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode('analyzing')}
+              className="gap-1"
+            >
+              <Play className="h-3 w-3" />
+              Analyzing
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {appMode === "editing" ? (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="elements" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Elements
-            </TabsTrigger>
-            <TabsTrigger value="comparisons" className="flex items-center gap-2">
-              <Table className="w-4 h-4" />
-              Comparisons
-            </TabsTrigger>
-            <TabsTrigger value="results" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Results
-            </TabsTrigger>
-          </TabsList>
+      {/* Model Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Model Overview
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {stats?.isValid && (
+                <Badge variant="outline" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Valid
+                </Badge>
+              )}
+              {model.decided && (
+                <Badge variant="default" className="gap-1">
+                  <Crown className="h-3 w-3" />
+                  Decided
+                </Badge>
+              )}
+            </div>
+          </div>
+          {model.note && (
+            <CardDescription>{model.note}</CardDescription>
+          )}
+        </CardHeader>
+        
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats?.totalElements || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Elements</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats?.evaluatedElements || 0}</div>
+              <div className="text-sm text-muted-foreground">Evaluated</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">
+                {Math.round((stats?.evaluationProgress || 0) * 100)}%
+              </div>
+              <div className="text-sm text-muted-foreground">Progress</div>
+            </div>
+            <div className="text-center">
+              {isDecisionMaking && 'comparisonProgress' in stats! && (
+                <>
+                  <div className="text-2xl font-bold">
+                    {Math.round(stats.comparisonProgress * 100)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Comparisons</div>
+                </>
+              )}
+              {isPerformanceReview && 'performanceProgress' in stats! && (
+                <>
+                  <div className="text-2xl font-bold">
+                    {Math.round(stats.performanceProgress * 100)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Performance Tracked</div>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <TabsContent value="elements" className="mt-6">
-            <ElementManager model={model} onModelUpdate={handleModelUpdate} />
-          </TabsContent>
-
-          <TabsContent value="comparisons" className="mt-6">
-            <ComparisonMatrix model={model} onModelUpdate={handleModelUpdate} />
-          </TabsContent>
-
-          <TabsContent value="results" className="mt-6">
-            <ResultsView model={model} />
-          </TabsContent>
-        </Tabs>
+      {/* Mode-Specific Content */}
+      {viewMode === 'editing' ? (
+        <EditingModeContent 
+          model={model} 
+          onModelUpdate={handleModelUpdate}
+        />
       ) : (
-        <div className="mt-6">
-          <AnalyzingGrid model={model} onModelUpdate={handleModelUpdate} />
-        </div>
+        <AnalyzingModeContent 
+          model={model} 
+          onModelUpdate={handleModelUpdate}
+        />
       )}
     </div>
+  )
+}
+
+interface ModeContentProps {
+  model: DigitalModel
+  onModelUpdate: (model: DigitalModel) => void
+}
+
+function EditingModeContent({ model, onModelUpdate }: ModeContentProps) {
+  const isDecisionMaking = isDecisionMakingModel(model)
+  const isPerformanceReview = isPerformanceReviewModel(model)
+
+  return (
+    <Tabs defaultValue="elements" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="elements" className="gap-2">
+          <Flag className="h-4 w-4" />
+          Elements
+        </TabsTrigger>
+        <TabsTrigger value="structure" className="gap-2">
+          <Settings className="h-4 w-4" />
+          Structure
+        </TabsTrigger>
+        {isDecisionMaking && (
+          <TabsTrigger value="comparisons" className="gap-2">
+            <Target className="h-4 w-4" />
+            Comparisons
+          </TabsTrigger>
+        )}
+        {isPerformanceReview && (
+          <TabsTrigger value="tracking" className="gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Tracking Setup
+          </TabsTrigger>
+        )}
+      </TabsList>
+
+      <TabsContent value="elements" className="space-y-6">
+        <ElementManager 
+          model={model} 
+          onModelUpdate={onModelUpdate}
+        />
+      </TabsContent>
+
+      <TabsContent value="structure" className="space-y-6">
+        <ModelStructureEditor 
+          model={model} 
+          onModelUpdate={onModelUpdate}
+        />
+      </TabsContent>
+
+      {isDecisionMaking && (
+        <TabsContent value="comparisons" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Comparison Matrix Setup</CardTitle>
+              <CardDescription>
+                Configure pairwise comparisons for Decision Making analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ComparisonMatrix 
+                model={model as DecisionMakingModel} 
+                onModelUpdate={onModelUpdate}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      )}
+
+      {isPerformanceReview && (
+        <TabsContent value="tracking" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Tracking Setup</CardTitle>
+              <CardDescription>
+                Configure performance evaluation criteria and baseline settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Performance Review models track trends over time without requiring pairwise comparisons.
+                  Elements are evaluated on both acceptability and performance trends.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Acceptability Evaluation</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Binary assessment: Acceptable (1) or Unacceptable (0)
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Performance Trend</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Trend tracking: Getting Better (1), Staying Same (0), Getting Worse (-1)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      )}
+    </Tabs>
+  )
+}
+
+function AnalyzingModeContent({ model, onModelUpdate }: ModeContentProps) {
+  const isDecisionMaking = isDecisionMakingModel(model)
+  const isPerformanceReview = isPerformanceReviewModel(model)
+
+  return (
+    <div className="space-y-6">
+      {/* Analysis Interface */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Play className="h-5 w-5" />
+            {isDecisionMaking ? "Decision Analysis" : "Performance Analysis"}
+          </CardTitle>
+          <CardDescription>
+            {isDecisionMaking 
+              ? "Evaluate element acceptability to determine the optimal decision"
+              : "Track performance trends and identify improvement priorities"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AnalyzingGrid 
+            model={model} 
+            onModelUpdate={onModelUpdate}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Model-Specific Analysis Tools */}
+      {isDecisionMaking && (
+        <ComparisonMatrix 
+          model={model as DecisionMakingModel} 
+          onModelUpdate={onModelUpdate}
+          readonly={false}
+        />
+      )}
+
+      {isPerformanceReview && (
+        <PerformanceDashboard 
+          model={model as PerformanceReviewModel} 
+          onModelUpdate={onModelUpdate}
+        />
+      )}
+    </div>
+  )
+}
+
+function ModelStructureEditor({ model, onModelUpdate }: ModeContentProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Model Configuration</CardTitle>
+        <CardDescription>
+          Adjust model settings and metadata
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Model Name</label>
+              <div className="p-2 border rounded bg-gray-50 text-sm">
+                {model.modelName}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Digital Topic</label>
+              <div className="p-2 border rounded bg-gray-50 text-sm">
+                {model.digitalTopic}
+              </div>
+            </div>
+          </div>
+          
+          {model.note && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <div className="p-2 border rounded bg-gray-50 text-sm">
+                {model.note}
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Auto Save:</span>
+              <span className={`ml-2 ${model.autoSaveModel ? 'text-green-600' : 'text-red-600'}`}>
+                {model.autoSaveModel ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Two Only:</span>
+              <span className={`ml-2 ${model.twoOnly ? 'text-blue-600' : 'text-gray-600'}`}>
+                {model.twoOnly ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Valid:</span>
+              <span className={`ml-2 ${model.valid ? 'text-green-600' : 'text-red-600'}`}>
+                {model.valid ? 'Valid' : 'Invalid'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">Has Issues:</span>
+              <span className={`ml-2 ${model.hasIssue ? 'text-red-600' : 'text-green-600'}`}>
+                {model.hasIssue ? 'Yes' : 'No'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
