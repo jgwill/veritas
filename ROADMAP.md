@@ -46,7 +46,7 @@ TandT (Thinking and Tracking) is a sophisticated decision-making and performance
 ## Technical Architecture Differentiation
 
 ### Decision Making Models Technical Stack
-```
+\`\`\`
 Editing Mode:
 ├── Element Management (Add/Edit/Delete)
 ├── Pairwise Comparison Matrix Interface
@@ -64,10 +64,10 @@ Data Layer:
 ├── Dominance Factor Calculations
 ├── Consistency Validation Rules
 └── Decision Logic Processing
-```
+\`\`\`
 
 ### Performance Review Models Technical Stack
-```
+\`\`\`
 Editing Mode:
 ├── Element Management (Add/Edit/Delete)
 ├── Evaluation Criteria Setup
@@ -85,7 +85,7 @@ Data Layer:
 ├── Priority Calculation Algorithms
 ├── Historical Performance Tracking
 └── Improvement Recommendation Engine
-```
+\`\`\`
 
 ## Technical Architecture
 

@@ -4,19 +4,18 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, BarChart3, Target, TrendingUp, Users, Clock, ArrowRight } from "lucide-react"
-import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, FileText } from "lucide-react"
+import { Target, TrendingUp, Clock, ArrowRight, CheckCircle2, FileText } from "lucide-react"
+import Link from "next/link"
 import CreateModelDialog from "@/components/CreateModelDialog"
-import { loadModelsFromSamples, getModelStats, createModel } from "@/lib/models"
-import { 
-  DigitalModel, 
-  DigitalThinkingModelType, 
-  CreateModelRequest,
+import {
+  type DigitalModel,
+  type CreateModelRequest,
   isDecisionMakingModel,
-  isPerformanceReviewModel
+  isPerformanceReviewModel,
 } from "@/lib/types"
+import { getModelStats } from "@/lib/models"
+import { createModelAction, getModelsAction } from "@/lib/actions"
 
 function ModelCard({ model }: { model: DigitalModel }) {
   const stats = getModelStats(model)
@@ -36,11 +35,9 @@ function ModelCard({ model }: { model: DigitalModel }) {
             {isDecisionMaking ? "Decision" : "Performance"}
           </Badge>
         </div>
-        <CardDescription className="text-sm">
-          {model.digitalTopic}
-        </CardDescription>
+        <CardDescription className="text-sm">{model.digitalTopic}</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Statistics */}
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -65,7 +62,7 @@ function ModelCard({ model }: { model: DigitalModel }) {
           </div>
 
           {/* Model-specific progress */}
-          {isDecisionMaking && 'comparisonProgress' in stats && (
+          {isDecisionMaking && "comparisonProgress" in stats && (
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Comparisons</span>
@@ -75,7 +72,7 @@ function ModelCard({ model }: { model: DigitalModel }) {
             </div>
           )}
 
-          {isPerformanceReview && 'performanceProgress' in stats && (
+          {isPerformanceReview && "performanceProgress" in stats && (
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Performance Tracking</span>
@@ -89,7 +86,7 @@ function ModelCard({ model }: { model: DigitalModel }) {
         {/* Model-specific indicators */}
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
-            {isDecisionMaking && 'consistencyScore' in stats && (
+            {isDecisionMaking && "consistencyScore" in stats && (
               <Badge variant="outline" className="text-xs">
                 Consistency: {Math.round(stats.consistencyScore * 100)}%
               </Badge>
@@ -100,7 +97,7 @@ function ModelCard({ model }: { model: DigitalModel }) {
               </Badge>
             )}
           </div>
-          
+
           <Link href={`/models/${model.id}`}>
             <Button size="sm" className="gap-1">
               Open
@@ -113,9 +110,7 @@ function ModelCard({ model }: { model: DigitalModel }) {
   )
 }
 
-async function ModelsGrid() {
-  const models = loadModelsFromSamples()
-
+function ModelsGrid({ models }: { models: DigitalModel[] }) {
   if (models.length === 0) {
     return (
       <div className="text-center py-12">
@@ -127,12 +122,7 @@ async function ModelsGrid() {
           <p className="text-muted-foreground mb-4">
             Create your first thinking model to get started with systematic decision-making or performance tracking.
           </p>
-          <CreateModelDialog 
-            onCreateModel={(request: CreateModelRequest) => {
-              "use server"
-              createModel(request)
-            }}
-          />
+          <CreateModelDialog onCreateModel={createModelAction} />
         </div>
       </div>
     )
@@ -179,22 +169,57 @@ async function ModelsGrid() {
 }
 
 export default function HomePage() {
+  const [models, setModels] = useState<DigitalModel[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchModels() {
+      try {
+        const fetchedModels = await getModelsAction()
+        setModels(fetchedModels)
+      } catch (error) {
+        console.error("Error fetching models:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchModels()
+  }, [])
+
+  const handleCreateModel = async (request: CreateModelRequest) => {
+    try {
+      const newModel = await createModelAction(request)
+      setModels((prev) => [...prev, newModel])
+      return newModel
+    } catch (error) {
+      console.error("Error creating model:", error)
+      throw error
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading models...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">TandT Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Systematic decision-making and performance tracking framework
-          </p>
+          <p className="text-muted-foreground mt-1">Systematic decision-making and performance tracking framework</p>
         </div>
-        <CreateModelDialog 
-          onCreateModel={async (request: CreateModelRequest) => {
-            "use server"
-            return createModel(request)
-          }}
-        />
+        <CreateModelDialog onCreateModel={handleCreateModel} />
       </div>
 
       {/* Overview Stats */}
@@ -205,68 +230,43 @@ export default function HomePage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{loadModelsFromSamples().length}</div>
+            <div className="text-2xl font-bold">{models.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Decision Models</CardTitle>
             <Target className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {loadModelsFromSamples().filter(isDecisionMakingModel).length}
-            </div>
+            <div className="text-2xl font-bold">{models.filter(isDecisionMakingModel).length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Performance Models</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {loadModelsFromSamples().filter(isPerformanceReviewModel).length}
-            </div>
+            <div className="text-2xl font-bold">{models.filter(isPerformanceReviewModel).length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {loadModelsFromSamples().filter(m => !m.decided).length}
-            </div>
+            <div className="text-2xl font-bold">{models.filter((m) => !m.decided).length}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Models Grid */}
-      <Suspense fallback={
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      }>
-        <ModelsGrid />
-      </Suspense>
+      <ModelsGrid models={models} />
     </div>
   )
 }

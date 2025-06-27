@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,20 +16,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Target, TrendingUp, Crown, Users } from "lucide-react"
-import { DigitalThinkingModelType, CreateModelRequest } from "@/lib/types"
+import { DigitalThinkingModelType, type CreateModelRequest } from "@/lib/types"
 
 interface CreateModelDialogProps {
-  onCreateModel: (model: CreateModelRequest) => void
+  onCreateModel: (model: CreateModelRequest) => Promise<any>
   isLoading?: boolean
 }
 
@@ -37,29 +32,38 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
   const [digitalTopic, setDigitalTopic] = useState("")
   const [note, setNote] = useState("")
   const [selectedType, setSelectedType] = useState<DigitalThinkingModelType | null>(null)
+  const [creating, setCreating] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!modelName.trim() || !digitalTopic.trim() || selectedType === null) {
       return
     }
 
-    const createRequest: CreateModelRequest = {
-      modelName: modelName.trim(),
-      digitalTopic: digitalTopic.trim(),
-      digitalThinkingModelType: selectedType,
-      note: note.trim()
-    }
+    setCreating(true)
 
-    onCreateModel(createRequest)
-    
-    // Reset form
-    setModelName("")
-    setDigitalTopic("")
-    setNote("")
-    setSelectedType(null)
-    setOpen(false)
+    try {
+      const createRequest: CreateModelRequest = {
+        modelName: modelName.trim(),
+        digitalTopic: digitalTopic.trim(),
+        digitalThinkingModelType: selectedType,
+        note: note.trim(),
+      }
+
+      await onCreateModel(createRequest)
+
+      // Reset form
+      setModelName("")
+      setDigitalTopic("")
+      setNote("")
+      setSelectedType(null)
+      setOpen(false)
+    } catch (error) {
+      console.error("Error creating model:", error)
+    } finally {
+      setCreating(false)
+    }
   }
 
   const modelTypes = [
@@ -70,19 +74,14 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
       icon: <Target className="h-5 w-5" />,
       features: [
         "Pairwise element comparisons",
-        "Dominance factor calculations", 
+        "Dominance factor calculations",
         "Element hierarchy ranking",
         "Binary acceptability evaluation",
-        "YES/NO decision output"
+        "YES/NO decision output",
       ],
-      useCases: [
-        "Housing decisions",
-        "Investment choices", 
-        "Strategic planning",
-        "Hiring decisions"
-      ],
+      useCases: ["Housing decisions", "Investment choices", "Strategic planning", "Hiring decisions"],
       badge: "Decision",
-      color: "blue"
+      color: "blue",
     },
     {
       type: DigitalThinkingModelType.PERFORMANCE_REVIEW,
@@ -94,17 +93,17 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
         "Priority identification",
         "Binary acceptability evaluation",
         "Performance dashboard output",
-        "No pairwise comparisons"
+        "No pairwise comparisons",
       ],
       useCases: [
         "Employee performance reviews",
         "Project health monitoring",
         "System metrics tracking",
-        "Business performance assessment"
+        "Business performance assessment",
       ],
       badge: "Performance",
-      color: "green"
-    }
+      color: "green",
+    },
   ]
 
   return (
@@ -129,12 +128,10 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
             <Label className="text-base font-semibold">Model Type</Label>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {modelTypes.map((modelType) => (
-                <Card 
+                <Card
                   key={modelType.type}
                   className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedType === modelType.type 
-                      ? 'ring-2 ring-primary border-primary' 
-                      : 'hover:border-gray-300'
+                    selectedType === modelType.type ? "ring-2 ring-primary border-primary" : "hover:border-gray-300"
                   }`}
                   onClick={() => setSelectedType(modelType.type)}
                 >
@@ -144,13 +141,9 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
                         {modelType.icon}
                         <CardTitle className="text-lg">{modelType.title}</CardTitle>
                       </div>
-                      <Badge variant={modelType.color === 'blue' ? 'default' : 'secondary'}>
-                        {modelType.badge}
-                      </Badge>
+                      <Badge variant={modelType.color === "blue" ? "default" : "secondary"}>{modelType.badge}</Badge>
                     </div>
-                    <CardDescription className="text-sm">
-                      {modelType.description}
-                    </CardDescription>
+                    <CardDescription className="text-sm">{modelType.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div>
@@ -186,9 +179,7 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
               ))}
             </div>
             {selectedType === null && (
-              <p className="text-sm text-muted-foreground">
-                Please select a model type to continue.
-              </p>
+              <p className="text-sm text-muted-foreground">Please select a model type to continue.</p>
             )}
           </div>
 
@@ -196,7 +187,7 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
           {selectedType !== null && (
             <div className="space-y-4 border-t pt-6">
               <h3 className="text-lg font-semibold">Model Information</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="modelName">Model Name *</Label>
@@ -236,22 +227,18 @@ export default function CreateModelDialog({ onCreateModel, isLoading }: CreateMo
         </form>
 
         <DialogFooter className="border-t pt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOpen(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button
             type="submit"
             onClick={handleSubmit}
-            disabled={!modelName.trim() || !digitalTopic.trim() || selectedType === null || isLoading}
+            disabled={!modelName.trim() || !digitalTopic.trim() || selectedType === null || creating || isLoading}
           >
-            {isLoading ? "Creating..." : "Create Model"}
+            {creating || isLoading ? "Creating..." : "Create Model"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
-} 
+}
