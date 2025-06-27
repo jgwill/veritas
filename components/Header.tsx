@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ModelMode } from "@/lib/constants"
-import { DigitalThinkingModelType } from "@/lib/types"
+import { DigitalThinkingModelType } from "@/lib/constants"
 
 interface HeaderProps {
   currentMode: ModelMode

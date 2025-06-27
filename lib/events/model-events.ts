@@ -1,7 +1,8 @@
 // Advanced Event-Driven Architecture for TandT Application
 // Inspired by legacy TandTEventManager patterns
 
-import type { DigitalModel, BaseDigitalElement, DigitalThinkingModelType } from "@/lib/types"
+import type { DigitalModel, BaseDigitalElement } from "@/lib/types"
+import { DigitalThinkingModelType } from "@/lib/constants"
 
 // Event Argument Types
 export interface ModelEventArgs {
