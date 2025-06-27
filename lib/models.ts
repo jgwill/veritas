@@ -27,6 +27,7 @@ import {
   PriorityLevel,
   MODEL_TYPE_LABELS,
 } from "./constants"
+import { isDecisionMakingModel, isPerformanceReviewModel, isBusinessAnalysisModel } from "./types"
 
 // In-memory storage for models (in production, this would be a database)
 const modelsCache: DigitalModel[] = []
@@ -34,76 +35,83 @@ let initialized = false
 
 // Initialize models from sample files
 async function initializeModels(): Promise<void> {
+  if (initialized || typeof window !== 'undefined') return
+  
   try {
-    // Skip file-system initialization on the client/browser to avoid bundling fs/path.
-    if (typeof window !== "undefined") {
-      initialized = true
-      return
-    }
-
-    // Dynamically import Node-only modules.
-    const { promises: fs } = await import("fs")
-    const path = await import("path")
-
+    // Only load fs and path on server side
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    
     const samplesDir = path.join(process.cwd(), "samples")
-    let files: string[] = []
+    
     try {
-      files = await fs.readdir(samplesDir)
-    } catch {
-      // samples directory may not exist in production; ignore.
-      files = []
-    }
+      const files = await fs.readdir(samplesDir)
+      const jsonFiles = files.filter((file) => file.endsWith(".json"))
 
-    const jsonFiles = files.filter((file) => file.endsWith(".json"))
+      for (const file of jsonFiles) {
+        try {
+          const filePath = path.join(samplesDir, file)
+          const content = await fs.readFile(filePath, "utf-8")
+          const modelData = JSON.parse(content)
 
-    for (const file of jsonFiles) {
-      try {
-        const filePath = path.join(samplesDir, file)
-        const content = await fs.readFile(filePath, "utf-8")
-        const modelData = JSON.parse(content)
+          // Extract ID from filename or use the model's ID
+          const fileId = file.match(/([a-f0-9-]{36})/)?.[1]
+          if (fileId) {
+            modelData.id = fileId
+          }
 
-        // Extract ID from filename or use the model's ID
-        const fileId = file.match(/([a-f0-9-]{36})/)?.[1]
-        if (fileId) modelData.id = fileId
+          // Ensure required fields exist
+          if (!modelData.dtCreated) {
+            modelData.dtCreated = new Date().toISOString()
+          }
+          if (!modelData.dtModified) {
+            modelData.dtModified = new Date().toISOString()
+          }
 
-        modelData.dtCreated ||= new Date().toISOString()
-        modelData.dtModified ||= new Date().toISOString()
-
-        modelsCache.push(modelData as DigitalModel)
-      } catch (error) {
-        console.warn(`Failed to load sample file ${file}:`, error)
+          modelsCache.push(modelData)
+        } catch (error) {
+          console.error(`Error loading model from ${file}:`, error)
+        }
       }
+    } catch (error) {
+      console.log("No samples directory found, starting with empty models")
     }
-
-    initialized = true
   } catch (error) {
-    console.warn("Failed to initialize models from samples:", error)
-    initialized = true // Prevent repeated attempts
+    console.error("Error initializing models:", error)
+  }
+
+  initialized = true
+}
+
+// Ensure models are initialized before any operations
+const ensureInitialized = async () => {
+  if (!initialized) {
+    await initializeModels()
   }
 }
 
 // Load models from samples directory - exported function
 export async function loadModelsFromSamples(): Promise<DigitalModel[]> {
-  await initializeModels()
+  await ensureInitialized()
   return [...modelsCache]
 }
 
 // Get all models
 export async function getAllModels(): Promise<DigitalModel[]> {
-  await initializeModels()
+  await ensureInitialized()
   return [...modelsCache]
 }
 
 // Get model by ID
 export async function getModelById(id: string): Promise<DigitalModel | null> {
-  await initializeModels()
+  await ensureInitialized()
   return modelsCache.find((model) => model.id === id) || null
 }
 
 // Create new model
 export async function createModel(request: CreateModelRequest): Promise<ModelResponse> {
   try {
-    await initializeModels()
+    await ensureInitialized()
 
     const newModel: DigitalModel = {
       id: generateId(),
@@ -144,7 +152,7 @@ export async function createModel(request: CreateModelRequest): Promise<ModelRes
 // Update model
 export async function updateModel(id: string, updates: Partial<DigitalModel>): Promise<ModelResponse> {
   try {
-    await initializeModels()
+    await ensureInitialized()
 
     const modelIndex = modelsCache.findIndex((model) => model.id === id)
     if (modelIndex === -1) {
@@ -176,7 +184,7 @@ export async function updateModel(id: string, updates: Partial<DigitalModel>): P
 // Delete model
 export async function deleteModel(id: string): Promise<ModelResponse> {
   try {
-    await initializeModels()
+    await ensureInitialized()
 
     const modelIndex = modelsCache.findIndex((model) => model.id === id)
     if (modelIndex === -1) {
@@ -204,7 +212,7 @@ export async function deleteModel(id: string): Promise<ModelResponse> {
 // Add element to model
 export async function addElementToModel(modelId: string, request: CreateElementRequest): Promise<ElementResponse> {
   try {
-    await initializeModels()
+    await ensureInitialized()
 
     const model = modelsCache.find((m) => m.id === modelId)
     if (!model) {
@@ -238,7 +246,7 @@ export async function updateElement(
   updates: Partial<DigitalElement>,
 ): Promise<ElementResponse> {
   try {
-    await initializeModels()
+    await ensureInitialized()
 
     const model = modelsCache.find((m) => m.id === modelId)
     if (!model) {
@@ -434,7 +442,7 @@ export async function calculateDominanceFactors(modelId: string): Promise<Digita
 
 // Get model statistics
 export async function getModelStatistics(modelId: string): Promise<ModelStatistics | null> {
-  await initializeModels()
+  await ensureInitialized()
 
   const model = modelsCache.find((m) => m.id === modelId)
   if (!model) return null
@@ -495,7 +503,7 @@ export async function getModelStatistics(modelId: string): Promise<ModelStatisti
 
 // Get dashboard statistics
 export async function getDashboardStats(): Promise<DashboardStats> {
-  await initializeModels()
+  await ensureInitialized()
 
   const totalModels = modelsCache.length
   const decisionMakingModels = modelsCache.filter(
