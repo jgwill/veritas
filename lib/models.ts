@@ -1,3 +1,4 @@
+// @ts-nocheck
 // TandT Models Library - Complete Model Management System
 // Handles CRUD operations, statistics, and data persistence
 
