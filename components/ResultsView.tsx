@@ -1,346 +1,175 @@
 "use client"
 
+import { useMemo } from "react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Trophy, TrendingUp, TrendingDown, Minus, Crown } from "lucide-react"
-
-interface DigitalModel {
-  id: string
-  modelName: string
-  digitalTopic: string
-  digitalThinkingModelType: number
-  twoOnly: boolean
-  decided: boolean
-  valid: boolean
-  autoSaveModel: boolean
-  hasIssue: boolean
-  note?: string
-  model: DigitalElement[]
-}
-
-interface DigitalElement {
-  idug: string
-  nameElement: string
-  displayName: string
-  description: string
-  sortNo: number
-  status: number
-  twoFlag: boolean
-  twoFlagAnswered: boolean
-  threeFlag: number
-  threeFlagAnswered: boolean
-  dominanceFactor: number
-  dominantElementItIS: boolean
-  comparationCompleted: boolean
-  question: boolean
-  comparationTableData: Record<string, number>
-}
+import { type DigitalModel, isDecisionMakingModel, isPerformanceReviewModel, type DigitalElement } from "@/lib/types"
+import { TrendingUp, TrendingDown, Minus, Trophy } from "lucide-react"
 
 interface ResultsViewProps {
   model: DigitalModel
 }
 
 export default function ResultsView({ model }: ResultsViewProps) {
-  const getSortedElements = () => {
-    return [...model.model].sort((a, b) => {
-      // First sort by dominance factor (descending)
-      if (b.dominanceFactor !== a.dominanceFactor) {
-        return b.dominanceFactor - a.dominanceFactor
-      }
-      // Then by evaluation preference if available
-      if (model.twoOnly) {
-        const aValue = a.twoFlagAnswered ? (a.twoFlag ? 1 : 0) : 0.5
-        const bValue = b.twoFlagAnswered ? (b.twoFlag ? 1 : 0) : 0.5
-        return bValue - aValue
-      } else {
-        const aValue = a.threeFlagAnswered ? a.threeFlag : 0
-        const bValue = b.threeFlagAnswered ? b.threeFlag : 0
-        return bValue - aValue
-      }
-    })
-  }
-
-  const getEvaluationIcon = (element: DigitalElement) => {
-    if (model.twoOnly) {
-      if (!element.twoFlagAnswered) return <Minus className="w-4 h-4 text-gray-400" />
-      return element.twoFlag ? (
-        <TrendingUp className="w-4 h-4 text-green-600" />
-      ) : (
-        <TrendingDown className="w-4 h-4 text-red-600" />
-      )
-    } else {
-      if (!element.threeFlagAnswered) return <Minus className="w-4 h-4 text-gray-400" />
-      switch (element.threeFlag) {
-        case 1:
-          return <TrendingUp className="w-4 h-4 text-green-600" />
-        case 0:
-          return <Minus className="w-4 h-4 text-yellow-600" />
-        case -1:
-          return <TrendingDown className="w-4 h-4 text-red-600" />
-        default:
-          return <Minus className="w-4 h-4 text-gray-400" />
-      }
-    }
-  }
-
-  const getEvaluationLabel = (element: DigitalElement) => {
-    if (model.twoOnly) {
-      if (!element.twoFlagAnswered) return "Not Evaluated"
-      return element.twoFlag ? "Positive" : "Negative"
-    } else {
-      if (!element.threeFlagAnswered) return "Not Evaluated"
-      switch (element.threeFlag) {
-        case 1:
-          return "Getting Better"
-        case 0:
-          return "Staying Same"
-        case -1:
-          return "Getting Worse"
-        default:
-          return "Not Evaluated"
-      }
-    }
-  }
-
-  const getRankIcon = (index: number) => {
-    switch (index) {
-      case 0:
-        return <Crown className="w-5 h-5 text-yellow-500" />
-      case 1:
-        return <Trophy className="w-5 h-5 text-gray-400" />
-      case 2:
-        return <Trophy className="w-5 h-5 text-amber-600" />
-      default:
-        return (
-          <span className="w-5 h-5 flex items-center justify-center text-sm font-bold text-muted-foreground">
-            #{index + 1}
-          </span>
-        )
-    }
-  }
-
-  const getOverallRecommendation = () => {
-    const sortedElements = getSortedElements()
-    const topElements = sortedElements.slice(0, 3)
-    const dominantElements = sortedElements.filter((el) => el.dominantElementItIS)
-
-    if (model.digitalThinkingModelType === 1) {
-      // Decision Making
-      const positiveElements = model.twoOnly
-        ? topElements.filter((el) => el.twoFlagAnswered && el.twoFlag)
-        : topElements.filter((el) => el.threeFlagAnswered && el.threeFlag > 0)
-
-      if (positiveElements.length > 0) {
-        return {
-          decision: "RECOMMENDED",
-          confidence: "High",
-          reason: `Top factors (${positiveElements.map((el) => el.displayName).join(", ")}) show positive evaluation with strong dominance.`,
-        }
-      } else {
-        return {
-          decision: "NOT RECOMMENDED",
-          confidence: "Medium",
-          reason: "Top dominant factors show negative or neutral evaluation.",
-        }
-      }
-    } else {
-      // Performance Review
-      const improvingElements = model.twoOnly
-        ? topElements.filter((el) => el.twoFlagAnswered && el.twoFlag)
-        : topElements.filter((el) => el.threeFlagAnswered && el.threeFlag > 0)
-
-      const decliningElements = model.twoOnly
-        ? topElements.filter((el) => el.twoFlagAnswered && !el.twoFlag)
-        : topElements.filter((el) => el.threeFlagAnswered && el.threeFlag < 0)
-
-      if (improvingElements.length > decliningElements.length) {
-        return {
-          decision: "POSITIVE TREND",
-          confidence: "High",
-          reason: `More key factors are improving (${improvingElements.length}) than declining (${decliningElements.length}).`,
-        }
-      } else if (decliningElements.length > improvingElements.length) {
-        return {
-          decision: "NEGATIVE TREND",
-          confidence: "High",
-          reason: `More key factors are declining (${decliningElements.length}) than improving (${improvingElements.length}).`,
-        }
-      } else {
-        return {
-          decision: "STABLE",
-          confidence: "Medium",
-          reason: "Key factors show balanced performance with equal improving and declining elements.",
-        }
-      }
-    }
-  }
-
-  const sortedElements = getSortedElements()
-  const maxDominance = Math.max(...model.model.map((el) => el.dominanceFactor))
-  const recommendation = getOverallRecommendation()
+  const isDecision = isDecisionMakingModel(model)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Results & Analysis</h2>
-        <p className="text-muted-foreground">Rankings and recommendations based on your comparisons and evaluations</p>
+        <h2 className="text-2xl font-bold">{model.digitalTopic}</h2>
+        <p className="text-muted-foreground">
+          {isDecision
+            ? "Results: Visualizing element dominance and hierarchy."
+            : "Results: Review the prioritized performance dashboard."}
+        </p>
       </div>
 
-      <Card className="border-2 border-primary">
+      {isDecision ? <DecisionDashboard model={model} /> : <PerformanceDashboard model={model} />}
+    </div>
+  )
+}
+
+// Component for Decision Making Model (Type 1)
+const DecisionDashboard = ({ model }: { model: DigitalModel }) => {
+  const chartData = useMemo(() => {
+    return [...model.model].sort((a, b) => a.dominanceFactor - b.dominanceFactor).map((el) => ({
+      name: el.displayName,
+      Dominance: el.dominanceFactor,
+    }))
+  }, [model])
+
+  const rankedElements = useMemo(() => {
+    return [...model.model].sort((a, b) => b.dominanceFactor - a.dominanceFactor)
+  }, [model])
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
-            Overall Recommendation
-          </CardTitle>
+          <CardTitle>Element Dominance Chart</CardTitle>
+          <CardDescription>Visual representation of each element's calculated importance.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Badge
-                variant={
-                  recommendation.decision.includes("RECOMMENDED") || recommendation.decision.includes("POSITIVE")
-                    ? "default"
-                    : recommendation.decision.includes("NOT") || recommendation.decision.includes("NEGATIVE")
-                      ? "destructive"
-                      : "secondary"
-                }
-                className="text-lg px-4 py-2"
-              >
-                {recommendation.decision}
-              </Badge>
-              <Badge variant="outline">{recommendation.confidence} Confidence</Badge>
-            </div>
-            <p className="text-muted-foreground">{recommendation.reason}</p>
-          </div>
+          <ResponsiveContainer width="100%" height={Math.max(400, model.model.length * 40)}>
+            <BarChart layout="vertical" data={chartData} margin={{ top: 5, right: 30, left: 120, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} interval={0} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  borderColor: "hsl(var(--border))",
+                }}
+              />
+              <Legend />
+              <Bar dataKey="Dominance" fill="hsl(var(--primary))">
+                <LabelList dataKey="Dominance" position="right" className="fill-foreground" />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Element Rankings</CardTitle>
-          <CardDescription>Elements ranked by dominance factor and evaluation</CardDescription>
+          <CardTitle>Dominant Mandatory Factors</CardTitle>
+          <CardDescription>Elements ranked by their dominance factor.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {sortedElements.map((element, index) => (
-              <div key={element.idug} className="flex items-center gap-4 p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  {getRankIcon(index)}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{element.displayName}</h3>
-                      {element.dominantElementItIS && <Badge variant="default">Dominant</Badge>}
-                      {element.question && <Badge variant="secondary">Question</Badge>}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{element.description}</p>
-                  </div>
+          <ol className="space-y-2">
+            {rankedElements.map((el, index) => (
+              <li
+                key={el.idug}
+                className="flex items-center justify-between text-sm p-2 rounded-md bg-muted/50"
+              >
+                <div className="flex items-center">
+                  <span className="w-6 text-center text-muted-foreground mr-2">{index + 1}.</span>
+                  <span className="font-medium">{el.displayName}</span>
                 </div>
-
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Dominance</div>
-                    <div className="text-xl font-bold">{element.dominanceFactor}</div>
-                    <Progress
-                      value={maxDominance > 0 ? (element.dominanceFactor / maxDominance) * 100 : 0}
-                      className="w-16 h-2 mt-1"
-                    />
-                  </div>
-
-                  <div className="text-center">
-                    <div className="text-sm text-muted-foreground">Evaluation</div>
-                    <div className="flex items-center gap-1 mt-1">
-                      {getEvaluationIcon(element)}
-                      <span className="text-sm font-medium">{getEvaluationLabel(element)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <Badge variant="secondary">{el.dominanceFactor}</Badge>
+              </li>
             ))}
-          </div>
+          </ol>
         </CardContent>
       </Card>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dominance Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Highest Dominance:</span>
-                <span className="font-medium">{maxDominance}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dominant Elements:</span>
-                <span className="font-medium">{model.model.filter((el) => el.dominantElementItIS).length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Average Dominance:</span>
-                <span className="font-medium">
-                  {(model.model.reduce((sum, el) => sum + el.dominanceFactor, 0) / model.model.length).toFixed(1)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Evaluation Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {model.twoOnly ? (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Positive:</span>
-                    <span className="font-medium text-green-600">
-                      {model.model.filter((el) => el.twoFlagAnswered && el.twoFlag).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Negative:</span>
-                    <span className="font-medium text-red-600">
-                      {model.model.filter((el) => el.twoFlagAnswered && !el.twoFlag).length}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Getting Better:</span>
-                    <span className="font-medium text-green-600">
-                      {model.model.filter((el) => el.threeFlagAnswered && el.threeFlag > 0).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Staying Same:</span>
-                    <span className="font-medium text-yellow-600">
-                      {model.model.filter((el) => el.threeFlagAnswered && el.threeFlag === 0).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Getting Worse:</span>
-                    <span className="font-medium text-red-600">
-                      {model.model.filter((el) => el.threeFlagAnswered && el.threeFlag < 0).length}
-                    </span>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Not Evaluated:</span>
-                <span className="font-medium text-gray-500">
-                  {model.twoOnly
-                    ? model.model.filter((el) => !el.twoFlagAnswered).length
-                    : model.model.filter((el) => !el.threeFlagAnswered).length}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
+  )
+}
+
+// Component for Performance Review Model (Type 2)
+const PerformanceDashboard = ({ model }: { model: DigitalModel }) => {
+  const sortedElements = useMemo(() => {
+    return [...model.model].sort((a, b) => {
+      const aIsUnacceptable = a.twoFlagAnswered && !a.twoFlag
+      const bIsUnacceptable = b.twoFlagAnswered && !b.twoFlag
+      if (aIsUnacceptable && !bIsUnacceptable) return -1
+      if (!aIsUnacceptable && bIsUnacceptable) return 1
+
+      const aTrend = a.threeFlagAnswered ? a.threeFlag : 0
+      const bTrend = b.threeFlagAnswered ? b.threeFlag : 0
+      if (aTrend !== bTrend) return aTrend - bTrend
+
+      return 0
+    })
+  }, [model])
+
+  const TrendIndicator = ({ element }: { element: DigitalElement }) => {
+    if (!element.threeFlagAnswered) return <span className="text-muted-foreground">-</span>
+    if (element.threeFlag === 1)
+      return (
+        <span className="text-green-600 flex items-center">
+          <TrendingUp className="w-4 h-4 mr-1" /> Improving
+        </span>
+      )
+    if (element.threeFlag === -1)
+      return (
+        <span className="text-red-600 flex items-center">
+          <TrendingDown className="w-4 h-4 mr-1" /> Declining
+        </span>
+      )
+    return (
+      <span className="text-yellow-600 flex items-center">
+        <Minus className="w-4 h-4 mr-1" /> Stable
+      </span>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Prioritized Action List</CardTitle>
+        <CardDescription>
+          Items are prioritized by their status (Unacceptable first) and then by their performance trend (Declining
+          first).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {sortedElements.map((el) => (
+            <div key={el.idug} className="border rounded-lg p-3 flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{el.displayName}</p>
+                <p className="text-xs text-muted-foreground">{el.description}</p>
+              </div>
+              <div className="flex items-center space-x-4 text-sm">
+                {el.twoFlagAnswered ? (
+                  !el.twoFlag ? (
+                    <Badge variant="destructive">Unacceptable</Badge>
+                  ) : (
+                    <Badge variant="default" className="bg-green-600">
+                      Acceptable
+                    </Badge>
+                  )
+                ) : (
+                  <Badge variant="outline">Pending</Badge>
+                )}
+                <TrendIndicator element={el} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

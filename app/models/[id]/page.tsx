@@ -33,6 +33,8 @@ import ComparisonMatrix from "@/components/ComparisonMatrix"
 import PerformanceDashboard from "@/components/PerformanceDashboard"
 import AnalyzingGrid from "@/components/enhanced/AnalyzingGrid"
 import ElementManager from "@/components/ElementManager"
+import Header from "@/components/Header"
+import { ModelMode } from "@/lib/constants"
 
 type ModelViewMode = 'editing' | 'analyzing'
 
@@ -45,6 +47,7 @@ export default function ModelPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ModelViewMode>('editing')
+  const [mode, setMode] = useState<ModelMode>(ModelMode.Modeling)
 
   // Load model data
   useEffect(() => {
@@ -70,9 +73,14 @@ export default function ModelPage() {
     }
   }, [modelId])
 
-  const handleModelUpdate = (updatedModel: DigitalModel) => {
-    setModel(updatedModel)
-    updateModel(updatedModel)
+  const handleModelUpdate = (updates: Partial<DigitalModel>) => {
+    setModel((prevModel) => {
+      if (!prevModel) return null
+      const updatedModel = { ...prevModel, ...updates }
+      // Here you would typically also save the model to the backend
+      // e.g., saveModel(updatedModel)
+      return updatedModel
+    })
   }
 
   const stats = useMemo(() => 
@@ -117,137 +125,31 @@ export default function ModelPage() {
   const isDecisionMaking = isDecisionMakingModel(model)
   const isPerformanceReview = isPerformanceReviewModel(model)
 
+  const renderContent = () => {
+    switch (mode) {
+      case ModelMode.Modeling:
+        return <ElementManager model={model} onModelUpdate={handleModelUpdate} />
+      case ModelMode.Analyzing:
+        return <AnalyzingGrid model={model} onModelUpdate={handleModelUpdate} />
+      case ModelMode.Results:
+        return <ResultsView model={model} />
+      default:
+        return <ElementManager model={model} onModelUpdate={handleModelUpdate} />
+    }
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => router.push('/')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          
-          <div className="flex items-center gap-3">
-            {isDecisionMaking && <Target className="h-6 w-6 text-blue-600" />}
-            {isPerformanceReview && <TrendingUp className="h-6 w-6 text-green-600" />}
-            <div>
-              <h1 className="text-2xl font-bold">{model.modelName}</h1>
-              <p className="text-muted-foreground">{model.digitalTopic}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Badge variant={isDecisionMaking ? "default" : "secondary"}>
-            {isDecisionMaking ? "Decision Making" : "Performance Review"}
-          </Badge>
-          
-          {/* Mode Toggle */}
-          <div className="flex rounded-lg border p-1">
-            <Button
-              variant={viewMode === 'editing' ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode('editing')}
-              className="gap-1"
-            >
-              <Edit3 className="h-3 w-3" />
-              Editing
-            </Button>
-            <Button
-              variant={viewMode === 'analyzing' ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode('analyzing')}
-              className="gap-1"
-            >
-              <Play className="h-3 w-3" />
-              Analyzing
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Model Overview */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Model Overview
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {stats?.isValid && (
-                <Badge variant="outline" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Valid
-                </Badge>
-              )}
-              {model.decided && (
-                <Badge variant="default" className="gap-1">
-                  <Crown className="h-3 w-3" />
-                  Decided
-                </Badge>
-              )}
-            </div>
-          </div>
-          {model.note && (
-            <CardDescription>{model.note}</CardDescription>
-          )}
-        </CardHeader>
-        
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats?.totalElements || 0}</div>
-              <div className="text-sm text-muted-foreground">Total Elements</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{stats?.evaluatedElements || 0}</div>
-              <div className="text-sm text-muted-foreground">Evaluated</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">
-                {Math.round((stats?.evaluationProgress || 0) * 100)}%
-              </div>
-              <div className="text-sm text-muted-foreground">Progress</div>
-            </div>
-            <div className="text-center">
-              {isDecisionMaking && 'comparisonProgress' in stats! && (
-                <>
-                  <div className="text-2xl font-bold">
-                    {Math.round(stats.comparisonProgress * 100)}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">Comparisons</div>
-                </>
-              )}
-              {isPerformanceReview && 'performanceProgress' in stats! && (
-                <>
-                  <div className="text-2xl font-bold">
-                    {Math.round(stats.performanceProgress * 100)}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">Performance Tracked</div>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mode-Specific Content */}
-      {viewMode === 'editing' ? (
-        <EditingModeContent 
-          model={model} 
-          onModelUpdate={handleModelUpdate}
-        />
-      ) : (
-        <AnalyzingModeContent 
-          model={model} 
-          onModelUpdate={handleModelUpdate}
-        />
-      )}
+    <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+      <Header
+        currentMode={mode}
+        onSetMode={setMode}
+        modelType={model.digitalThinkingModelType}
+        modelName={model.digitalTopic}
+        modelId={model.id}
+      />
+      <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        {renderContent()}
+      </main>
     </div>
   )
 }

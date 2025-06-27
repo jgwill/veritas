@@ -11,91 +11,85 @@ import { Switch } from "@/components/ui/switch"
 import { Plus, Edit, Trash2, Save, X, CheckCircle, AlertCircle } from "lucide-react"
 import dynamic from "next/dynamic"
 
-interface DigitalModel {
-  id: string
-  modelName: string
-  digitalTopic: string
-  digitalThinkingModelType: number
-  twoOnly: boolean
-  decided: boolean
-  valid: boolean
-  autoSaveModel: boolean
-  hasIssue: boolean
-  note?: string
-  model: DigitalElement[]
-}
-
-interface DigitalElement {
-  idug: string
-  nameElement: string
-  displayName: string
-  description: string
-  sortNo: number
-  status: number
-  twoFlag: boolean
-  twoFlagAnswered: boolean
-  threeFlag: number
-  threeFlagAnswered: boolean
-  dominanceFactor: number
-  dominantElementItIS: boolean
-  comparationCompleted: boolean
-  question: boolean
-  comparationTableData: Record<string, number>
-}
+import { type DigitalModel, type DigitalElement, isDecisionMakingModel, DecisionMakingElement, isPerformanceReviewModel, PerformanceReviewElement } from "@/lib/types"
+import ElementCard from "@/components/cards/ElementCard"
+import ComparisonModal from "@/components/ComparisonModal"
+import EditElementDialog from "@/components/EditElementDialog"
+import { ModelMode } from "@/lib/constants"
 
 interface ElementManagerProps {
   model: DigitalModel
-  onModelUpdate: (model: DigitalModel) => void
+  onModelUpdate: (updates: Partial<DigitalModel>) => void
 }
 
 const GeminiAssistant = dynamic(() => import("@/components/GeminiAssistant"), { ssr: false })
 
 export default function ElementManager({ model, onModelUpdate }: ElementManagerProps) {
-  const [editingElement, setEditingElement] = useState<string | null>(null)
-  const [newElement, setNewElement] = useState({
-    nameElement: "",
-    displayName: "",
-    description: "",
-    question: false,
-  })
+  const [editingElement, setEditingElement] = useState<DigitalElement | null>(null)
+  const [comparingElement, setComparingElement] = useState<DecisionMakingElement | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [isEditModalOpen, setEditModalOpen] = useState(false)
+  const [elementToEdit, setElementToEdit] = useState<DigitalElement | null>(null)
 
-  const handleAddElement = async () => {
-    if (!newElement.nameElement.trim() || !newElement.displayName.trim()) {
-      alert("Please fill in the required fields")
-      return
-    }
+  const handleUpdateElement = async (element: DigitalElement, updates: Partial<DigitalElement>) => {
+    // Optimistic UI update
+    const originalModel = { ...model }
+    const updatedElements = model.model.map((el) => (el.idug === element.idug ? { ...el, ...updates } : el))
+    onModelUpdate({ ...model, model: updatedElements })
 
-    setLoading(true)
+    // API call
     try {
-      const response = await fetch(`/api/models/${model.id}/elements`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newElement),
+      const response = await fetch(`/api/models/${model.id}/elements/${element.idug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
       })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-        setNewElement({
-          nameElement: "",
-          displayName: "",
-          description: "",
-          question: false,
-        })
-        setShowNewForm(false)
+      if (!response.ok) {
+        onModelUpdate(originalModel) // Revert on failure
       } else {
-        throw new Error("Failed to add element")
+        const finalModel = await response.json()
+        onModelUpdate(finalModel) // Sync with server state
       }
     } catch (error) {
-      console.error("Error adding element:", error)
-      alert("Failed to add element. Please try again.")
-    } finally {
-      setLoading(false)
+      console.error("Error updating element:", error)
+      onModelUpdate(originalModel)
     }
+  }
+
+  const handleStartCompare = (element: DigitalElement) => {
+    if (isDecisionMakingModel(model)) {
+      setComparingElement(element as DecisionMakingElement)
+    }
+  }
+
+  const handleComparisonComplete = async (
+    baseElement: DecisionMakingElement,
+    results: Record<string, number>,
+  ) => {
+    setComparingElement(null)
+    setLoading(true)
+
+    // In a real app, this logic would likely live in a backend service
+    // For now, mimic the logic of updating all related elements
+    let updatedModel = { ...model }
+    for (const otherId of Object.keys(results)) {
+      const value = results[otherId]
+      const response = await fetch(`/api/models/${model.id}/comparisons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          element1Id: baseElement.idug,
+          element2Id: otherId,
+          value: value,
+        }),
+      })
+      if (response.ok) {
+        updatedModel = await response.json()
+      }
+    }
+    onModelUpdate({ model: updatedModel.model as DigitalElement[] })
+    setLoading(false)
   }
 
   const handleAddElementFromSuggestion = async (el: { nameElement: string; displayName: string; description: string }) => {
@@ -107,100 +101,27 @@ export default function ElementManager({ model, onModelUpdate }: ElementManagerP
       })
       if (response.ok) {
         const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
+        onModelUpdate({ model: updatedModel.model as DigitalElement[] })
       }
     } catch (error) {
       console.error("Error adding suggested element:", error)
     }
   }
 
-  const handleUpdateElement = async (elementId: string, updates: Partial<DigitalElement>) => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/models/${model.id}/elements/${elementId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updates),
-      })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-        setEditingElement(null)
-      } else {
-        throw new Error("Failed to update element")
-      }
-    } catch (error) {
-      console.error("Error updating element:", error)
-      alert("Failed to update element. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const handleOpenEditModal = (element: DigitalElement) => {
+    setElementToEdit(element)
+    setEditModalOpen(true)
   }
 
-  const handleDeleteElement = async (elementId: string) => {
-    if (!confirm("Are you sure you want to delete this element? This will also remove all its comparisons.")) {
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/models/${model.id}/elements/${elementId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-      } else {
-        throw new Error("Failed to delete element")
-      }
-    } catch (error) {
-      console.error("Error deleting element:", error)
-      alert("Failed to delete element. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const handleCloseEditModal = () => {
+    setElementToEdit(null)
+    setEditModalOpen(false)
   }
 
-  const getStatusBadge = (element: DigitalElement) => {
-    if (element.comparationCompleted) {
-      return (
-        <Badge variant="default" className="flex items-center gap-1">
-          <CheckCircle className="w-3 h-3" />
-          Complete
-        </Badge>
-      )
-    }
-    if (element.question) {
-      return (
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          Question
-        </Badge>
-      )
-    }
-    return <Badge variant="outline">Pending</Badge>
-  }
-
-  const getEvaluationValue = (element: DigitalElement) => {
-    if (model.twoOnly) {
-      return element.twoFlagAnswered ? (element.twoFlag ? "Yes" : "No") : "Not Set"
-    } else {
-      if (!element.threeFlagAnswered) return "Not Set"
-      switch (element.threeFlag) {
-        case 1:
-          return "Getting Better"
-        case 0:
-          return "Staying Same"
-        case -1:
-          return "Getting Worse"
-        default:
-          return "Not Set"
-      }
-    }
+  const handleSaveElement = (updatedElement: DigitalElement) => {
+    const updatedElements = model.model.map((el) => (el.idug === updatedElement.idug ? updatedElement : el))
+    onModelUpdate({ model: updatedElements as DigitalElement[] })
+    handleCloseEditModal()
   }
 
   return (
@@ -208,7 +129,11 @@ export default function ElementManager({ model, onModelUpdate }: ElementManagerP
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Elements</h2>
-          <p className="text-muted-foreground">Manage the decision factors or criteria for your model</p>
+          <p className="text-muted-foreground">
+            {isDecisionMakingModel(model)
+              ? "Build your dominance hierarchy. Click 'Compare' on an element to begin."
+              : "Define the elements you want to evaluate in your performance review."}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowNewForm(true)} disabled={showNewForm}>
@@ -226,146 +151,137 @@ export default function ElementManager({ model, onModelUpdate }: ElementManagerP
       </div>
 
       {showNewForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Element</CardTitle>
-            <CardDescription>Create a new decision factor or criterion</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nameElement">Element Name *</Label>
-                  <Input
-                    id="nameElement"
-                    value={newElement.nameElement}
-                    onChange={(e) => setNewElement((prev) => ({ ...prev, nameElement: e.target.value }))}
-                    placeholder="e.g., KitchenFunctionality"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name *</Label>
-                  <Input
-                    id="displayName"
-                    value={newElement.displayName}
-                    onChange={(e) => setNewElement((prev) => ({ ...prev, displayName: e.target.value }))}
-                    placeholder="e.g., Kitchen Functionality"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newElement.description}
-                  onChange={(e) => setNewElement((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe this element in detail..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <Label htmlFor="question" className="font-medium">
-                    Mark as Question
-                  </Label>
-                  <p className="text-sm text-muted-foreground">This element requires user input or clarification</p>
-                </div>
-                <Switch
-                  id="question"
-                  checked={newElement.question}
-                  onCheckedChange={(checked) => setNewElement((prev) => ({ ...prev, question: checked }))}
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <Button onClick={() => setShowNewForm(false)} variant="outline" className="flex-1">
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button onClick={handleAddElement} className="flex-1" disabled={loading}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {loading ? "Adding..." : "Add Element"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <NewElementForm
+          onAdd={(newElement) => {
+            handleAddElementFromSuggestion(newElement)
+            setShowNewForm(false)
+          }}
+          onCancel={() => setShowNewForm(false)}
+        />
       )}
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {model.model.map((element) => (
-          <Card key={element.idug}>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold">{element.displayName}</h3>
-                    {getStatusBadge(element)}
-                    {element.dominantElementItIS && <Badge variant="default">Dominant</Badge>}
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {element.description || "No description provided"}
-                  </p>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Dominance Factor:</span>
-                      <div className="font-medium">{element.dominanceFactor}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Evaluation:</span>
-                      <div className="font-medium">{getEvaluationValue(element)}</div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Status:</span>
-                      <div className="font-medium">
-                        {element.status === 1 ? "Active" : element.status === 3 ? "Evaluated" : "Unknown"}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Comparisons:</span>
-                      <div className="font-medium">
-                        {Object.values(element.comparationTableData).filter((v) => v !== 0).length}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 ml-4">
-                  <Button variant="outline" size="sm" onClick={() => setEditingElement(element.idug)}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteElement(element.idug)}
-                    disabled={loading}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <ElementCard
+            key={element.idug}
+            element={element}
+            mode={ModelMode.EDITING}
+            modelType={model.digitalThinkingModelType}
+            onCompare={handleStartCompare}
+            onEdit={handleOpenEditModal}
+            onUpdate={handleUpdateElement}
+            isComparing={comparingElement?.idug === element.idug}
+          />
         ))}
       </div>
 
-      {model.model.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Plus className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Elements Yet</h3>
-            <p className="text-muted-foreground mb-4">Add your first element to start building your decision model.</p>
-            <Button onClick={() => setShowNewForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Element
-            </Button>
-          </CardContent>
-        </Card>
+      {isDecisionMakingModel(model) && (
+        <ComparisonModal
+          isOpen={!!comparingElement}
+          onClose={() => setComparingElement(null)}
+          comparingElement={comparingElement}
+          otherElements={model.model.filter((el) => el.idug !== comparingElement?.idug) as DecisionMakingElement[]}
+          onComplete={handleComparisonComplete}
+        />
       )}
+
+      <EditElementDialog
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        element={elementToEdit}
+        onSave={handleSaveElement}
+      />
     </div>
+  )
+}
+
+// Sub-component for the new element form to keep the main component cleaner
+function NewElementForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (element: { nameElement: string; displayName: string; description: string; question: boolean }) => void
+  onCancel: () => void
+}) {
+  const [newElement, setNewElement] = useState({
+    nameElement: "",
+    displayName: "",
+    description: "",
+    question: false,
+  })
+
+  const handleAdd = () => {
+    if (!newElement.displayName.trim()) {
+      alert("Display Name is required.")
+      return
+    }
+    // Auto-generate nameElement if empty
+    const finalElement = {
+      ...newElement,
+      nameElement: newElement.nameElement.trim() || newElement.displayName.replace(/\s+/g, ""),
+    }
+    onAdd(finalElement)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Add New Element</CardTitle>
+        <CardDescription>Create a new decision factor or criterion</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="displayName">Display Name *</Label>
+            <Input
+              id="displayName"
+              value={newElement.displayName}
+              onChange={(e) => setNewElement((prev) => ({ ...prev, displayName: e.target.value }))}
+              placeholder="e.g., Kitchen Functionality"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="nameElement">Element Name (auto-generated if blank)</Label>
+            <Input
+              id="nameElement"
+              value={newElement.nameElement}
+              onChange={(e) => setNewElement((prev) => ({ ...prev, nameElement: e.target.value }))}
+              placeholder="e.g., KitchenFunctionality"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={newElement.description}
+            onChange={(e) => setNewElement((prev) => ({ ...prev, description: e.target.value }))}
+            placeholder="Describe this element in detail..."
+            rows={3}
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="question"
+            checked={newElement.question}
+            onCheckedChange={(checked) => setNewElement((prev) => ({ ...prev, question: checked }))}
+          />
+          <Label htmlFor="question">Mark as Question</Label>
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <Button onClick={onCancel} variant="outline">
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button onClick={handleAdd}>
+            <Save className="w-4 h-4 mr-2" />
+            Add Element
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
