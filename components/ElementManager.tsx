@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Edit, Trash2, Save, X, CheckCircle, AlertCircle } from "lucide-react"
+import dynamic from "next/dynamic"
 
 interface DigitalModel {
   id: string
@@ -46,6 +47,8 @@ interface ElementManagerProps {
   model: DigitalModel
   onModelUpdate: (model: DigitalModel) => void
 }
+
+const GeminiAssistant = dynamic(() => import("@/components/GeminiAssistant"), { ssr: false })
 
 export default function ElementManager({ model, onModelUpdate }: ElementManagerProps) {
   const [editingElement, setEditingElement] = useState<string | null>(null)
@@ -92,6 +95,22 @@ export default function ElementManager({ model, onModelUpdate }: ElementManagerP
       alert("Failed to add element. Please try again.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddElementFromSuggestion = async (el: { nameElement: string; displayName: string; description: string }) => {
+    try {
+      const response = await fetch(`/api/models/${model.id}/elements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(el),
+      })
+      if (response.ok) {
+        const updatedModel = await response.json()
+        onModelUpdate(updatedModel)
+      }
+    } catch (error) {
+      console.error("Error adding suggested element:", error)
     }
   }
 
@@ -191,10 +210,19 @@ export default function ElementManager({ model, onModelUpdate }: ElementManagerP
           <h2 className="text-2xl font-bold">Elements</h2>
           <p className="text-muted-foreground">Manage the decision factors or criteria for your model</p>
         </div>
-        <Button onClick={() => setShowNewForm(true)} disabled={showNewForm}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Element
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowNewForm(true)} disabled={showNewForm}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Element
+          </Button>
+          <GeminiAssistant
+            onAddElements={(elements) => {
+              elements.forEach(async (el) => {
+                await handleAddElementFromSuggestion(el)
+              })
+            }}
+          />
+        </div>
       </div>
 
       {showNewForm && (
