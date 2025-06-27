@@ -1,324 +1,321 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, Circle, Minus } from "lucide-react"
-
-interface DigitalModel {
-  id: string
-  modelName: string
-  digitalTopic: string
-  digitalThinkingModelType: number
-  twoOnly: boolean
-  decided: boolean
-  valid: boolean
-  autoSaveModel: boolean
-  hasIssue: boolean
-  note?: string
-  model: DigitalElement[]
-}
-
-interface DigitalElement {
-  idug: string
-  nameElement: string
-  displayName: string
-  description: string
-  sortNo: number
-  status: number
-  twoFlag: boolean
-  twoFlagAnswered: boolean
-  threeFlag: number
-  threeFlagAnswered: boolean
-  dominanceFactor: number
-  dominantElementItIS: boolean
-  comparationCompleted: boolean
-  question: boolean
-  comparationTableData: Record<string, number>
-}
+import { 
+  Check, 
+  X, 
+  Crown, 
+  Target, 
+  AlertCircle,
+  RefreshCw,
+  BarChart3,
+  Eye,
+  EyeOff
+} from "lucide-react"
+import { DecisionMakingModel, DecisionMakingElement } from "@/lib/types"
+import { DecisionMakingService } from "@/lib/services/decision-making"
 
 interface ComparisonMatrixProps {
-  model: DigitalModel
-  onModelUpdate: (model: DigitalModel) => void
+  model: DecisionMakingModel
+  onModelUpdate: (updatedModel: DecisionMakingModel) => void
+  readonly?: boolean
 }
 
-interface ComparisonPair {
-  element1: DigitalElement
-  element2: DigitalElement
-  value: number
-  completed: boolean
-}
+export default function ComparisonMatrix({ model, onModelUpdate, readonly = false }: ComparisonMatrixProps) {
+  const [showCompletedOnly, setShowCompletedOnly] = useState(false)
+  
+  const matrix = useMemo(() => 
+    DecisionMakingService.generateComparisonMatrix(model), 
+    [model]
+  )
 
-export default function ComparisonMatrix({ model, onModelUpdate }: ComparisonMatrixProps) {
-  const [currentPairIndex, setCurrentPairIndex] = useState(0)
-  const [comparisonPairs, setComparisonPairs] = useState<ComparisonPair[]>([])
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    generateComparisonPairs()
-  }, [model])
-
-  const generateComparisonPairs = () => {
-    const pairs: ComparisonPair[] = []
-    const elements = model.model
-
-    for (let i = 0; i < elements.length; i++) {
-      for (let j = i + 1; j < elements.length; j++) {
-        const element1 = elements[i]
-        const element2 = elements[j]
-        const value = element1.comparationTableData[element2.idug] || 0
-
-        pairs.push({
-          element1,
-          element2,
-          value,
-          completed: value !== 0,
-        })
-      }
-    }
-
-    setComparisonPairs(pairs)
-
-    // Find first incomplete comparison
-    const firstIncomplete = pairs.findIndex((pair) => !pair.completed)
-    if (firstIncomplete !== -1) {
-      setCurrentPairIndex(firstIncomplete)
-    }
-  }
-
-  const handleComparison = async (value: number) => {
-    const currentPair = comparisonPairs[currentPairIndex]
-    if (!currentPair) return
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/models/${model.id}/comparisons`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          element1Id: currentPair.element1.idug,
-          element2Id: currentPair.element2.idug,
-          value: value,
-        }),
-      })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-
-        // Move to next incomplete comparison
-        const nextIncomplete = comparisonPairs.findIndex((pair, index) => index > currentPairIndex && !pair.completed)
-        if (nextIncomplete !== -1) {
-          setCurrentPairIndex(nextIncomplete)
-        } else {
-          // All comparisons complete, calculate dominance
-          await calculateDominance()
-        }
-      } else {
-        throw new Error("Failed to save comparison")
-      }
-    } catch (error) {
-      console.error("Error saving comparison:", error)
-      alert("Failed to save comparison. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const calculateDominance = async () => {
-    try {
-      const response = await fetch(`/api/models/${model.id}/calculate`, {
-        method: "POST",
-      })
-
-      if (response.ok) {
-        const updatedModel = await response.json()
-        onModelUpdate(updatedModel)
-      }
-    } catch (error) {
-      console.error("Error calculating dominance:", error)
-    }
-  }
-
-  const getCompletionStats = () => {
-    const completed = comparisonPairs.filter((pair) => pair.completed).length
-    const total = comparisonPairs.length
-    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 }
-  }
-
-  const getComparisonIcon = (value: number) => {
-    switch (value) {
-      case 1:
-        return <CheckCircle className="w-4 h-4 text-green-600" />
-      case -1:
-        return <Circle className="w-4 h-4 text-red-600" />
-      case 0:
-        return <Minus className="w-4 h-4 text-gray-400" />
-      default:
-        return <Circle className="w-4 h-4 text-gray-300" />
-    }
-  }
-
-  if (model.model.length < 2) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <Circle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">Need More Elements</h3>
-          <p className="text-muted-foreground">Add at least 2 elements to start making comparisons.</p>
-        </CardContent>
-      </Card>
+  const handleComparison = (element1Id: string, element2Id: string, decision: 'YES' | 'NO') => {
+    const updatedModel = DecisionMakingService.processComparison(
+      model, 
+      element1Id, 
+      element2Id, 
+      decision
     )
+    onModelUpdate(updatedModel)
   }
 
-  const stats = getCompletionStats()
-  const currentPair = comparisonPairs[currentPairIndex]
+  const handleCalculateDominance = () => {
+    DecisionMakingService.calculateDominanceFactors(model)
+    onModelUpdate({ ...model })
+  }
+
+  const filteredComparisons = useMemo(() => {
+    if (showCompletedOnly) {
+      return matrix.comparisons.filter(comp => comp.isCompleted)
+    }
+    return matrix.comparisons
+  }, [matrix.comparisons, showCompletedOnly])
+
+  const incompletePairs = matrix.comparisons.filter(comp => !comp.isCompleted)
+  const nextComparison = incompletePairs[0]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Pairwise Comparisons</h2>
-        <p className="text-muted-foreground">Compare each element against others to determine relative importance</p>
-      </div>
-
+      {/* Matrix Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Progress</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-600" />
+              <CardTitle>Pairwise Comparison Matrix</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {matrix.completedComparisons} / {matrix.totalComparisons}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCompletedOnly(!showCompletedOnly)}
+                className="gap-1"
+              >
+                {showCompletedOnly ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                {showCompletedOnly ? 'Show All' : 'Completed Only'}
+              </Button>
+            </div>
+          </div>
           <CardDescription>
-            {stats.completed} of {stats.total} comparisons completed
+            Compare elements pairwise to determine hierarchy and dominance factors
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Progress value={stats.percentage} className="mb-2" />
-          <p className="text-sm text-muted-foreground">{Math.round(stats.percentage)}% complete</p>
+        
+        <CardContent className="space-y-4">
+          {/* Progress */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span>Comparison Progress</span>
+              <span>{Math.round((matrix.completedComparisons / matrix.totalComparisons) * 100)}%</span>
+            </div>
+            <Progress value={(matrix.completedComparisons / matrix.totalComparisons) * 100} />
+          </div>
+
+          {/* Consistency Score */}
+          {matrix.completedComparisons > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Consistency Score</span>
+              <Badge 
+                variant={matrix.consistencyScore > 0.8 ? "default" : "destructive"}
+                className="gap-1"
+              >
+                {matrix.consistencyScore > 0.8 ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <AlertCircle className="h-3 w-3" />
+                )}
+                {Math.round(matrix.consistencyScore * 100)}%
+              </Badge>
+            </div>
+          )}
+
+          {/* Calculate Dominance Button */}
+          {matrix.completedComparisons === matrix.totalComparisons && !readonly && (
+            <Button 
+              onClick={handleCalculateDominance}
+              className="w-full gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Calculate Dominance Factors
+            </Button>
+          )}
         </CardContent>
       </Card>
 
-      {stats.completed < stats.total && currentPair && (
-        <Card>
+      {/* Next Comparison Highlight */}
+      {nextComparison && !readonly && (
+        <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
-            <CardTitle>Current Comparison</CardTitle>
+            <CardTitle className="text-lg">Next Comparison</CardTitle>
             <CardDescription>
-              Comparison {currentPairIndex + 1} of {stats.total}
+              Decide which element would make the decision "YES" if you had it but not the other
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div className="flex items-center justify-center gap-4">
-                <div className="flex-1 text-center p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg mb-2">{currentPair.element1.displayName}</h3>
-                  <p className="text-sm text-muted-foreground">{currentPair.element1.description}</p>
-                </div>
-
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-muted-foreground">VS</div>
-                </div>
-
-                <div className="flex-1 text-center p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg mb-2">{currentPair.element2.displayName}</h3>
-                  <p className="text-sm text-muted-foreground">{currentPair.element2.description}</p>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-4">Which element is more important or dominant?</p>
-
-                <div className="flex justify-center gap-3">
-                  <Button
-                    onClick={() => handleComparison(1)}
-                    disabled={loading}
-                    variant="outline"
-                    className="flex-1 max-w-xs"
-                  >
-                    {currentPair.element1.displayName} Dominates
-                  </Button>
-
-                  <Button onClick={() => handleComparison(0)} disabled={loading} variant="outline" className="px-8">
-                    Equal
-                  </Button>
-
-                  <Button
-                    onClick={() => handleComparison(-1)}
-                    disabled={loading}
-                    variant="outline"
-                    className="flex-1 max-w-xs"
-                  >
-                    {currentPair.element2.displayName} Dominates
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ComparisonCard 
+              comparison={nextComparison}
+              onDecision={handleComparison}
+              highlighted={true}
+            />
           </CardContent>
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparison Matrix</CardTitle>
-          <CardDescription>Overview of all pairwise comparisons</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="p-2 text-left border-b">Element</th>
-                  {model.model.map((element) => (
-                    <th key={element.idug} className="p-2 text-center border-b text-xs">
-                      {element.displayName.substring(0, 10)}...
-                    </th>
-                  ))}
-                  <th className="p-2 text-center border-b">Dominance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {model.model.map((element1) => (
-                  <tr key={element1.idug}>
-                    <td className="p-2 border-b font-medium">
-                      <div className="flex items-center gap-2">
-                        {element1.displayName}
-                        {element1.dominantElementItIS && (
-                          <Badge variant="default" className="text-xs">
-                            Dom
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    {model.model.map((element2) => (
-                      <td key={element2.idug} className="p-2 text-center border-b">
-                        {element1.idug === element2.idug ? (
-                          <span className="text-muted-foreground">-</span>
-                        ) : (
-                          getComparisonIcon(element1.comparationTableData[element2.idug] || 0)
-                        )}
-                      </td>
-                    ))}
-                    <td className="p-2 text-center border-b font-bold">{element1.dominanceFactor}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Comparison Grid */}
+      <div className="grid gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            {showCompletedOnly ? 'Completed Comparisons' : 'All Comparisons'}
+          </h3>
+          <span className="text-sm text-muted-foreground">
+            {filteredComparisons.length} comparison{filteredComparisons.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {filteredComparisons.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              {showCompletedOnly 
+                ? "No completed comparisons yet" 
+                : "No comparisons available"
+              }
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3">
+            {filteredComparisons.map((comparison, index) => (
+              <ComparisonCard
+                key={`${comparison.element1.idug}-${comparison.element2.idug}`}
+                comparison={comparison}
+                onDecision={handleComparison}
+                readonly={readonly || comparison.isCompleted}
+                index={index + 1}
+              />
+            ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {stats.completed === stats.total && stats.total > 0 && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-              <div>
-                <h3 className="font-semibold text-green-800">All Comparisons Complete!</h3>
-                <p className="text-sm text-green-700">You can now view the results and rankings in the Results tab.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        )}
+      </div>
     </div>
+  )
+}
+
+interface ComparisonCardProps {
+  comparison: {
+    element1: DecisionMakingElement
+    element2: DecisionMakingElement
+    isCompleted: boolean
+    currentValue?: 'YES' | 'NO'
+  }
+  onDecision: (element1Id: string, element2Id: string, decision: 'YES' | 'NO') => void
+  readonly?: boolean
+  highlighted?: boolean
+  index?: number
+}
+
+function ComparisonCard({ 
+  comparison, 
+  onDecision, 
+  readonly = false, 
+  highlighted = false,
+  index 
+}: ComparisonCardProps) {
+  const { element1, element2, isCompleted, currentValue } = comparison
+
+  return (
+    <Card className={`${highlighted ? 'ring-2 ring-blue-500 shadow-lg' : ''}`}>
+      <CardContent className="p-4">
+        <div className="space-y-4">
+          {/* Comparison Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {index && (
+                <Badge variant="outline" className="text-xs">
+                  {index}
+                </Badge>
+              )}
+              <span className="font-medium">
+                {highlighted ? 'Current Comparison' : 'Element Comparison'}
+              </span>
+            </div>
+            {isCompleted && (
+              <Badge variant="default" className="gap-1">
+                <Check className="h-3 w-3" />
+                Completed
+              </Badge>
+            )}
+          </div>
+
+          {/* Question Framework */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="text-sm font-medium mb-2">Decision Question:</p>
+            <p className="text-sm text-gray-600">
+              "If you have <strong>{element1.displayName}</strong> but don't have{" "}
+              <strong>{element2.displayName}</strong>, would the decision be YES or NO?"
+            </p>
+          </div>
+
+          {/* Elements Display */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="font-medium">{element1.displayName}</span>
+                {element1.dominantElementItIS && (
+                  <Crown className="h-3 w-3 text-yellow-500" />
+                )}
+              </div>
+              <p className="text-xs text-gray-600">{element1.description}</p>
+              {element1.dominanceFactor > 0 && (
+                <Badge variant="outline" className="mt-1 text-xs">
+                  Dominance: {element1.dominanceFactor}
+                </Badge>
+              )}
+            </div>
+
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="font-medium">{element2.displayName}</span>
+                {element2.dominantElementItIS && (
+                  <Crown className="h-3 w-3 text-yellow-500" />
+                )}
+              </div>
+              <p className="text-xs text-gray-600">{element2.description}</p>
+              {element2.dominanceFactor > 0 && (
+                <Badge variant="outline" className="mt-1 text-xs">
+                  Dominance: {element2.dominanceFactor}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Decision Buttons */}
+          {!readonly && (
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant={currentValue === 'YES' ? "default" : "outline"}
+                onClick={() => onDecision(element1.idug, element2.idug, 'YES')}
+                className="gap-2 flex-1"
+              >
+                <Check className="h-4 w-4" />
+                YES - Choose {element1.displayName}
+              </Button>
+              <Button
+                variant={currentValue === 'NO' ? "destructive" : "outline"}
+                onClick={() => onDecision(element1.idug, element2.idug, 'NO')}
+                className="gap-2 flex-1"
+              >
+                <X className="h-4 w-4" />
+                NO - Choose {element2.displayName}
+              </Button>
+            </div>
+          )}
+
+          {/* Current Decision Display */}
+          {readonly && isCompleted && currentValue && (
+            <div className="text-center">
+              <Badge 
+                variant={currentValue === 'YES' ? "default" : "destructive"}
+                className="gap-1"
+              >
+                {currentValue === 'YES' ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <X className="h-3 w-3" />
+                )}
+                Decision: {currentValue} - {currentValue === 'YES' ? element1.displayName : element2.displayName}
+              </Badge>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
