@@ -1,5 +1,4 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 
@@ -70,6 +69,7 @@ const DecisionDashboard: React.FC<{ model: DigitalModel, theme: 'light' | 'dark'
 
 // Component for Performance Review Model (Type 2)
 const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
+  const [copyStatus, setCopyStatus] = useState('Copy Summary');
   const sortedElements = useMemo(() => {
     return [...model.Model].sort((a, b) => {
         // Primary sort: unacceptable vs acceptable
@@ -87,35 +87,137 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
     });
   }, [model]);
 
+  const { tiers, textToCopy } = useMemo(() => {
+    const tierConfig: { [key: string]: { label: string; elements: DigitalElement[]; color: string } } = {
+        A: { label: 'Critical Focus', elements: [], color: 'text-red-500 dark:text-red-400' },
+        B: { label: 'Urgent Focus', elements: [], color: 'text-orange-500 dark:text-orange-400' },
+        C: { label: 'Proactive Watch', elements: [], color: 'text-yellow-500 dark:text-yellow-400' },
+        D: { label: 'Monitor', elements: [], color: 'text-blue-500 dark:text-blue-400' },
+        E: { label: 'Maintain', elements: [], color: 'text-green-500 dark:text-green-400' },
+        Uncategorized: { label: 'Not Evaluated', elements: [], color: 'text-gray-500 dark:text-gray-400' }
+    };
+
+    let textOutput = `Digital Performance Review: Focus Hierarchy\n${'='.repeat(40)}\n\n`;
+    let elementCounter = 1;
+
+    sortedElements.forEach(el => {
+        if (!el.TwoFlagAnswered) {
+            tierConfig.Uncategorized.elements.push(el);
+            return;
+        }
+
+        const isUnacceptable = !el.TwoFlag;
+        const isAcceptable = el.TwoFlag;
+        const isDeclining = el.ThreeFlagAnswered && el.ThreeFlag === -1;
+        const isStable = el.ThreeFlagAnswered && el.ThreeFlag === 0;
+        const isImproving = el.ThreeFlagAnswered && el.ThreeFlag === 1;
+
+        if (isUnacceptable && isDeclining) tierConfig.A.elements.push(el);
+        else if (isUnacceptable) tierConfig.B.elements.push(el);
+        else if (isAcceptable && isDeclining) tierConfig.C.elements.push(el);
+        else if (isAcceptable && isStable) tierConfig.D.elements.push(el);
+        else if (isAcceptable && isImproving) tierConfig.E.elements.push(el);
+        else tierConfig.Uncategorized.elements.push(el);
+    });
+    
+    Object.entries(tierConfig).forEach(([key, tierData]) => {
+        if (tierData.elements.length > 0) {
+            textOutput += `TIER ${key}: ${tierData.label.toUpperCase()}\n`;
+            tierData.elements.forEach(el => {
+                textOutput += `${elementCounter}::${key}:${el.DisplayName}\n`;
+                elementCounter++;
+            });
+            textOutput += '\n';
+        }
+    });
+
+    return { tiers: tierConfig, textToCopy: textOutput };
+  }, [sortedElements]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        setCopyStatus('Copied!');
+        setTimeout(() => setCopyStatus('Copy Summary'), 2000);
+    });
+  };
+
+  const getPerformanceItemStyle = (element: DigitalElement) => {
+    const isUnacceptable = element.TwoFlagAnswered && !element.TwoFlag;
+    const trend = element.ThreeFlagAnswered ? element.ThreeFlag : 0;
+
+    if (isUnacceptable && trend === -1) return 'bg-red-100 dark:bg-red-900/40 border-l-4 border-red-500 dark:border-red-600'; // Critical
+    if (isUnacceptable) return 'bg-orange-100 dark:bg-orange-900/30 border-l-4 border-orange-500 dark:border-orange-600'; // Urgent
+    if (trend === -1) return 'bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 dark:border-yellow-600'; // Warning
+    if (trend === 1) return 'bg-green-100 dark:bg-green-900/20 border-l-4 border-green-400 dark:border-green-700'; // Good
+    return 'bg-white dark:bg-gray-800 border-l-4 border-gray-300 dark:border-gray-700'; // Neutral
+  };
+
   const TrendIndicator = ({ element }: { element: DigitalElement }) => {
-    if (!element.ThreeFlagAnswered) return <span className="text-gray-400 dark:text-gray-500">-</span>;
-    if (element.ThreeFlag === 1) return <span className="text-green-500 flex items-center"><TrendingUpIcon/> Improving</span>;
-    if (element.ThreeFlag === -1) return <span className="text-red-500 flex items-center"><TrendingDownIcon/> Declining</span>;
-    return <span className="text-yellow-500 flex items-center"><MinusIcon/> Stable</span>;
+    if (!element.ThreeFlagAnswered) {
+        return <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">Not Set</span>;
+    }
+    switch (element.ThreeFlag) {
+        case 1:
+            return <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"><TrendingUpIcon/> Improving</span>;
+        case -1:
+            return <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"><TrendingDownIcon/> Declining</span>;
+        default:
+            return <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"><MinusIcon/> Stable</span>;
+    }
   };
   
   return (
-     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-       <h3 className="font-semibold mb-4 text-tandt-dark dark:text-gray-100">Prioritized Action List</h3>
-       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Items are prioritized by their status (Unacceptable first) and then by their performance trend (Declining first).</p>
-       <div className="space-y-3">
-        {sortedElements.map(el => (
-          <div key={el.Idug} className="border dark:border-gray-700 rounded-lg p-3 flex items-center justify-between">
-            <div>
-              <p className="font-semibold dark:text-gray-200">{el.DisplayName}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{el.Description}</p>
-            </div>
-            <div className="flex items-center space-x-4 text-sm">
-                {el.TwoFlagAnswered && !el.TwoFlag ? (
-                    <span className="font-bold text-red-600 bg-red-100 dark:bg-red-900/50 dark:text-red-300 px-3 py-1 rounded-full">Unacceptable</span>
-                ) : (
-                    <span className="font-bold text-green-600 bg-green-100 dark:bg-green-900/50 dark:text-green-300 px-3 py-1 rounded-full">Acceptable</span>
-                )}
-                <TrendIndicator element={el} />
-            </div>
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* --- Column 1: Focus Hierarchy --- */}
+        <div className="lg:col-span-1 bg-white dark:bg-gray-800/50 p-6 rounded-lg shadow-sm h-fit sticky top-24 border dark:border-gray-700">
+          <h3 className="font-semibold mb-2 text-tandt-dark dark:text-gray-100">Focus Hierarchy</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">A tiered priority list based on your analysis.</p>
+          <div className="space-y-4">
+            {Object.entries(tiers).map(([key, tierData]) => (
+                tierData.elements.length > 0 && (
+                    <div key={key}>
+                        <h4 className={`text-sm font-bold uppercase tracking-wider ${tierData.color}`}>{`Tier ${key}: ${tierData.label}`}</h4>
+                        <ul className="mt-1 list-none space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            {tierData.elements.map((el, index) => <li key={el.Idug} className="pl-2 border-l-2 border-gray-300 dark:border-gray-600">{el.DisplayName}</li>)}
+                        </ul>
+                    </div>
+                )
+            ))}
           </div>
-        ))}
-       </div>
+          <hr className="my-6 dark:border-gray-700" />
+          <button
+            onClick={handleCopy}
+            className="w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+          >
+            {copyStatus}
+          </button>
+        </div>
+
+        {/* --- Column 2: Detailed List --- */}
+        <div className="lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+                <h3 className="font-semibold mb-2 text-tandt-dark dark:text-gray-100">Prioritized Action List</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Items are prioritized by status (Unacceptable first) and trend (Declining first).</p>
+                <div className="space-y-3">
+                {sortedElements.map(el => (
+                <div key={el.Idug} className={`shadow-sm rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between transition-colors duration-300 ${getPerformanceItemStyle(el)}`}>
+                    <div className="flex-grow mb-3 sm:mb-0">
+                    <p className="font-semibold dark:text-gray-200">{el.DisplayName}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{el.Description}</p>
+                    </div>
+                    <div className="flex items-center space-x-2 sm:space-x-4 text-sm flex-shrink-0">
+                        {el.TwoFlagAnswered && !el.TwoFlag ? (
+                            <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Unacceptable</span>
+                        ) : (
+                            <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Acceptable</span>
+                        )}
+                        <TrendIndicator element={el} />
+                    </div>
+                </div>
+                ))}
+            </div>
+            </div>
+        </div>
      </div>
   );
 };

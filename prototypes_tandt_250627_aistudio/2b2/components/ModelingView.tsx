@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DigitalModel, DigitalElement, AppMode } from '../types';
 import ElementCard from './ElementCard';
@@ -142,7 +141,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
                     }
                 </p>
             </div>
-            <GeminiAssistant onAddElements={handleAddElements} />
+            <GeminiAssistant onAddElements={handleAddElements} modelType={model.DigitalThinkingModelType} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
