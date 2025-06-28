@@ -13,22 +13,22 @@ This phase focuses on building the fundamental features required for a user to c
 - [x] **Data Structures**: Define TypeScript interfaces for `DigitalModel` and `DigitalElement`.
 - [x] **Model Loading**: Implement functionality to load pre-defined model data (`Decision Making` & `Performance Review`).
 - [x] **Mode Switching UI**: Create the main header with navigation between "Modeling", "Analyzing", and "Structuring/Dashboard" modes.
-- [*] **Modeling View**:
+- [x] **Modeling View**:
   - [x] Display all model elements as interactive cards.
-  - [*] **Full Text Editing**: Allow editing of element titles and descriptions via a modal.
+  - [x] **Full Text Editing**: Allow editing of element titles and descriptions via a modal.
   - [x] **For Decision Making Models**:
       - [x] Implement the core pairwise comparison mechanism via a modal.
       - [x] Update `ComparationTableData` and `DominanceFactor` based on user input.
       - [x] Update comparison modal prompt to reflect a trade-off question.
   - [x] **For Performance Review Models**:
       - [x] Simplify the view to hide all comparison and dominance-related UI elements.
-- [*] **Analyzing View**:
+- [x] **Analyzing View**:
   - [x] Differentiate UI controls based on `DigitalThinkingModelType`.
     - **Decision Making (Type 1)**: Show only Acceptable/Unacceptable (👍/👎) controls.
     - **Performance Review (Type 2)**: Show both Acceptable/Unacceptable (👍/👎) and Trend (📈/➖/📉) controls.
   - [x] Implement the core decision algorithm for Decision Making models.
   - [x] Display a context-aware title (e.g., "Decision Is:" vs. "Analysis Summary").
-- [*] **Dashboard/Structuring View**:
+- [x] **Dashboard/Structuring View**:
   - [x] **For Decision Making Models**:
       - [x] Create a bar chart to visualize the `DominanceFactor` of each element.
       - [x] Display a simple ranked list of elements.
@@ -47,7 +47,7 @@ This phase focuses on building the fundamental features required for a user to c
   - [x] UI to input a topic.
   - [x] Service call to Gemini API to generate a JSON list of relevant factors.
   - [x] Functionality to add the suggested elements to the current model.
-  - [ ] Tweak Gemini prompt based on the `DigitalThinkingModelType`.
+  - [x] Tweak Gemini prompt based on the `DigitalThinkingModelType`.
 
 ---
 
@@ -56,8 +56,8 @@ This phase focuses on building the fundamental features required for a user to c
 This phase builds on the MVP to enhance the user experience, add more detailed analysis views, and introduce persistence.
 
 ### Features
-- [ ] **Full Three-State Analysis**: Incorporate the `ThreeFlag` (trend) data into the Performance Dashboard with better visuals.
-- [ ] **"You Have / You Don't Have" View**: For Decision Making models, create the detailed summary screen seen in mockups, showing which criteria are met and which are not.
+- [x] **Full Three-State Analysis**: Incorporate the `ThreeFlag` (trend) data into the Performance Dashboard with better visuals.
+- [x] **"You Have / You Don't Have" View**: For Performance Review models, create the detailed Focus Hierarchy summary screen to clearly show which areas need attention based on the analysis.
 - [ ] **Model Management**:
     - [ ] Create a dedicated landing page to list, create, edit, and delete models.
     - [ ] Implement a guided model creation workflow (choosing type, step-by-step element addition).
