@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { suggestElementsFromTopic } from '../services/geminiService';
 
 interface GeminiAssistantProps {
   onAddElements: (elements: { name: string; description: string }[]) => void;
+  modelType: number;
 }
 
-const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ onAddElements }) => {
+const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ onAddElements, modelType }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [topic, setTopic] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +20,7 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ onAddElements }) => {
     setIsLoading(true);
     setError('');
     try {
-      const suggestedElements = await suggestElementsFromTopic(topic);
+      const suggestedElements = await suggestElementsFromTopic(topic, modelType);
       if (suggestedElements.length > 0) {
         onAddElements(suggestedElements);
         setIsOpen(false);
@@ -56,15 +56,15 @@ const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ onAddElements }) => {
           <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white">&times;</button>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">Enter a topic for your decision, and Gemini will suggest relevant elements to compare.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Enter a topic for your model, and Gemini will suggest relevant elements.</p>
           <div>
-            <label htmlFor="topic" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Decision Topic</label>
+            <label htmlFor="topic" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Model Topic</label>
             <input
               type="text"
               id="topic"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Choosing a new car"
+              placeholder="e.g., Choosing a new car, Quarterly Sales Review"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-tandt-dark dark:text-white rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
