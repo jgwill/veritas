@@ -76,6 +76,24 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
     setEditingElement(null);
   };
   
+  const handleDeleteElement = (elementIdToDelete: string) => {
+    const newModelElements = model.Model.filter(el => el.Idug !== elementIdToDelete);
+
+    if (model.DigitalThinkingModelType === 1) {
+      // For decision models, also remove the deleted element from all comparison tables
+      const cleanedModelElements = newModelElements.map(el => {
+        const newComparationTableData = { ...el.ComparationTableData };
+        delete newComparationTableData[elementIdToDelete];
+        return { ...el, ComparationTableData: newComparationTableData };
+      });
+      onUpdateModel({ ...model, Model: cleanedModelElements });
+    } else {
+      // For performance models, just update the element list
+      onUpdateModel({ ...model, Model: newModelElements });
+    }
+    setEditingElement(null);
+  };
+
   const handleAddElements = (newElements: { name: string; description: string }[]) => {
       const newDigitalElements: DigitalElement[] = newElements.map((el, index) => {
         const idug = `new-${Date.now()}-${index}`;
@@ -172,6 +190,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
                 element={editingElement}
                 onClose={() => setEditingElement(null)}
                 onSave={handleSaveEdit}
+                onDelete={handleDeleteElement}
             />
         )}
     </div>
