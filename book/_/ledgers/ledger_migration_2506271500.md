@@ -2,6 +2,9 @@
 
 
 
+## @miadisabelle 
+
+* The AI Bellow says he completed the work but that is not the case, great analysis and demonstration of problem-solving skills,haha (describing the problem and not really making it working) the  'DigitalThinkingModelType' is still not working.  @stcmastery I think they need more work in understanding and that spiral task I wanted them todo with the old version, they are sloppy (or I give inadequate input) doing it, the concepts of SpecLang is not necessarely understood would be the cause I think, therefore creating this app using what they think is the 'specs' I asked caused things like that (or it is just one of that cycle of developping bunch or specLang files, you dont get what you want, therefore, you need to keep working on refining them.)  so the state bellow is not adequate to complete my REVIEW of the LLM's Work.
 
 
 ## Current State: COMPLETED ✅ + POST-MIGRATION FIXES
