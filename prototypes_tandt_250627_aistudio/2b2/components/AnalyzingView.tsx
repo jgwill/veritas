@@ -1,7 +1,7 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement, AppMode } from '../types';
 import ElementCard from './ElementCard';
+import { generateAnalysisSummary } from '../services/geminiService';
 
 interface AnalyzingViewProps {
   model: DigitalModel;
@@ -10,6 +10,28 @@ interface AnalyzingViewProps {
 
 const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model, onUpdateElement }) => {
   const isDecisionModel = model.DigitalThinkingModelType === 1;
+
+  // State for AI summary
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const hasAnalysisData = useMemo(() => model.Model.some(el => el.TwoFlagAnswered), [model]);
+
+  const handleGetSummary = async () => {
+      setIsSummaryLoading(true);
+      setSummaryError(null);
+      setAiSummary(null);
+      try {
+          const summary = await generateAnalysisSummary(model);
+          setAiSummary(summary);
+      } catch (error: any) {
+          setSummaryError(error.message || "An unknown error occurred.");
+      } finally {
+          setIsSummaryLoading(false);
+      }
+  };
+
 
   const decision = useMemo(() => {
     if (!isDecisionModel) return null;
@@ -40,10 +62,42 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model, onUpdateElement })
       </div>
     );
   };
+  
+  const AiSummaryCard = () => (
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6 border border-dashed border-purple-400 dark:border-purple-600">
+          <div className="flex items-center mb-4">
+              <SparklesIcon />
+              <h3 className="ml-3 text-lg font-bold text-tandt-dark dark:text-gray-100">AI Analysis Insight</h3>
+          </div>
+          {isSummaryLoading && (
+              <div className="flex items-center text-gray-500 dark:text-gray-400">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
+                  <span className="ml-3">The AI is analyzing the data...</span>
+              </div>
+          )}
+          {summaryError && <p className="text-red-600 dark:text-red-400">{summaryError}</p>}
+          {aiSummary && <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{aiSummary}</p>}
+      </div>
+  );
 
   return (
     <div>
       <AnalysisHeader />
+      
+      {hasAnalysisData && (
+          <div className="mb-6 flex justify-center">
+              <button
+                  onClick={handleGetSummary}
+                  disabled={isSummaryLoading}
+                  className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-wait"
+              >
+                  {isSummaryLoading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <SparklesIcon />}
+                  <span className="ml-2">{isSummaryLoading ? 'Analyzing...' : 'Get AI Summary'}</span>
+              </button>
+          </div>
+      )}
+
+      {(aiSummary || isSummaryLoading || summaryError) && <AiSummaryCard />}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {model.Model.map((element) => (
@@ -59,5 +113,9 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model, onUpdateElement })
     </div>
   );
 };
+
+
+// Icons needed for the new components
+const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 2a1 1 0 00-1 1v1.586l-1.707 1.707A1 1 0 003 8v4a1 1 0 00.293.707L5 14.414V16a1 1 0 001 1h1.586l1.707 1.707A1 1 0 0012 17h4a1 1 0 00.707-.293l1.707-1.707H19a1 1 0 001-1v-1.586l1.707-1.707A1 1 0 0017 8V4a1 1 0 00-.293-.707L15 1.586V0a1 1 0 00-1-1h-1.586l-1.707-1.707A1 1 0 008 1H4a1 1 0 00-.707.293L1.586 3H0a1 1 0 00-1 1zm14 11.586l-1.293 1.293A1 1 0 0017 16v1a1 1 0 01-1 1h-1.586l-1.293 1.293A1 1 0 0110 19H6a1 1 0 01-.707-.293L4 17.414V19a1 1 0 01-1 1H1.586l-1.293 1.293A1 1 0 01-2 21H-6a1 1 0 01-.707-.293L-8 19.414V21a1 1 0 01-1 1h-1.586l-1.293 1.293A1 1 0 01-14 21H-18a1 1 0 01-.707-.293L-20 19.414V21" transform="translate(10, -5) rotate(15)" clipRule="evenodd" /></svg>;
 
 export default AnalyzingView;

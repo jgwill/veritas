@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { DigitalModel } from "../types";
 
 const API_KEY = process.env.API_KEY;
 
@@ -172,4 +173,68 @@ export const generateModelFromDescription = async (description: string, modelTyp
     console.error("Failed to generate model from description via Gemini:", error);
     throw error;
   }
+};
+
+export const generateAnalysisSummary = async (model: DigitalModel): Promise<string> => {
+    if (!API_KEY) {
+        console.log("Using mock data for Gemini analysis summary.");
+        return model.DigitalThinkingModelType === 1 
+            ? "This is a mock decision summary. The decision is YES because all critical factors seem to be in order based on the provided mock analysis."
+            : "This is a mock performance summary. Key areas to focus on are 'Declining Locus of Control' and the 'Regulatory Environment' based on the mock analysis.";
+    }
+
+    const isDecisionModel = model.DigitalThinkingModelType === 1;
+
+    // Create a concise summary of the model state to send to the AI
+    const analysisData = model.Model
+        .filter(el => el.TwoFlagAnswered) // Only include evaluated elements
+        .map(el => {
+            let status = `Status: ${el.TwoFlag ? 'Acceptable' : 'Unacceptable'}`;
+            if (!isDecisionModel && el.ThreeFlagAnswered) {
+                const trend = el.ThreeFlag === 1 ? 'Improving' : (el.ThreeFlag === -1 ? 'Declining' : 'Stable');
+                status += `, Trend: ${trend}`;
+            }
+            if (isDecisionModel) {
+                status += `, Dominance Factor: ${el.DominanceFactor}`;
+            }
+            return `- ${el.DisplayName}: ${status}`;
+        }).join('\n');
+    
+    if (analysisData.length === 0) {
+        return "No elements have been evaluated yet. Please evaluate at least one element to get a summary.";
+    }
+
+    const prompt = isDecisionModel
+    ? `
+        You are an expert strategic consultant. Below is a "Decision Making" model analysis for the topic "${model.DigitalTopic}".
+        A decision is "NO" if any highly dominant factor is "Unacceptable". Otherwise, it's "YES".
+        Based *only* on the provided data, generate a concise, natural-language summary explaining the final decision.
+        Start by stating the decision (e.g., "The analysis points to a clear 'YES' decision."). Then, explain the one or two most critical reasons why.
+        Do not invent information. Be direct and insightful.
+
+        Analysis Data:
+        ${analysisData}
+    `
+    : `
+        You are an expert management consultant. Below is a "Performance Review" analysis for the topic "${model.DigitalTopic}".
+        The goal is to identify the most critical areas needing attention. Priority should be given to items that are "Unacceptable", especially if they are also "Declining".
+        Based *only* on the provided data, generate a concise, natural-language summary.
+        Highlight the top 1-3 most urgent priorities and briefly explain why they are critical.
+        If all items are acceptable and stable/improving, provide a positive summary.
+        Do not invent information. Be direct and actionable.
+
+        Analysis Data:
+        ${analysisData}
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-04-17",
+            contents: prompt,
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Failed to fetch analysis summary from Gemini:", error);
+        throw new Error("The AI analyst is currently unavailable. Please try again later.");
+    }
 };
