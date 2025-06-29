@@ -1,11 +1,17 @@
+
 import React, { useState } from 'react';
+import { useAppStore } from '../store';
 
 interface CreateNewModelModalProps {
-    onClose: () => void;
-    onCreate: (config: { name?: string, description?: string, type: number, useAi: boolean }) => void;
+    // All props removed, will use store
 }
 
-const CreateNewModelModal: React.FC<CreateNewModelModalProps> = ({ onClose, onCreate }) => {
+const CreateNewModelModal: React.FC<CreateNewModelModalProps> = () => {
+    const { onClose, onCreate } = useAppStore(state => ({
+        onClose: () => state.setIsCreatingModel(false),
+        onCreate: state.createModel
+    }));
+
     const [creationMode, setCreationMode] = useState<'manual' | 'ai'>('manual');
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');

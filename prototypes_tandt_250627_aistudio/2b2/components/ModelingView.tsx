@@ -1,19 +1,21 @@
+
 import React, { useState } from 'react';
 import { DigitalModel, DigitalElement, AppMode } from '../types';
 import ElementCard from './ElementCard';
 import HierarchyBuilderModal from './ComparisonModal';
 import EditElementModal from './EditElementModal';
 import GeminiAssistant from './GeminiAssistant';
+import { useAppStore } from '../store';
 
 interface ModelingViewProps {
   model: DigitalModel;
-  onSaveModel: (model: DigitalModel) => void;
 }
 
-const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
+const ModelingView: React.FC<ModelingViewProps> = ({ model }) => {
   const [comparingElement, setComparingElement] = useState<DigitalElement | null>(null);
   const [editingElement, setEditingElement] = useState<DigitalElement | null>(null);
 
+  const saveModel = useAppStore(state => state.saveModel);
   const isDecisionModel = model.DigitalThinkingModelType === 1;
 
   const handleStartCompare = (element: DigitalElement) => {
@@ -60,7 +62,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
         return { ...el, DominanceFactor: newDominanceFactor };
     });
 
-    onSaveModel({ ...model, Model: finalElements });
+    saveModel({ ...model, Model: finalElements });
     setComparingElement(null);
   };
 
@@ -72,7 +74,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
     const newElements = model.Model.map(el =>
       el.Idug === updatedElement.Idug ? updatedElement : el
     );
-    onSaveModel({ ...model, Model: newElements });
+    saveModel({ ...model, Model: newElements });
     setEditingElement(null);
   };
   
@@ -89,7 +91,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
       });
     }
     
-    onSaveModel({ ...model, Model: newModelElements });
+    saveModel({ ...model, Model: newModelElements });
     setEditingElement(null);
   };
 
@@ -149,7 +151,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
         updatedModelElements.push(...newDigitalElements);
       }
       
-      onSaveModel({ ...model, Model: updatedModelElements });
+      saveModel({ ...model, Model: updatedModelElements });
   };
 
 

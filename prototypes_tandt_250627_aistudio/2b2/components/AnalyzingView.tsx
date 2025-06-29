@@ -1,15 +1,17 @@
+
 import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement, AppMode } from '../types';
 import ElementCard from './ElementCard';
 import { generateAnalysisSummary } from '../services/geminiService';
+import { useAppStore } from '../store';
 
 interface AnalyzingViewProps {
   model: DigitalModel;
-  onUpdateElement: (element: DigitalElement) => void;
 }
 
-const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model, onUpdateElement }) => {
+const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model }) => {
   const isDecisionModel = model.DigitalThinkingModelType === 1;
+  const updateElement = useAppStore(state => state.updateElement);
 
   // State for AI summary
   const [aiSummary, setAiSummary] = useState<string | null>(null);
@@ -105,7 +107,7 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model, onUpdateElement })
             key={element.Idug} 
             element={element} 
             mode={AppMode.Analyzing} 
-            onUpdate={onUpdateElement}
+            onUpdate={updateElement}
             modelType={model.DigitalThinkingModelType}
           />
         ))}

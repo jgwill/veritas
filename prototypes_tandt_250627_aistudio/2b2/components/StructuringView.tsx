@@ -1,14 +1,17 @@
+
 import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { useAppStore } from '../store';
 
 interface StructuringViewProps {
   model: DigitalModel;
-  theme: 'light' | 'dark';
 }
 
 // Component for Decision Making Model (Type 1)
-const DecisionDashboard: React.FC<{ model: DigitalModel, theme: 'light' | 'dark' }> = ({ model, theme }) => {
+const DecisionDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
+  const theme = useAppStore(state => state.theme);
+  
   const chartData = useMemo(() => {
     return [...model.Model]
       .sort((a, b) => a.DominanceFactor - b.DominanceFactor)
@@ -222,7 +225,7 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
   );
 };
 
-const StructuringView: React.FC<StructuringViewProps> = ({ model, theme }) => {
+const StructuringView: React.FC<StructuringViewProps> = ({ model }) => {
   const isDecisionModel = model.DigitalThinkingModelType === 1;
 
   return (
@@ -238,7 +241,7 @@ const StructuringView: React.FC<StructuringViewProps> = ({ model, theme }) => {
       </div>
       
       {isDecisionModel 
-        ? <DecisionDashboard model={model} theme={theme} /> 
+        ? <DecisionDashboard model={model} /> 
         : <PerformanceDashboard model={model} />
       }
     </div>

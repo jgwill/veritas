@@ -1,14 +1,10 @@
 
 import React from 'react';
 import { AppMode } from '../types';
+import { useAppStore } from '../store';
 
 interface HeaderProps {
-  currentMode: AppMode;
-  onSetMode: (mode: AppMode) => void;
-  onGoBack: () => void;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
-  modelName: string;
+  // All props removed, will use store
 }
 
 const ModeButton: React.FC<{
@@ -30,7 +26,16 @@ const ModeButton: React.FC<{
   </button>
 );
 
-const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onGoBack, theme, onToggleTheme, modelName }) => {
+const Header: React.FC<HeaderProps> = () => {
+  const { currentMode, setMode, onGoBack, theme, onToggleTheme, modelName } = useAppStore(state => ({
+    currentMode: state.mode,
+    setMode: state.setMode,
+    onGoBack: state.closeModel,
+    theme: state.theme,
+    onToggleTheme: state.toggleTheme,
+    modelName: state.model?.DigitalTopic || ''
+  }));
+
   return (
     <header className="bg-tandt-light dark:bg-gray-800 shadow-md sticky top-0 z-20 border-b border-tandt-border dark:border-gray-700">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,19 +54,19 @@ const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onGoBack, theme
                 <ModeButton
                 label={AppMode.Modeling}
                 currentMode={currentMode}
-                onClick={onSetMode}
+                onClick={setMode}
                 icon={<PencilSquareIcon />}
                 />
                 <ModeButton
                 label={AppMode.Analyzing}
                 currentMode={currentMode}
-                onClick={onSetMode}
+                onClick={setMode}
                 icon={<MagnifyingGlassIcon />}
                 />
                 <ModeButton
                 label={AppMode.Structuring}
                 currentMode={currentMode}
-                onClick={onSetMode}
+                onClick={setMode}
                 icon={<ChartBarIcon />}
                 />
             </div>

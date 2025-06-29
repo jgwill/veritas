@@ -1,15 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ModelSummary, ModelId } from '../types';
+import { useAppStore } from '../store';
 
 interface ModelListViewProps {
-    models: ModelSummary[];
-    isLoading: boolean;
-    onLoadModel: (modelId: ModelId) => void;
-    onDeleteModel: (modelId: ModelId) => void;
-    onNewModel: () => void;
-    theme: 'light' | 'dark';
-    onToggleTheme: () => void;
+  // All props removed, will use store
 }
 
 const ModelTypeBadge: React.FC<{ type: number }> = ({ type }) => {
@@ -84,7 +79,24 @@ const NewModelCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 );
 
 
-const ModelListView: React.FC<ModelListViewProps> = ({ models, isLoading, onLoadModel, onDeleteModel, onNewModel, theme, onToggleTheme }) => {
+const ModelListView: React.FC<ModelListViewProps> = () => {
+    const { 
+        models, 
+        isLoading, 
+        onLoadModel, 
+        onDeleteModel, 
+        onNewModel, 
+        theme, 
+        onToggleTheme 
+    } = useAppStore(state => ({
+        models: state.availableModels,
+        isLoading: state.isLoading,
+        onLoadModel: state.loadModel,
+        onDeleteModel: state.deleteModel,
+        onNewModel: () => state.setIsCreatingModel(true),
+        theme: state.theme,
+        onToggleTheme: state.toggleTheme
+    }));
 
     return (
         <div className="min-h-screen bg-tandt-bg dark:bg-gray-900">
@@ -117,7 +129,7 @@ const ModelListView: React.FC<ModelListViewProps> = ({ models, isLoading, onLoad
 // Icons
 const SunIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-2.12 6.536a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM4.95 6.364a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM3 11a1 1 0 100-2H2a1 1 0 100 2h1zM6.364 15.05a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>;
 const MoonIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>;
-const PlusIcon = () => <svg xmlns="http://www.w.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>;
+const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 
 export default ModelListView;

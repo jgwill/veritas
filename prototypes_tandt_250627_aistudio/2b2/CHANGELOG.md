@@ -70,4 +70,15 @@ Updated the StructuringView component to include a detailed performance dashboar
 - **Service Layer**: Implemented a new `generateAnalysisSummary` function in `geminiService.ts`. It uses context-aware prompts tailored to "Decision Making" and "Performance Review" models to generate relevant insights.
 - **UI/UX**: The "Analyzing" view now includes a new card to display the AI-generated summary. It handles loading and error states to provide a smooth user experience.
 - **Roadmap**: Updated `ROADMAP.md` to mark this feature as complete.
+
+# 2506281313
+
+## > Keep working on Phase 2: Enhanced Analysis, UX, and Persistence
+
+### refactor: implement Zustand for global state management
+
+- **Architectural Refactor**: Replaced the local state management in `App.tsx` with a centralized **Zustand store** (`store.ts`). This improves scalability and maintainability.
+- **Centralized Logic**: All application state (active model, model list, UI mode, theme) and the actions that modify it are now managed in the global store. This provides a single source of truth.
+- **Decoupled Components**: All major components (`App`, `Header`, `ModelListView`, `ModelingView`, `AnalyzingView`, etc.) were refactored to connect directly to the store, removing extensive prop-drilling and making them more self-contained.
+- **Roadmap Completion**: Marked the "Refactor State Management" task as complete in the `ROADMAP.md`, officially finalizing all planned work for Phase 2.
 #3
