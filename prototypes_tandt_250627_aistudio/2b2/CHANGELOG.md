@@ -39,7 +39,7 @@
 - **Header Update**: The main `Header` component was updated to remove model loading buttons and add a "Back to Models" button, improving navigation context.
 - **Service Layer**: Added a new `getAvailableModels` function to `modelService.ts` to provide data for the new landing page.
 - **New Types**: Added `ModelSummary` and `ModelId` types to `types.ts` to support the new functionality.
-- **New Instruction File**: Created `AISTUDIO.md` to store meta-instructions for development strategy.
+- **New InstructionFile**: Created `AISTUDIO.md` to store meta-instructions for development strategy.
 
 # 2506280729
 
@@ -60,4 +60,14 @@
 
 Updated the StructuringView component to include a detailed performance dashboard that categorizes digital elements into tiers based on their status and performance trends. Added a copy button to allow users to easily copy the summary of the performance review. Improved UI elements for better clarity and user experience.
 
+# 2506281001
+
+## > Keep advancing taskos from Roadmap, do it
+
+### feat: implement AI-powered analysis summary
+
+- **New Feature**: Added a "Get AI Summary" button to the "Analyzing" view. This button appears after the user evaluates at least one element.
+- **Service Layer**: Implemented a new `generateAnalysisSummary` function in `geminiService.ts`. It uses context-aware prompts tailored to "Decision Making" and "Performance Review" models to generate relevant insights.
+- **UI/UX**: The "Analyzing" view now includes a new card to display the AI-generated summary. It handles loading and error states to provide a smooth user experience.
+- **Roadmap**: Updated `ROADMAP.md` to mark this feature as complete.
 #3

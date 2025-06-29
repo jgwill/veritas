@@ -74,7 +74,7 @@ This phase builds on the MVP to enhance the user experience, add more detailed a
     - [x] During model creation, allow users to describe their goal in natural language.
     - [x] Use Gemini to generate a complete starter `DigitalModel` JSON, including relevant elements.
     - [x] Tweak the prompt based on whether it's a "Decision Making" or "Performance Review" model.
-- **[ ] AI-Powered Analysis Summary**:
+- **[x] AI-Powered Analysis Summary**:
     - After an analysis is complete, send the results to Gemini.
     - Prompt Gemini to generate a natural-language paragraph explaining *why* the decision was reached or summarizing the performance review.
     - Display this summary on the results page (Analyzing or Structuring view).
