@@ -39,7 +39,7 @@ This phase focuses on building the fundamental features required for a user to c
 ### Architecture & API
 - **[x] Component-Based Architecture**: Decompose UI into reusable components.
 - **[x] State Management**: Utilize React Hooks for managing the active `DigitalModel` state.
-- **[ ] Local API Endpoints (Conceptual)**: Structure services as if they were hitting APIs.
+- **[x] Local API Endpoints (Conceptual)**: Structure services as if they were hitting APIs.
 
 ### Gemini Integration
 - **[x] Element Generation**:
@@ -58,25 +58,26 @@ This phase builds on the MVP to enhance the user experience, add more detailed a
 ### Features
 - [x] **Full Three-State Analysis**: Incorporate the `ThreeFlag` (trend) data into the Performance Dashboard with better visuals.
 - [x] **"You Have / You Don't Have" View**: For Performance Review models, create the detailed Focus Hierarchy summary screen to clearly show which areas need attention based on the analysis.
-- [ ] **Model Management**:
-    - [ ] Create a dedicated landing page to list, create, edit, and delete models.
-    - [ ] Implement a guided model creation workflow (choosing type, step-by-step element addition).
-- [ ] **Local Persistence**: Integrate `localStorage` or `IndexedDB` to save all model changes, so work is not lost on refresh.
+- [x] **Model Management**:
+    - [x] Create a dedicated landing page to list/manage models.
+    - [x] Implement creation of new models via a modal.
+    - [x] Implement deletion of models from the landing page.
+- [x] **Local Persistence**: Integrate `localStorage` to save all model changes, so work is not lost on refresh.
 
 ### Architecture & API
-- **[ ] API Expansion**:
+- [ ] **API Expansion**:
   - `GET /api/models`, `POST /api/models`, `DELETE /api/models/:id`, `PUT /api/models/:id`
-- **[ ] Refactor State Management**: Introduce a more robust state management solution if complexity demands it (e.g., Zustand or Redux Toolkit).
+- [ ] **Refactor State Management**: Introduce a more robust state management solution if complexity demands it (e.g., Zustand or Redux Toolkit).
 
 ### Gemini Integration
-- **[ ] AI-Powered Model Generation**:
-    - During model creation, allow users to describe their goal in natural language.
-    - Use Gemini to generate a complete starter `DigitalModel` JSON, including relevant elements.
-    - Tweak the prompt based on whether it's a "Decision Making" or "Performance Review" model.
+- [x] **AI-Powered Model Generation**:
+    - [x] During model creation, allow users to describe their goal in natural language.
+    - [x] Use Gemini to generate a complete starter `DigitalModel` JSON, including relevant elements.
+    - [x] Tweak the prompt based on whether it's a "Decision Making" or "Performance Review" model.
 - **[ ] AI-Powered Analysis Summary**:
     - After an analysis is complete, send the results to Gemini.
     - Prompt Gemini to generate a natural-language paragraph explaining *why* the decision was reached or summarizing the performance review.
-    - Display this summary on the results page.
+    - Display this summary on the results page (Analyzing or Structuring view).
 
 ---
 
@@ -85,20 +86,20 @@ This phase builds on the MVP to enhance the user experience, add more detailed a
 This phase focuses on turning the tool into a collaborative, enterprise-ready platform.
 
 ### Features
-- [ ] **User Accounts & Authentication**.
-- [ ] **Backend & Database**: Transition to a full backend (e.g., Node.js/Express) with a database (e.g., PostgreSQL/MongoDB).
-- [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously.
-- [ ] **Import/Export**: Implement functionality to import/export models as JSON files.
-- [ ] **History / Versioning**: Keep a history of changes to a model.
+- [ ] **User Accounts & Authentication**: Integrate a simple authentication system (e.g., Firebase Auth, Supabase).
+- [ ] **Backend & Database**: Transition from `localStorage` to a full backend (e.g., Node.js/Express) with a cloud database (e.g., PostgreSQL/MongoDB via Supabase/Firebase/Vercel Postgres).
+- [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously (e.g., using WebSockets).
+- [ ] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
+- [ ] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
 
 ### Architecture & API
-- **[ ] Full RESTful/GraphQL API**: Formalize the backend API with authentication middleware.
-- **[ ] Cloud Deployment**: Prepare the application for deployment on a cloud platform (e.g., Vercel, Netlify, AWS).
+- **[ ] Full RESTful/GraphQL API**: Formalize the backend API with authentication middleware and standardized response formats.
+- **[ ] Cloud Deployment**: Prepare and configure the application for deployment on a cloud platform (e.g., Vercel, Netlify, AWS).
 
 ### Gemini Integration
 - **[ ] AI-Powered Action Suggestions**:
-  - For Performance Review models, have Gemini suggest actionable steps based on the results.
-- **[ ] Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language.
+  - For Performance Review models, have Gemini suggest concrete, actionable steps based on the analysis results (e.g., "For the 'Declining Code Quality' KPI, consider implementing mandatory code reviews for all PRs.").
+- **[ ] Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language (e.g., "What's the most critical factor in my decision model?" or "Summarize the key performance issues.").
 
 
 
