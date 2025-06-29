@@ -96,3 +96,80 @@ export const suggestElementsFromTopic = async (topic: string, modelType: number)
     return [];
   }
 };
+
+
+export const generateModelFromDescription = async (description: string, modelType: number): Promise<{ DigitalTopic: string; Model: { name: string; description: string }[] }> => {
+  if (!API_KEY) {
+    console.log("Using mock data for Gemini model generation.");
+    return {
+      DigitalTopic: `Mock: ${description.substring(0, 20)}`,
+      Model: [
+        { name: "Generated Factor 1", description: "This is the first mock factor." },
+        { name: "Generated Factor 2", description: "This is the second mock factor." },
+      ]
+    };
+  }
+
+  const isDecisionModel = modelType === 1;
+
+  const prompt = `
+    You are an expert consultant who helps users structure their thinking.
+    A user has provided a description of a goal. Your task is to generate a complete digital thinking model structure based on this description.
+
+    User's Goal: "${description}"
+    Model Type: ${isDecisionModel ? "Decision Making" : "Performance Review"}
+
+    Instructions:
+    1.  Analyze the user's goal to determine a concise and clear "DigitalTopic". This should be a short title for their model.
+    2.  Based on the goal and model type, generate a list of 5 to 8 relevant elements.
+        -   If the model type is "Decision Making", these elements should be critical factors or criteria for making the decision.
+        -   If the model type is "Performance Review", these elements should be key performance indicators (KPIs) or areas to evaluate.
+    3.  Each element must have a "name" (string, title-cased) and a "description" (string, 1-2 sentences).
+
+    Return the response as a single JSON object with the following structure:
+    {
+      "DigitalTopic": "A concise topic name you generated",
+      "Model": [
+        {
+          "name": "First Element Name",
+          "description": "A clear description for the first element."
+        },
+        {
+          "name": "Second Element Name",
+          "description": "A clear description for the second element."
+        }
+      ]
+    }
+
+    Do not include any other text, explanations, or markdown formatting outside of the JSON object.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-04-17",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    let jsonStr = response.text.trim();
+    const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
+    const match = jsonStr.match(fenceRegex);
+    if (match && match[2]) {
+      jsonStr = match[2].trim();
+    }
+    
+    const parsedData = JSON.parse(jsonStr);
+
+    if (parsedData && parsedData.DigitalTopic && Array.isArray(parsedData.Model)) {
+      return parsedData;
+    } else {
+      console.error("Gemini model generation response is not in the expected format:", parsedData);
+      throw new Error("Failed to generate model due to unexpected format.");
+    }
+  } catch (error) {
+    console.error("Failed to generate model from description via Gemini:", error);
+    throw error;
+  }
+};

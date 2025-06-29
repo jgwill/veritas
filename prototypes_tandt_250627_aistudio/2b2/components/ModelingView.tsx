@@ -7,10 +7,10 @@ import GeminiAssistant from './GeminiAssistant';
 
 interface ModelingViewProps {
   model: DigitalModel;
-  onUpdateModel: (model: DigitalModel) => void;
+  onSaveModel: (model: DigitalModel) => void;
 }
 
-const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => {
+const ModelingView: React.FC<ModelingViewProps> = ({ model, onSaveModel }) => {
   const [comparingElement, setComparingElement] = useState<DigitalElement | null>(null);
   const [editingElement, setEditingElement] = useState<DigitalElement | null>(null);
 
@@ -60,7 +60,7 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
         return { ...el, DominanceFactor: newDominanceFactor };
     });
 
-    onUpdateModel({ ...model, Model: finalElements });
+    onSaveModel({ ...model, Model: finalElements });
     setComparingElement(null);
   };
 
@@ -72,25 +72,24 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
     const newElements = model.Model.map(el =>
       el.Idug === updatedElement.Idug ? updatedElement : el
     );
-    onUpdateModel({ ...model, Model: newElements });
+    onSaveModel({ ...model, Model: newElements });
     setEditingElement(null);
   };
   
   const handleDeleteElement = (elementIdToDelete: string) => {
-    const newModelElements = model.Model.filter(el => el.Idug !== elementIdToDelete);
+    let newModelElements = model.Model.filter(el => el.Idug !== elementIdToDelete);
 
     if (model.DigitalThinkingModelType === 1) {
       // For decision models, also remove the deleted element from all comparison tables
-      const cleanedModelElements = newModelElements.map(el => {
+      newModelElements = newModelElements.map(el => {
         const newComparationTableData = { ...el.ComparationTableData };
         delete newComparationTableData[elementIdToDelete];
-        return { ...el, ComparationTableData: newComparationTableData };
+        const newDominanceFactor = Object.values(newComparationTableData).filter(v => v === 1).length;
+        return { ...el, ComparationTableData: newComparationTableData, DominanceFactor: newDominanceFactor };
       });
-      onUpdateModel({ ...model, Model: cleanedModelElements });
-    } else {
-      // For performance models, just update the element list
-      onUpdateModel({ ...model, Model: newModelElements });
     }
+    
+    onSaveModel({ ...model, Model: newModelElements });
     setEditingElement(null);
   };
 
@@ -121,29 +120,36 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model, onUpdateModel }) => 
             TelescopedModel: null,
         }
       });
-
-      // Initialize comparison data for new elements against all existing elements
-      const allElementIdugs = [...model.Model.map(e => e.Idug), ...newDigitalElements.map(e => e.Idug)];
-
-      const updatedExistingElements = model.Model.map(exEl => {
-          const newComps = { ...exEl.ComparationTableData };
-          newDigitalElements.forEach(newEl => {
-              newComps[newEl.Idug] = 0; // Initialize as equal
-          });
-          return { ...exEl, ComparationTableData: newComps };
-      });
-
-      const updatedNewElements = newDigitalElements.map(newEl => {
-          const newComps = { ...newEl.ComparationTableData };
-          allElementIdugs.forEach(idug => {
-              if (idug !== newEl.Idug) {
-                  newComps[idug] = 0; // Initialize as equal
-              }
-          });
-          return { ...newEl, ComparationTableData: newComps };
-      });
       
-      onUpdateModel({ ...model, Model: [...updatedExistingElements, ...updatedNewElements] });
+      let updatedModelElements = [...model.Model];
+
+      if (isDecisionModel) {
+          // Initialize comparison data for new elements against all existing elements
+          const allElementIdugs = [...model.Model.map(e => e.Idug), ...newDigitalElements.map(e => e.Idug)];
+
+          updatedModelElements = model.Model.map(exEl => {
+              const newComps = { ...exEl.ComparationTableData };
+              newDigitalElements.forEach(newEl => {
+                  newComps[newEl.Idug] = 0; // Initialize as equal
+              });
+              return { ...exEl, ComparationTableData: newComps };
+          });
+
+          const updatedNewElements = newDigitalElements.map(newEl => {
+              const newComps = { ...newEl.ComparationTableData };
+              allElementIdugs.forEach(idug => {
+                  if (idug !== newEl.Idug) {
+                      newComps[idug] = 0; // Initialize as equal
+                  }
+              });
+              return { ...newEl, ComparationTableData: newComps };
+          });
+          updatedModelElements.push(...updatedNewElements);
+      } else {
+        updatedModelElements.push(...newDigitalElements);
+      }
+      
+      onSaveModel({ ...model, Model: updatedModelElements });
   };
 
 

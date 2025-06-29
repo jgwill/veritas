@@ -46,3 +46,12 @@ export enum AppMode {
   Analyzing = 'Analyzing',
   Structuring = 'Structuring'
 }
+
+export type ModelId = string;
+
+export interface ModelSummary {
+  id: ModelId;
+  name: string;
+  type: number;
+  description: string;
+}

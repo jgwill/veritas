@@ -5,9 +5,10 @@ import { AppMode } from '../types';
 interface HeaderProps {
   currentMode: AppMode;
   onSetMode: (mode: AppMode) => void;
-  onLoadModel: (modelName: 'performance' | 'habitat') => void;
+  onGoBack: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  modelName: string;
 }
 
 const ModeButton: React.FC<{
@@ -29,13 +30,19 @@ const ModeButton: React.FC<{
   </button>
 );
 
-const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onLoadModel, theme, onToggleTheme }) => {
+const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onGoBack, theme, onToggleTheme, modelName }) => {
   return (
     <header className="bg-tandt-light dark:bg-gray-800 shadow-md sticky top-0 z-20 border-b border-tandt-border dark:border-gray-700">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <span className="text-2xl font-bold text-tandt-dark dark:text-white tracking-wider">TandT</span>
+          <div className="flex items-center space-x-4">
+             <button onClick={onGoBack} title="Back to Models" className="text-tandt-secondary dark:text-gray-400 hover:text-tandt-dark dark:hover:text-white transition-colors p-2 rounded-full -ml-2">
+                <ArrowLeftIcon />
+             </button>
+             <div className="flex items-baseline">
+                <span className="text-2xl font-bold text-tandt-dark dark:text-white tracking-wider">TandT</span>
+                <span className="text-sm font-medium text-tandt-secondary dark:text-gray-400 ml-3 hidden md:inline">/ {modelName}</span>
+             </div>
           </div>
           <div className="flex-1 flex justify-center px-8">
              <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
@@ -60,9 +67,6 @@ const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onLoadModel, th
             </div>
           </div>
           <div className="flex items-center space-x-4">
-             <span className="text-sm font-medium text-tandt-secondary dark:text-gray-400 hidden sm:inline">Load Model:</span>
-             <button onClick={() => onLoadModel('performance')} className="text-sm font-semibold text-tandt-primary hover:underline">Performance Review</button>
-             <button onClick={() => onLoadModel('habitat')} className="text-sm font-semibold text-tandt-primary hover:underline">Habitat Decision</button>
              <button onClick={onToggleTheme} className="ml-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                 {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
              </button>
@@ -74,6 +78,7 @@ const Header: React.FC<HeaderProps> = ({ currentMode, onSetMode, onLoadModel, th
 };
 
 // Icons
+const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" /></svg>;
 const PencilSquareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>;
 const MagnifyingGlassIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>;
 const ChartBarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm5 2a1 1 0 00-1 1v10a1 1 0 102 0V6a1 1 0 00-1-1zm5-2a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clipRule="evenodd" /></svg>;

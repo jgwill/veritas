@@ -29,3 +29,37 @@ This model type is designed to evaluate the current state of a system, project, 
     1.  **State**: Is the current state **Acceptable (👍)** or **Unacceptable (👎)**?
     2.  **Trend**: Is performance **Getting Better (📈)**, **Staying the Same (➖)**, or **Getting Worse (📉)**?
 -   **Structuring/Dashboard View**: This view presents a **Performance Dashboard**. It's an automatically prioritized action list, highlighting elements that are "Unacceptable" or "Getting Worse" so you know exactly where to focus your efforts.
+
+---
+
+## Development & Architecture
+
+This section provides a high-level overview of the project's structure, making it easier for future developers to understand and contribute.
+
+### Core Technologies
+- **React 18**: For building the user interface.
+- **TypeScript**: For static typing and improved code quality.
+- **Tailwind CSS**: For utility-first styling.
+- **@google/genai**: For integrating Gemini AI features.
+
+### Project Structure
+- **`index.tsx`**: The main entry point of the React application.
+- **`App.tsx`**: The root component that manages global state, routing between views, and the main application lifecycle.
+- **`components/`**: Contains all reusable React components.
+  - **Views (`ModelingView`, `AnalyzingView`, `StructuringView`, `ModelListView`)**: Top-level components for each of the main application screens.
+  - **Modals (`ComparisonModal`, `EditElementModal`, `CreateNewModelModal`)**: Components for interactive dialogs.
+  - **Shared (`Header`, `ElementCard`)**: Common UI elements used across multiple views.
+- **`services/`**: Contains business logic decoupled from the UI.
+  - **`modelService.ts`**: Acts as the data access layer. It handles all CRUD (Create, Read, Update, Delete) operations for models by interfacing with `localStorage`.
+  - **`geminiService.ts`**: Manages all interactions with the Google Gemini API, including generating element suggestions and creating full models from user descriptions.
+- **`types.ts`**: Defines all core TypeScript interfaces (`DigitalModel`, `DigitalElement`, etc.) used throughout the application.
+- **`constants.ts`**: Holds initial/default model data.
+
+### State Management
+The application uses a centralized state management approach within the `App.tsx` component, leveraging React Hooks (`useState`, `useEffect`, `useCallback`). The `model` state is held here and passed down as props to the active view. Callbacks like `handleSaveModel` are passed down to allow child components to trigger state updates in the parent.
+
+### Persistence
+All application data (models, elements, etc.) is persisted in the browser's **`localStorage`**. The `modelService.ts` abstracts all interactions with `localStorage`, making the rest of the application agnostic to the storage mechanism. On first load, the service initializes `localStorage` with two default models. Every subsequent change is saved automatically.
+
+### Gemini Integration
+The `geminiService.ts` provides functions that construct specific prompts for the Gemini API (`gemini-2.5-flash-preview-04-17`). It requests structured JSON responses and includes parsing logic to handle the API's output gracefully. API calls are designed to be asynchronous, with loading and error states managed in the UI components.
