@@ -1,3 +1,51 @@
+# 2506281315
+
+## > you did nothing and just talked about doing it
+
+### feat: implement import/export functionality
+
+- **Export Feature**: Added an "Export" button to each model card on the landing page. Clicking this allows users to download the selected model as a JSON file for backup or sharing.
+- **Import Feature**: Added an "Import Model" button to the landing page. Users can now upload a valid model JSON file, which will be validated and added to their collection of models.
+- **Service Layer**: The `modelService` was updated with `importModel` and `exportModel` functions to handle validation and saving of uploaded model files and retrieval for download.
+- **UI Updates**: The `ModelListView` component was updated to include the new UI controls and the logic for handling file selection and download triggers.
+- **State Management**: Added `importModel` and `exportModel` actions to the Zustand store.
+- **Roadmap**: Marked the "Import/Export" feature as complete in Phase 3 of the roadmap.
+
+# 2506281314
+
+## > Great ensure Phase 2 is completed
+
+### doc: finalize Phase 2 documentation and roadmap
+
+- **Roadmap**: Updated `ROADMAP.md` to mark the conceptual "API Expansion" task as complete, officially finalizing all work for Phase 2.
+- **README**: Rewrote the "State Management" section in `README.md` to accurately reflect the current Zustand-based architecture.
+
+### fix: improve initial theme detection
+
+- **Theme Logic**: Corrected the logic in `store.ts` to properly detect and apply the user's system-level light/dark mode preference on first load, improving the initial user experience.
+
+# 2506281313
+
+## > Keep working on Phase 2: Enhanced Analysis, UX, and Persistence
+
+### refactor: implement Zustand for global state management
+
+- **Architectural Refactor**: Replaced the local state management in `App.tsx` with a centralized **Zustand store** (`store.ts`). This improves scalability and maintainability.
+- **Centralized Logic**: All application state (active model, model list, UI mode, theme) and the actions that modify it are now managed in the global store. This provides a single source of truth.
+- **Decoupled Components**: All major components (`App`, `Header`, `ModelListView`, `ModelingView`, `AnalyzingView`, etc.) were refactored to connect directly to the store, removing extensive prop-drilling and making them more self-contained.
+- **Roadmap Completion**: Marked the "Refactor State Management" task as complete in the `ROADMAP.md`, officially finalizing all planned work for Phase 2.
+
+# 2506281001
+
+## > Keep advancing taskos from Roadmap, do it
+
+### feat: implement AI-powered analysis summary
+
+- **New Feature**: Added a "Get AI Summary" button to the "Analyzing" view. This button appears after the user evaluates at least one element.
+- **Service Layer**: Implemented a new `generateAnalysisSummary` function in `geminiService.ts`. It uses context-aware prompts tailored to "Decision Making" and "Performance Review" models to generate relevant insights.
+- **UI/UX**: The "Analyzing" view now includes a new card to display the AI-generated summary. It handles loading and error states to provide a smooth user experience.
+- **Roadmap**: Updated `ROADMAP.md` to mark this feature as complete.
+
 # 2506280732
 
 ## > Rpepare what is needed for completing this cycle and next (many LLM will try different things so make sure what comes next has these options in the docs and that the codes is stable)
@@ -59,26 +107,3 @@
 ### feat: enhance StructuringView with performance dashboard and copy functionality
 
 Updated the StructuringView component to include a detailed performance dashboard that categorizes digital elements into tiers based on their status and performance trends. Added a copy button to allow users to easily copy the summary of the performance review. Improved UI elements for better clarity and user experience.
-
-# 2506281001
-
-## > Keep advancing taskos from Roadmap, do it
-
-### feat: implement AI-powered analysis summary
-
-- **New Feature**: Added a "Get AI Summary" button to the "Analyzing" view. This button appears after the user evaluates at least one element.
-- **Service Layer**: Implemented a new `generateAnalysisSummary` function in `geminiService.ts`. It uses context-aware prompts tailored to "Decision Making" and "Performance Review" models to generate relevant insights.
-- **UI/UX**: The "Analyzing" view now includes a new card to display the AI-generated summary. It handles loading and error states to provide a smooth user experience.
-- **Roadmap**: Updated `ROADMAP.md` to mark this feature as complete.
-
-# 2506281313
-
-## > Keep working on Phase 2: Enhanced Analysis, UX, and Persistence
-
-### refactor: implement Zustand for global state management
-
-- **Architectural Refactor**: Replaced the local state management in `App.tsx` with a centralized **Zustand store** (`store.ts`). This improves scalability and maintainability.
-- **Centralized Logic**: All application state (active model, model list, UI mode, theme) and the actions that modify it are now managed in the global store. This provides a single source of truth.
-- **Decoupled Components**: All major components (`App`, `Header`, `ModelListView`, `ModelingView`, `AnalyzingView`, etc.) were refactored to connect directly to the store, removing extensive prop-drilling and making them more self-contained.
-- **Roadmap Completion**: Marked the "Refactor State Management" task as complete in the `ROADMAP.md`, officially finalizing all planned work for Phase 2.
-#3

@@ -48,19 +48,41 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model }) => {
   }, [model, isDecisionModel]);
 
   const AnalysisHeader = () => {
+    const AiButton = ({ subtle = false }) => (
+      <button
+        onClick={handleGetSummary}
+        disabled={isSummaryLoading}
+        title="Get AI Summary"
+        className={`inline-flex items-center justify-center ml-auto px-4 py-2 text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-wait ${hasAnalysisData ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${subtle ? 'bg-white/60 dark:bg-black/20' : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'}`}
+      >
+        {isSummaryLoading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div> : <SparklesIcon />}
+        <span className="ml-2 hidden sm:inline">{isSummaryLoading ? 'Analyzing...' : 'AI Summary'}</span>
+      </button>
+    );
+
     if (isDecisionModel && decision) {
       return (
-        <div className={`p-4 rounded-lg shadow-md mb-6 text-center ${decision.isYes ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'}`}>
-          <h2 className="text-2xl font-bold">DECISION IS: {decision.isYes ? '->YES<-' : '->NO<-'}</h2>
-          <p className="text-sm">{decision.reason}</p>
+        <div className={`p-4 rounded-lg shadow-md mb-6 flex justify-between items-center ${decision.isYes ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300'}`}>
+          <div className="flex-grow text-center">
+            <h2 className="text-2xl font-bold">DECISION IS: {decision.isYes ? '->YES<-' : '->NO<-'}</h2>
+            <p className="text-sm">{decision.reason}</p>
+          </div>
+          <div className="w-40 flex-shrink-0 text-right"> {/* Placeholder to prevent shift */}
+            <AiButton subtle={true} />
+          </div>
         </div>
       );
     }
     
     return (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-6">
-        <h2 className="text-xl font-bold text-tandt-dark dark:text-gray-100">Analysis Summary</h2>
-        <p className="text-sm text-tandt-secondary dark:text-gray-400">Evaluate the current state and trend for each performance element.</p>
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-tandt-dark dark:text-gray-100">Analysis Summary</h2>
+          <p className="text-sm text-tandt-secondary dark:text-gray-400">Evaluate the current state and trend for each performance element.</p>
+        </div>
+        <div className="w-40 flex-shrink-0 text-right"> {/* Placeholder */}
+            <AiButton />
+        </div>
       </div>
     );
   };
@@ -85,19 +107,6 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model }) => {
   return (
     <div>
       <AnalysisHeader />
-      
-      {hasAnalysisData && (
-          <div className="mb-6 flex justify-center">
-              <button
-                  onClick={handleGetSummary}
-                  disabled={isSummaryLoading}
-                  className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-wait"
-              >
-                  {isSummaryLoading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <SparklesIcon />}
-                  <span className="ml-2">{isSummaryLoading ? 'Analyzing...' : 'Get AI Summary'}</span>
-              </button>
-          </div>
-      )}
 
       {(aiSummary || isSummaryLoading || summaryError) && <AiSummaryCard />}
 

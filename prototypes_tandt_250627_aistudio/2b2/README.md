@@ -40,11 +40,13 @@ This section provides a high-level overview of the project's structure, making i
 - **React 18**: For building the user interface.
 - **TypeScript**: For static typing and improved code quality.
 - **Tailwind CSS**: For utility-first styling.
+- **Zustand**: For lightweight global state management.
 - **@google/genai**: For integrating Gemini AI features.
 
 ### Project Structure
 - **`index.tsx`**: The main entry point of the React application.
-- **`App.tsx`**: The root component that manages global state, routing between views, and the main application lifecycle.
+- **`App.tsx`**: The root component that renders the correct view based on the global state.
+- **`store.ts`**: The global **Zustand store** that holds all application state and actions.
 - **`components/`**: Contains all reusable React components.
   - **Views (`ModelingView`, `AnalyzingView`, `StructuringView`, `ModelListView`)**: Top-level components for each of the main application screens.
   - **Modals (`ComparisonModal`, `EditElementModal`, `CreateNewModelModal`)**: Components for interactive dialogs.
@@ -56,7 +58,11 @@ This section provides a high-level overview of the project's structure, making i
 - **`constants.ts`**: Holds initial/default model data.
 
 ### State Management
-The application uses a centralized state management approach within the `App.tsx` component, leveraging React Hooks (`useState`, `useEffect`, `useCallback`). The `model` state is held here and passed down as props to the active view. Callbacks like `handleSaveModel` are passed down to allow child components to trigger state updates in the parent.
+The application uses **Zustand** for centralized, global state management. The store is defined in `store.ts` and acts as a single source of truth for all critical application data (e.g., the current list of models, the active model, the UI mode, and theme).
+
+- **State**: The store holds the data.
+- **Actions**: The store contains all the functions that can modify the state (e.g., `loadModel`, `saveModel`, `toggleTheme`).
+- **Hooks**: Components access the state and actions by using the `useAppStore` hook, which makes them reactive to any changes in the global state. This approach eliminates "prop drilling" and makes components more decoupled and easier to maintain.
 
 ### Persistence
 All application data (models, elements, etc.) is persisted in the browser's **`localStorage`**. The `modelService.ts` abstracts all interactions with `localStorage`, making the rest of the application agnostic to the storage mechanism. On first load, the service initializes `localStorage` with two default models. Every subsequent change is saved automatically.

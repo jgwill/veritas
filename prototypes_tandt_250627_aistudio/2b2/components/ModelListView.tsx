@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { ModelSummary, ModelId } from '../types';
+import React, { useState, useRef } from 'react';
+import { ModelSummary, ModelId, DigitalModel } from '../types';
 import { useAppStore } from '../store';
 
 interface ModelListViewProps {
@@ -20,7 +20,7 @@ const ModelTypeBadge: React.FC<{ type: number }> = ({ type }) => {
     );
 };
 
-const ModelCard: React.FC<{ model: ModelSummary, onLoad: (id: ModelId) => void, onDelete: (id: ModelId) => void }> = ({ model, onLoad, onDelete }) => {
+const ModelCard: React.FC<{ model: ModelSummary, onLoad: (id: ModelId) => void, onDelete: (id: ModelId) => void, onExport: (id: ModelId) => void }> = ({ model, onLoad, onDelete, onExport }) => {
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
     const handleDeleteClick = (e: React.MouseEvent) => {
@@ -49,9 +49,14 @@ const ModelCard: React.FC<{ model: ModelSummary, onLoad: (id: ModelId) => void, 
                 <p className="mt-2 text-sm text-tandt-secondary dark:text-gray-400 h-16">{model.description}</p>
             </div>
             <div className="mt-auto p-4 bg-tandt-light dark:bg-gray-800/50 border-t dark:border-gray-700 rounded-b-lg flex justify-between items-center">
-                <button onClick={handleDeleteClick} title="Delete Model" className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full">
-                    <TrashIcon />
-                </button>
+                <div className="flex items-center space-x-1">
+                    <button onClick={handleDeleteClick} title="Delete Model" className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full">
+                        <TrashIcon />
+                    </button>
+                    <button onClick={() => onExport(model.id)} title="Export Model" className="text-gray-400 hover:text-blue-500 transition-colors p-2 rounded-full">
+                        <DownloadIcon />
+                    </button>
+                </div>
                 {isConfirmingDelete ? (
                     <div className="flex items-center space-x-2">
                         <span className="text-xs text-red-500 font-semibold">Delete?</span>
@@ -84,7 +89,9 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
         models, 
         isLoading, 
         onLoadModel, 
-        onDeleteModel, 
+        onDeleteModel,
+        onExportModel,
+        onImportModel,
         onNewModel, 
         theme, 
         onToggleTheme 
@@ -93,19 +100,54 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
         isLoading: state.isLoading,
         onLoadModel: state.loadModel,
         onDeleteModel: state.deleteModel,
+        onExportModel: state.exportModel,
+        onImportModel: state.importModel,
         onNewModel: () => state.setIsCreatingModel(true),
         theme: state.theme,
         onToggleTheme: state.toggleTheme
     }));
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const fileContent = await file.text();
+        try {
+            const modelJson = JSON.parse(fileContent);
+            await onImportModel(modelJson as DigitalModel);
+            alert(`Model "${modelJson.DigitalTopic}" imported successfully!`);
+        } catch (error) {
+            console.error("Failed to import model:", error);
+            alert("Failed to import model. Please ensure it is a valid JSON file exported from this application.");
+        }
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-tandt-bg dark:bg-gray-900">
             <div className="max-w-screen-xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-4xl font-bold text-tandt-dark dark:text-white">Your Models</h1>
-                    <button onClick={onToggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                        {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-                    </button>
+                    <div className="flex items-center space-x-2">
+                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
+                         <button onClick={handleImportClick} className="flex items-center px-3 py-2 text-sm font-semibold rounded-md bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            <UploadIcon />
+                            <span className="ml-2 hidden sm:inline">Import Model</span>
+                        </button>
+                        <button onClick={onToggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+                        </button>
+                    </div>
                 </div>
                 <p className="text-lg text-tandt-secondary dark:text-gray-400 mb-12 max-w-2xl">
                     Select a model to begin your analysis or create a new one. All your work is saved automatically in your browser.
@@ -117,7 +159,7 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {models.map(model => <ModelCard key={model.id} model={model} onLoad={onLoadModel} onDelete={onDeleteModel} />)}
+                        {models.map(model => <ModelCard key={model.id} model={model} onLoad={onLoadModel} onDelete={onDeleteModel} onExport={onExportModel} />)}
                         <NewModelCard onClick={onNewModel} />
                     </div>
                 )}
@@ -131,5 +173,7 @@ const SunIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5
 const MoonIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
+const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" /></svg>;
 
 export default ModelListView;

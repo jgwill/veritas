@@ -65,8 +65,8 @@ This phase builds on the MVP to enhance the user experience, add more detailed a
 - [x] **Local Persistence**: Integrate `localStorage` to save all model changes, so work is not lost on refresh.
 
 ### Architecture & API
-- [ ] **API Expansion**:
-  - `GET /api/models`, `POST /api/models`, `DELETE /api/models/:id`, `PUT /api/models/:id`
+- [x] **API Expansion**:
+  - The `modelService` now conceptually provides `GET /api/models`, `POST /api/models`, `DELETE /api/models/:id`, `PUT /api/models/:id`.
 - [x] **Refactor State Management**: Introduce a more robust state management solution (Zustand) to centralize state and actions, improving maintainability and decoupling components.
 
 ### Gemini Integration
@@ -89,7 +89,7 @@ This phase focuses on turning the tool into a collaborative, enterprise-ready pl
 - [ ] **User Accounts & Authentication**: Integrate a simple authentication system (e.g., Firebase Auth, Supabase).
 - [ ] **Backend & Database**: Transition from `localStorage` to a full backend (e.g., Node.js/Express) with a cloud database (e.g., PostgreSQL/MongoDB via Supabase/Firebase/Vercel Postgres).
 - [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously (e.g., using WebSockets).
-- [ ] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
+- [x] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
 - [ ] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
 
 ### Architecture & API

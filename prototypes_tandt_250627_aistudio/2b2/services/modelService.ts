@@ -196,3 +196,39 @@ export const deleteModel = async (modelId: ModelId): Promise<void> => {
     models = models.filter(m => m.Idug !== modelId);
     saveModelsToStorage(models);
 };
+
+export const importModel = async (modelToImport: DigitalModel): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    if (!modelToImport.Idug || !modelToImport.DigitalTopic || !Array.isArray(modelToImport.Model)) {
+        throw new Error("Invalid model format. The file does not appear to be a valid TandT model.");
+    }
+
+    const models = getModelsFromStorage();
+    const existingModelIndex = models.findIndex(m => m.Idug === modelToImport.Idug);
+    
+    const modelCopy = JSON.parse(JSON.stringify(modelToImport));
+
+    if (existingModelIndex > -1) {
+        modelCopy.Idug = `model-${Date.now()}`;
+        modelCopy.DigitalTopic = `${modelCopy.DigitalTopic} (Imported)`;
+        models.push(modelCopy);
+    } else {
+        models.push(modelCopy);
+    }
+    
+    saveModelsToStorage(models);
+};
+
+export const exportModel = async (modelId: ModelId): Promise<{modelData: DigitalModel, fileName: string}> => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const models = getModelsFromStorage();
+    const modelToExport = models.find(m => m.Idug === modelId);
+
+    if (!modelToExport) {
+        throw new Error(`Model with ID ${modelId} not found for export.`);
+    }
+
+    const fileName = `${modelToExport.DigitalTopic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+    return { modelData: modelToExport, fileName };
+};
