@@ -8,6 +8,8 @@ import AnalyzingView from './components/AnalyzingView';
 import StructuringView from './components/StructuringView';
 import ModelListView from './components/ModelListView';
 import CreateNewModelModal from './components/CreateNewModelModal';
+import HistoryPanel from './components/HistoryPanel';
+import ConversationalAnalyst from './components/ConversationalAnalyst';
 
 const App: React.FC = () => {
   const {
@@ -16,6 +18,7 @@ const App: React.FC = () => {
     isLoading,
     isCreatingModel,
     availableModels,
+    isChatAnalystOpen,
     initializeTheme,
     fetchAvailableModels,
   } = useAppStore();
@@ -66,6 +69,8 @@ const App: React.FC = () => {
           <main className="p-4 sm:p-6 lg:p-8">
             {renderModelContent()}
           </main>
+          <HistoryPanel />
+          {isChatAnalystOpen && <ConversationalAnalyst />}
         </>
       )}
     </div>
