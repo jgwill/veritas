@@ -6,7 +6,7 @@ interface ElementCardProps {
   element: DigitalElement;
   mode: AppMode;
   modelType: number;
-  onUpdate?: (element: DigitalElement) => void;
+  onUpdate?: (element: DigitalElement, description: string) => void;
   onCompare?: (element: DigitalElement) => void;
   onEdit?: (element: DigitalElement) => void;
   isComparing?: boolean;
@@ -15,13 +15,16 @@ interface ElementCardProps {
 const ElementCard: React.FC<ElementCardProps> = ({ element, mode, modelType, onUpdate, onCompare, onEdit, isComparing }) => {
   const handleEvaluation = (evaluation: 'accepted' | 'rejected') => {
     if (onUpdate) {
-      onUpdate({ ...element, TwoFlag: evaluation === 'accepted', TwoFlagAnswered: true });
+      const description = `Set status of '${element.DisplayName}' to '${evaluation}'`;
+      onUpdate({ ...element, TwoFlag: evaluation === 'accepted', TwoFlagAnswered: true }, description);
     }
   };
 
   const handleTrend = (trend: -1 | 0 | 1) => {
     if (onUpdate) {
-      onUpdate({ ...element, ThreeFlag: trend, ThreeFlagAnswered: true });
+      const trendText = trend === 1 ? 'improving' : trend === -1 ? 'declining' : 'stable';
+      const description = `Set trend of '${element.DisplayName}' to '${trendText}'`;
+      onUpdate({ ...element, ThreeFlag: trend, ThreeFlagAnswered: true }, description);
     }
   };
 

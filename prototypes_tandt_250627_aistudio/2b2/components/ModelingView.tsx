@@ -62,7 +62,8 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model }) => {
         return { ...el, DominanceFactor: newDominanceFactor };
     });
 
-    saveModel({ ...model, Model: finalElements });
+    const description = `Compared "${baseElement.DisplayName}" with ${Object.keys(results).length} element(s)`;
+    saveModel({ ...model, Model: finalElements }, description);
     setComparingElement(null);
   };
 
@@ -74,11 +75,13 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model }) => {
     const newElements = model.Model.map(el =>
       el.Idug === updatedElement.Idug ? updatedElement : el
     );
-    saveModel({ ...model, Model: newElements });
+    const description = `Updated element: "${updatedElement.DisplayName}"`;
+    saveModel({ ...model, Model: newElements }, description);
     setEditingElement(null);
   };
   
   const handleDeleteElement = (elementIdToDelete: string) => {
+    const elementNameToDelete = model.Model.find(el => el.Idug === elementIdToDelete)?.DisplayName || 'Unknown';
     let newModelElements = model.Model.filter(el => el.Idug !== elementIdToDelete);
 
     if (model.DigitalThinkingModelType === 1) {
@@ -91,7 +94,8 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model }) => {
       });
     }
     
-    saveModel({ ...model, Model: newModelElements });
+    const description = `Deleted element: "${elementNameToDelete}"`;
+    saveModel({ ...model, Model: newModelElements }, description);
     setEditingElement(null);
   };
 
@@ -151,7 +155,8 @@ const ModelingView: React.FC<ModelingViewProps> = ({ model }) => {
         updatedModelElements.push(...newDigitalElements);
       }
       
-      saveModel({ ...model, Model: updatedModelElements });
+      const description = `Added ${newElements.length} element(s) via AI suggestion`;
+      saveModel({ ...model, Model: updatedModelElements }, description);
   };
 
 

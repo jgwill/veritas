@@ -73,6 +73,18 @@ const DecisionDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
 // Component for Performance Review Model (Type 2)
 const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
   const [copyStatus, setCopyStatus] = useState('Copy Summary');
+  const {
+      actionSuggestions,
+      isGeneratingSuggestions,
+      suggestionError,
+      generateActionSuggestions
+  } = useAppStore(state => ({
+      actionSuggestions: state.actionSuggestions,
+      isGeneratingSuggestions: state.isGeneratingSuggestions,
+      suggestionError: state.suggestionError,
+      generateActionSuggestions: state.generateActionSuggestions
+  }));
+
   const sortedElements = useMemo(() => {
     return [...model.Model].sort((a, b) => {
         // Primary sort: unacceptable vs acceptable
@@ -169,6 +181,34 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
     }
   };
   
+  const AiActionPlanCard = () => (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-dashed border-purple-400 dark:border-purple-600">
+        <div className="flex items-center mb-4">
+            <SparklesIcon />
+            <h3 className="ml-3 text-lg font-bold text-tandt-dark dark:text-gray-100">AI-Powered Action Plan</h3>
+        </div>
+        {isGeneratingSuggestions && (
+            <div className="flex items-center text-gray-500 dark:text-gray-400">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
+                <span className="ml-3">The AI is generating an action plan...</span>
+            </div>
+        )}
+        {suggestionError && <p className="text-red-600 dark:text-red-400">{suggestionError}</p>}
+        {actionSuggestions && (
+             <div className="space-y-4">
+                {actionSuggestions.map((item, index) => (
+                    <div key={index} className="border-l-4 border-purple-300 dark:border-purple-500 pl-4">
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{item.area}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.suggestion}</p>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+  );
+
+  const hasCriticalItems = tiers.A.elements.length > 0 || tiers.B.elements.length > 0;
+
   return (
      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* --- Column 1: Focus Hierarchy --- */}
@@ -196,30 +236,46 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
           </button>
         </div>
 
-        {/* --- Column 2: Detailed List --- */}
-        <div className="lg:col-span-2">
+        {/* --- Column 2: Detailed List & AI Actions --- */}
+        <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                <h3 className="font-semibold mb-2 text-tandt-dark dark:text-gray-100">Prioritized Action List</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Items are prioritized by status (Unacceptable first) and trend (Declining first).</p>
-                <div className="space-y-3">
-                {sortedElements.map(el => (
-                <div key={el.Idug} className={`shadow-sm rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between transition-colors duration-300 ${getPerformanceItemStyle(el)}`}>
-                    <div className="flex-grow mb-3 sm:mb-0">
-                    <p className="font-semibold dark:text-gray-200">{el.DisplayName}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{el.Description}</p>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+                    <div>
+                        <h3 className="font-semibold mb-2 text-tandt-dark dark:text-gray-100">Prioritized Action List</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Items are prioritized by status (Unacceptable first) and trend (Declining first).</p>
                     </div>
-                    <div className="flex items-center space-x-2 sm:space-x-4 text-sm flex-shrink-0">
-                        {el.TwoFlagAnswered && !el.TwoFlag ? (
-                            <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Unacceptable</span>
-                        ) : (
-                            <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Acceptable</span>
-                        )}
-                        <TrendIndicator element={el} />
-                    </div>
+                    {hasCriticalItems && (
+                         <button
+                            onClick={generateActionSuggestions}
+                            disabled={isGeneratingSuggestions}
+                            className="mt-3 sm:mt-0 flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <SparklesIcon />
+                            <span className="ml-2 text-sm">{isGeneratingSuggestions ? 'Thinking...' : 'Suggest Actions'}</span>
+                        </button>
+                    )}
                 </div>
-                ))}
+                <div className="space-y-3">
+                    {sortedElements.map(el => (
+                        <div key={el.Idug} className={`shadow-sm rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between transition-colors duration-300 ${getPerformanceItemStyle(el)}`}>
+                            <div className="flex-grow mb-3 sm:mb-0">
+                                <p className="font-semibold dark:text-gray-200">{el.DisplayName}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{el.Description}</p>
+                            </div>
+                            <div className="flex items-center space-x-2 sm:space-x-4 text-sm flex-shrink-0">
+                                {el.TwoFlagAnswered && !el.TwoFlag ? (
+                                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Unacceptable</span>
+                                ) : (
+                                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Acceptable</span>
+                                )}
+                                <TrendIndicator element={el} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-            </div>
+
+            {(isGeneratingSuggestions || suggestionError || actionSuggestions) && <AiActionPlanCard />}
         </div>
      </div>
   );
@@ -252,5 +308,6 @@ const StructuringView: React.FC<StructuringViewProps> = ({ model }) => {
 const TrendingUpIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
 const MinusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4" /></svg>;
 const TrendingDownIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>;
+const SparklesIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.401 2.628a.75.75 0 011.198 0l.233.29a.75.75 0 00.95.421l.34-.14a.75.75 0 01.93.93l-.14.34a.75.75 0 00.422.95l.29.233a.75.75 0 010 1.198l-.29.233a.75.75 0 00-.422.95l.14.34a.75.75 0 01-.93.93l-.34-.14a.75.75 0 00-.95.422l-.233.29a.75.75 0 01-1.198 0l-.233-.29a.75.75 0 00-.95-.422l-.34.14a.75.75 0 01-.93-.93l.14-.34a.75.75 0 00-.422-.95l-.29-.233a.75.75 0 010-1.198l.29-.233a.75.75 0 00.422-.95l-.14-.34a.75.75 0 01.93-.93l.34.14a.75.75 0 00.95-.422l.233-.29zM4.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM4.11 12.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.8 12.8a.75.75 0 010-1.06l.69-.69a.75.75 0 011.06 1.06l-.69.69a.75.75 0 01-1.06 0z" clipRule="evenodd" /></svg>;
 
 export default StructuringView;
