@@ -1,5 +1,5 @@
 {
-  "name": "tandt-digital-thinking-guidance-250628b2d",
+  "name": "tandt-250628b2d2-speclang",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,11 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "recharts": "^3.0.2",
-    "@google/genai": "^1.7.0",
-    "zustand": "^4.5.4"
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-dom/client": "18.2.0",
+    "recharts": "2.12.7?alias=react:react,react-dom:react-dom",
+    "@google/genai": "1.7.0",
+    "zustand": "4.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
