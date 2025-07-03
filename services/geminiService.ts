@@ -145,7 +145,7 @@ export const suggestElementsFromTopic = async (
       },
     })
 
-    let jsonStr = response.text.trim()
+    let jsonStr = response.text?.trim() || ""
     const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s
     const match = jsonStr.match(fenceRegex)
     if (match && match[2]) {
@@ -256,7 +256,7 @@ export const generateModelFromDescription = async (
       },
     })
 
-    const responseText = response.text.trim()
+    const responseText = response.text?.trim() || ""
     console.log("Raw AI response:", responseText) // Debug log
 
     const parsedData = parseAIJsonResponse(responseText)
@@ -369,7 +369,7 @@ export const generateAnalysisSummary = async (model: DigitalModel): Promise<stri
       model: "gemini-2.5-flash-preview-04-17",
       contents: prompt,
     })
-    return response.text.trim()
+    return response.text?.trim() || "No response received from AI"
   } catch (error) {
     console.error("Failed to fetch analysis summary from Gemini:", error)
     throw new Error("The AI analyst is currently unavailable. Please try again later.")
@@ -448,7 +448,7 @@ export const generateActionSuggestions = async (model: DigitalModel): Promise<Ac
       },
     })
 
-    let jsonStr = response.text.trim()
+    let jsonStr = response.text?.trim() || ""
     const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s
     const match = jsonStr.match(fenceRegex)
     if (match && match[2]) {
