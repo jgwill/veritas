@@ -1,324 +1,117 @@
-# TandT Application Roadmap
+# TandT Application Development Roadmap
 
-## Project Overview
-TandT (Thinking and Tracking) is a sophisticated decision-making and performance evaluation application that supports multiple distinct model types with fundamentally different evaluation methodologies:
+This document outlines the phased development plan for the TandT (Think and Think) digital thinking guidance application.
 
-### Model Types
+---
 
-#### 1. Digital Decision Making Models
-- **Purpose**: Binary decision analysis for YES/NO scenarios requiring element hierarchy determination
-- **Core Algorithm**: Pairwise comparisons with dominance factor calculations
-- **Evaluation Method**: Binary acceptability assessment only (Acceptable = 1, Unacceptable = 0)
-- **Key Feature**: Builds element hierarchy through systematic pairwise comparisons
-- **Question Framework**: "If you have Element X but don't have Element Y, would the decision be YES or NO?"
-- **Output**: Clear YES/NO decision with mandatory vs optional element classification
-- **Use Cases**: Housing decisions, investment choices, hiring decisions, strategic planning
-- **Technical Requirements**: Comparison matrix, dominance calculations, consistency validation
+## Phase 1: Core Modeling and Analysis Engine (MVP)
 
-#### 2. Digital Performance Review Models  
-- **Purpose**: Performance tracking and trend analysis over time without dominance calculations
-- **Core Algorithm**: Performance trend tracking with priority identification
-- **Evaluation Methods**: 
-  - Binary acceptability (Acceptable = 1, Unacceptable = 0)
-  - Performance trend tracking (Getting Better = 1, Stay Same = 0, Getting Worse = -1)
-- **Key Feature**: **NO pairwise comparisons or dominance calculations**
-- **Focus**: Identify primary improvement areas and track performance trends
-- **Output**: Performance dashboard with improvement priorities
-- **Use Cases**: Employee performance reviews, project health monitoring, system metrics tracking
-- **Technical Requirements**: Trend analysis, priority scoring, performance dashboards
+This phase focuses on building the fundamental features required for a user to create, structure, and analyze a decision model, with clear differentiation between the two model types.
 
-#### 3. Digital Business Analysis Models (Discovered)
-- **Purpose**: Comprehensive business analysis with multiple metrics and KPIs
-- **Core Algorithm**: Multi-dimensional analysis with weighted scoring
-- **Evaluation Methods**: Complex scoring with business-specific metrics
-- **Key Feature**: Advanced analytics with predictive insights
-- **Use Cases**: Strategic business planning, market analysis, competitive assessment
+### Core Features
+- [x] **Project Setup**: Initialize React 18 with TypeScript and Tailwind CSS.
+- [x] **Data Structures**: Define TypeScript interfaces for `DigitalModel` and `DigitalElement`.
+- [x] **Model Loading**: Implement functionality to load pre-defined model data (`Decision Making` & `Performance Review`).
+- [x] **Mode Switching UI**: Create the main header with navigation between "Modeling", "Analyzing", and "Structuring/Dashboard" modes.
+- [x] **Modeling View**:
+  - [x] Display all model elements as interactive cards.
+  - [x] **Full Text Editing**: Allow editing of element titles and descriptions via a modal.
+  - [x] **For Decision Making Models**:
+      - [x] Implement the core pairwise comparison mechanism via a modal.
+      - [x] Update `ComparationTableData` and `DominanceFactor` based on user input.
+      - [x] Update comparison modal prompt to reflect a trade-off question.
+  - [x] **For Performance Review Models**:
+      - [x] Simplify the view to hide all comparison and dominance-related UI elements.
+- [x] **Analyzing View**:
+  - [x] Differentiate UI controls based on `DigitalThinkingModelType`.
+    - **Decision Making (Type 1)**: Show only Acceptable/Unacceptable (👍/👎) controls.
+    - **Performance Review (Type 2)**: Show both Acceptable/Unacceptable (👍/👎) and Trend (📈/➖/📉) controls.
+  - [x] Implement the core decision algorithm for Decision Making models.
+  - [x] Display a context-aware title (e.g., "Decision Is:" vs. "Analysis Summary").
+- [x] **Dashboard/Structuring View**:
+  - [x] **For Decision Making Models**:
+      - [x] Create a bar chart to visualize the `DominanceFactor` of each element.
+      - [x] Display a simple ranked list of elements.
+  - [x] **For Performance Review Models**:
+      - [x] Create a "Performance Dashboard" that shows a prioritized list of action items based on analysis results (unacceptable/getting worse).
+- [x] **State Reset**: Automatically reset evaluation flags when a new model is loaded for a clean analysis session.
 
-## Application Modes
+### Architecture & API
+- **[x] Component-Based Architecture**: Decompose UI into reusable components.
+- **[x] State Management**: Utilize React Hooks for managing the active `DigitalModel` state.
+- **[x] Local API Endpoints (Conceptual)**: Structure services as if they were hitting APIs.
 
-### Editing Mode
-- Build and modify model structures
-- Add/remove/edit elements  
-- **For Decision Making Models**: Configure pairwise comparison matrices
-- **For Performance Review Models**: Set up evaluation criteria (no comparisons)
-- **For Business Analysis Models**: Configure metrics and KPIs
-- Set up model parameters and metadata
+### Gemini Integration
+- **[x] Element Generation**:
+  - [x] Add a "Suggest Elements with AI" feature in the Modeling view.
+  - [x] UI to input a topic.
+  - [x] Service call to Gemini API to generate a JSON list of relevant factors.
+  - [x] Functionality to add the suggested elements to the current model.
+  - [x] Tweak Gemini prompt based on the `DigitalThinkingModelType`.
 
-### Analyzing Mode
-- Visual evaluation interface with model-type specific controls
-- Real-time element assessment
-- **For Decision Making Models**: Binary acceptability evaluation only
-- **For Performance Review Models**: Binary acceptability + performance trend tracking
-- **For Business Analysis Models**: Multi-metric evaluation with analytics
-- Results visualization tailored to model type
+---
 
-### Structuring Mode (Planned)
-- Advanced model architecture configuration
-- Template creation and management
-- Cross-model relationship mapping
+## Phase 2: Enhanced Analysis, UX, and Persistence
 
-## Technical Architecture Differentiation
+This phase builds on the MVP to enhance the user experience, add more detailed analysis views, and introduce persistence.
 
-### Decision Making Models Technical Stack
-\`\`\`
-Editing Mode:
-├── Element Management (Add/Edit/Delete)
-├── Pairwise Comparison Matrix Interface
-├── Comparison Progress Tracking
-└── Consistency Validation
+### Features
+- [x] **Full Three-State Analysis**: Incorporate the `ThreeFlag` (trend) data into the Performance Dashboard with better visuals.
+- [x] **"You Have / You Don't Have" View**: For Performance Review models, create the detailed Focus Hierarchy summary screen to clearly show which areas need attention based on the analysis.
+- [x] **Model Management**:
+    - [x] Create a dedicated landing page to list/manage models.
+    - [x] Implement creation of new models via a modal.
+    - [x] Implement deletion of models from the landing page.
+- [x] **Local Persistence**: Integrate `localStorage` to save all model changes, so work is not lost on refresh.
 
-Analyzing Mode:
-├── Binary Acceptability Assessment (TwoFlag: 1/0)
-├── Dominance Factor Display
-├── Element Hierarchy Visualization
-└── YES/NO Decision Output
+### Architecture & API
+- [x] **API Expansion**:
+  - The `modelService` now conceptually provides `GET /api/models`, `POST /api/models`, `DELETE /api/models/:id`, `PUT /api/models/:id`.
+- [x] **Refactor State Management**: Introduce a more robust state management solution (Zustand) to centralize state and actions, improving maintainability and decoupling components.
 
-Data Layer:
-├── Comparison Matrix Storage (JSON)
-├── Dominance Factor Calculations
-├── Consistency Validation Rules
-└── Decision Logic Processing
-\`\`\`
+### Gemini Integration
+- [x] **AI-Powered Model Generation**:
+    - [x] During model creation, allow users to describe their goal in natural language.
+    - [x] Use Gemini to generate a complete starter `DigitalModel` JSON, including relevant elements.
+    - [x] Tweak the prompt based on whether it's a "Decision Making" or "Performance Review" model.
+- [x] **AI-Powered Analysis Summary**:
+    - After an analysis is complete, send the results to Gemini.
+    - Prompt Gemini to generate a natural-language paragraph explaining *why* the decision was reached or summarizing the performance review.
+    - Display this summary on the results page (Analyzing or Structuring view).
 
-### Performance Review Models Technical Stack
-\`\`\`
-Editing Mode:
-├── Element Management (Add/Edit/Delete)
-├── Evaluation Criteria Setup
-├── No Comparison Matrix Required
-└── Performance Baseline Definition
+---
 
-Analyzing Mode:
-├── Binary Acceptability Assessment (TwoFlag: 1/0)
-├── Performance Trend Tracking (ThreeFlag: -1/0/1)
-├── Priority Level Indicators
-└── Performance Dashboard Output
+## Phase 3: Collaboration, Advanced Features, and Deployment
 
-Data Layer:
-├── Performance Trend Storage
-├── Priority Calculation Algorithms
-├── Historical Performance Tracking
-└── Improvement Recommendation Engine
-\`\`\`
+This phase focuses on turning the tool into a collaborative, enterprise-ready platform.
 
-## Technical Architecture
+### Features
+- [ ] **User Accounts & Authentication**: Integrate a simple authentication system (e.g., Firebase Auth, Supabase).
+- [ ] **Backend & Database**: Transition from `localStorage` to a full backend (e.g., Node.js/Express) with a cloud database (e.g., PostgreSQL/MongoDB via Supabase/Firebase/Vercel Postgres).
+- [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously (e.g., using WebSockets).
+- [x] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
+- [x] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
 
-### Frontend
-- **Framework**: Next.js 14+ with App Router
-- **UI Library**: shadcn/ui components with Tailwind CSS
-- **State Management**: React hooks and context with event-driven architecture
-- **Responsive Design**: Mobile-first approach
-- **Animation**: Framer Motion for smooth transitions
-- **Charts**: Recharts for data visualization
+### Gemini Integration
+- [x] **AI-Powered Action Suggestions**:
+  - For Performance Review models, have Gemini suggest concrete, actionable steps based on the analysis results (e.g., "For the 'Declining Code Quality' KPI, consider implementing mandatory code reviews for all PRs.").
+- [x] **Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language (e.g., "What's the most critical factor in my decision model?" or "Summarize the key performance issues.").
 
-### Backend
-- **API Routes**: Next.js API routes with TypeScript
-- **Data Storage**: JSON files (development), Database (production)
-- **Real-time Updates**: Optimistic UI updates with event system
-- **Validation**: Zod for runtime type checking
 
-### Data Structure
-- **Models**: Core model configuration and metadata
-- **Elements**: Individual evaluation criteria
-- **Comparisons**: Pairwise comparison matrices
-- **Evaluations**: Assessment results and trends
-- **Events**: Model lifecycle and state changes
 
-## Development Phases
+--------
+IMPORTED IDEA and CONCEPTS to Explore
+---------
 
-### Phase 1: Core Infrastructure ✅ (COMPLETED)
-- [x] Basic model CRUD operations
-- [x] Element management
-- [x] Basic comparison matrix functionality
-- [x] Basic results visualization
-- [x] TypeScript type system implementation
-- [x] Service layer architecture (DecisionMakingService, PerformanceReviewService)
 
-### Phase 2: Model Type Differentiation ✅ (COMPLETED)
-- [x] Clear model type separation in data models (TypeScript interfaces)
-- [x] Decision Making specific comparison interface (ComparisonMatrix)
-- [x] Performance Review specific trend tracking (PerformanceDashboard)
-- [x] Model type-specific creation flows (CreateModelDialog)
-- [x] Analyzing mode with proper model type handling (AnalyzingGrid)
-- [x] Dominance calculations for Decision Making models (decision-making.ts service)
-- [x] Performance priority algorithms for Review models (performance-review.ts service)
 
-### Phase 3: Analyzing Mode Implementation ✅ (COMPLETED)
-- [x] **Decision Making Analyzing Interface**:
-  - [x] Binary acceptability evaluation (TwoFlag)
-  - [x] Real-time dominance factor display
-  - [x] Element hierarchy visualization
-  - [x] YES/NO decision output
-- [x] **Performance Review Analyzing Interface**:
-  - [x] Binary acceptability evaluation (TwoFlag)
-  - [x] Performance trend tracking (ThreeFlag: -1/0/1)
-  - [x] Priority level indicators
-  - [x] Performance dashboard output
-- [x] **Individual Model Pages with Mode Switching**:
-  - [x] Comprehensive model viewing with editing/analyzing modes
-  - [x] Model type-specific interfaces and workflows
-  - [x] Advanced statistics and progress tracking
 
-### Phase 4: Advanced Legacy Features Integration 🔄 (CURRENT - HIGH PRIORITY)
-Based on detailed legacy system analysis, implementing sophisticated patterns:
 
-- [*] **Event-Driven Architecture (from TandTEventManager)**:
-  - [x] Global model state management with events (lib/events/model-events.ts)
-  - [*] Mode change notifications across components
-  - [*] Model lifecycle event handling (create, open, close, save)
-  - [ ] Cross-component communication patterns
-  - [ ] Real-time collaboration features
 
-- [*] **Advanced Model Types (5 types discovered)**:
-  - [x] DigitalThinkingGeneric (base type)
-  - [x] DigitalThinkingGenericTwoOnly (binary-only mode)
-  - [*] DigitalBusinessAnalysis (third sophisticated type)
-  - [ ] Model type-specific UI adaptations and workflows
-  - [ ] Type conversion and migration utilities
-
-- [*] **Sophisticated Mode System**:
-  - [x] Modeling Mode (element structure building)
-  - [x] Analyzing Mode (evaluation and assessment)
-  - [ ] Structuring Mode (planned advanced feature)
-  - [*] Auto-mode switching based on model state
-
-- [*] **Advanced State Management**:
-  - [x] Model validation with business rules
-  - [*] Auto-save functionality with change tracking
-  - [x] Consistency checking and issue detection
-  - [ ] Undo/redo capability for complex operations
-
-### Phase 5: Enhanced User Experience 🔄 (NEXT - MEDIUM PRIORITY)
-- [*] **Visual Design Improvements**:
-  - [x] Card-based evaluation interface matching screenshots
-  - [*] Advanced filtering and sorting by model type
-  - [ ] Bulk operations for elements
-  - [ ] Export/import functionality with model type preservation
-  - [ ] Mode switching animations and transitions (Framer Motion)
-
-- [ ] **Advanced UI Components**:
-  - [ ] Drag-and-drop element reordering
-  - [ ] Advanced data tables with sorting/filtering
-  - [ ] Interactive charts and visualizations
-  - [ ] Toast notifications for user feedback
-  - [ ] Loading states and skeleton screens
-
-- [ ] **Accessibility & UX**:
-  - [ ] WCAG 2.1 AA compliance
-  - [ ] Keyboard navigation support
-  - [ ] Screen reader optimization
-  - [ ] Mobile-responsive design improvements
-  - [ ] Dark mode support
-
-### Phase 6: Advanced Features (PLANNED)
-- [ ] **Template System**:
-  - [ ] Model templates for common use cases
-  - [ ] Template marketplace/library
-  - [ ] Custom template creation tools
-  - [ ] Template versioning and updates
-
-- [ ] **Advanced Analytics**:
-  - [ ] Historical performance tracking
-  - [ ] Trend analysis and predictions
-  - [ ] Comparative analysis between models
-  - [ ] Advanced reporting and insights
-
-- [ ] **Integration & APIs**:
-  - [ ] REST API for external integrations
-  - [ ] Webhook support for real-time updates
-  - [ ] Third-party service integrations
-  - [ ] Data import/export capabilities
-
-### Phase 7: Collaboration & Scaling (FUTURE)
-- [ ] **Multi-user Support**:
-  - [ ] User authentication and authorization
-  - [ ] Role-based access control
-  - [ ] Team collaboration features
-  - [ ] Real-time collaborative editing
-
-- [ ] **Enterprise Features**:
-  - [ ] Multi-tenant architecture
-  - [ ] Advanced security features
-  - [ ] Audit logging and compliance
-  - [ ] Enterprise SSO integration
-
-### Phase 8: Production Readiness (FUTURE)
-- [ ] **Database Integration**:
-  - [ ] PostgreSQL/MongoDB integration
-  - [ ] Data migration tools
-  - [ ] Backup and recovery systems
-  - [ ] Performance optimization
-
-- [ ] **Deployment & DevOps**:
-  - [ ] CI/CD pipeline setup
-  - [ ] Container orchestration
-  - [ ] Monitoring and alerting
-  - [ ] Auto-scaling capabilities
-
-## Key Features Status
-
-### Model Management ✅ (COMPLETED)
-- [x] Create, edit, and delete models
-- [x] Model type selection and configuration
-- [x] Template-based model creation
-- [x] Model validation and error handling
-
-### Element Evaluation ✅ (COMPLETED)
-- [x] Visual card-based evaluation interface
-- [x] Binary acceptability assessment
-- [x] Performance trend tracking
-- [x] Real-time status updates
-
-### Comparison Analysis ✅ (COMPLETED)
-- [x] Pairwise comparison matrices
-- [x] Dominance factor calculation
-- [x] Hierarchy determination
-- [x] Consistency checking
-
-### Results and Analytics 🔄 (IN PROGRESS)
-- [x] Visual results dashboard
-- [x] Progress tracking
-- [x] Performance trends
-- [*] Export capabilities (basic implementation)
-- [ ] Advanced analytics and insights
-
-## Technical Considerations
-
-### Data Persistence
-- Development: JSON file storage ✅
-- Production: Database (PostgreSQL/MongoDB) [ ]
-- Caching: Redis for performance [ ]
-
-### Performance
-- [x] Lazy loading for large models
-- [x] Optimistic UI updates
-- [x] Efficient comparison algorithms
-- [x] Responsive design patterns
-
-### Security
-- [*] Input validation and sanitization (Zod integration)
-- [ ] API rate limiting
-- [ ] User authentication (future)
-- [ ] Data encryption (production)
-
-## Success Metrics
-- Model creation and completion rates
-- User engagement with evaluation interface
-- Decision accuracy improvements
-- Performance tracking effectiveness
-- System performance and reliability
-- User satisfaction and adoption rates
-
-## Current Priority Tasks (Phase 4)
-1. **Complete Event System Implementation** - Finish cross-component communication
-2. **Business Analysis Model Type** - Implement third model type with advanced features
-3. **Auto-save Functionality** - Implement change tracking and automatic saving
-4. **Mode Switching Improvements** - Add smooth transitions and state persistence
-5. **Advanced UI Polish** - Implement remaining visual improvements and animations
-
-## Next Sprint Goals
-- [ ] Complete event-driven architecture implementation
-- [ ] Add Business Analysis model type support
-- [ ] Implement auto-save with change tracking
-- [ ] Add advanced filtering and sorting capabilities
-- [ ] Improve mobile responsiveness and accessibility
+**1. Digital Performance Review Models**
+- Purpose: Track performance trends over time
+- Evaluation Methods:
+  - Binary acceptability (1=Acceptable, 0=Unacceptable) 
+  - Performance trend tracking (-1=Getting Worse, 0=Stay Same, 1=Getting Better)
+- **NO dominance calculations required**
+- Focus: Review performance and identify what's primary to work on
