@@ -55,6 +55,11 @@ const resetModelAnalysisState = (model: DigitalModel): DigitalModel => {
 const processModel = (model: DigitalModel): DigitalModel => {
     // 1. Reset analysis state for a fresh session
     const resetModel = resetModelAnalysisState(model);
+    
+    // Ensure history exists
+    if (!resetModel.history) {
+        resetModel.history = [];
+    }
 
     // 2. Process based on model type
     if (resetModel.DigitalThinkingModelType === 1) {
@@ -173,6 +178,7 @@ export const createModel = async (config: { topic: string; type: number; element
         ModelName: config.topic.replace(/\s/g, ''),
         DigitalThinkingModelType: config.type,
         Model: newElements,
+        history: [],
         Note: `A new model for ${isDecisionModel ? 'decision making' : 'performance review'}.`,
         AutoSaveModel: true,
         HasIssue: false,
