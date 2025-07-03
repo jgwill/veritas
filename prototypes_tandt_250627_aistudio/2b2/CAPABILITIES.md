@@ -11,4 +11,7 @@
 ### Digital Decision Making
 
 
+* Limitation observed about the comparation model, the decision is said no for non dominant elements that do not or should not affect the decision (the elements is not dominant)
+
+
 ## UI Analyzing
