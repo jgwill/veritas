@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { ModelSummary, ModelId, DigitalModel } from '../types';
 import { useAppStore } from '../store';

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';

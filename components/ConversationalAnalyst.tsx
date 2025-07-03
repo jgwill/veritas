@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { ChatMessage } from '../types';

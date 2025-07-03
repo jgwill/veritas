@@ -6,7 +6,7 @@ This document contains meta-instructions and strategies to improve response qual
 
 When completing a user request, update `CHANGELOG.md`. The entry should summarize the user's request and the key changes made to the application in response. Format the entry like this:
 
-```markdown
+\`\`\`markdown
 # yyMMddHHMM
 
 ## > [User's core request paraphrased here]
@@ -15,7 +15,7 @@ When completing a user request, update `CHANGELOG.md`. The entry should summariz
 
 - [Detailed change 1]
 - [Detailed change 2]
-```
+\`\`\`
 
 ## Generating Structured JSON
 

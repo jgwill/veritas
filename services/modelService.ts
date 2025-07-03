@@ -1,4 +1,3 @@
-
 import { DigitalModel, ModelSummary, ModelId, DigitalElement } from '../types';
 import { performanceReviewModelData, habitatModelData } from '../constants';
 

@@ -1,4 +1,3 @@
-
 export interface HistoryEntry {
   id: string; // Unique ID for the history entry, e.g., a timestamp
   timestamp: string; // ISO string of when the change was made

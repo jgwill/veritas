@@ -20,7 +20,7 @@
 
 Implement the following TypeScript interfaces exactly.
 
-```typescript
+\`\`\`typescript
 export interface HistoryEntry {
   id: string; // e.g., timestamp
   timestamp: string; // ISO string
@@ -82,7 +82,7 @@ export interface ModelSummary {
   type: number;
   description: string;
 }
-```
+\`\`\`
 
 ---
 ## 3. Application Flow & Screens

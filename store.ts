@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { Chat } from '@google/genai';
 import { AppMode, DigitalModel, ModelId, ModelSummary, DigitalElement, HistoryEntry, ChatMessage, ActionSuggestion } from './types';

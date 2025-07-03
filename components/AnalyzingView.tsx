@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { DigitalModel, DigitalElement, AppMode } from '../types';
 import ElementCard from './ElementCard';

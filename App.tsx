@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { AppMode } from './types';
 import { useAppStore } from './store';
