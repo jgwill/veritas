@@ -1,5 +1,7 @@
+
 import { create } from 'zustand';
-import { AppMode, DigitalModel, ModelId, ModelSummary, DigitalElement } from './types';
+import type { Chat } from '@google/genai';
+import { AppMode, DigitalModel, ModelId, ModelSummary, DigitalElement, HistoryEntry, ChatMessage, ActionSuggestion } from './types';
 import { 
     getAvailableModels, 
     getModel, 
@@ -9,7 +11,9 @@ import {
     importModel as importModelService,
     exportModel as exportModelService,
 } from './services/modelService';
-import { generateModelFromDescription } from './services/geminiService';
+import { generateModelFromDescription, createChatSession as createChatSessionService, generateActionSuggestions as generateActionSuggestionsService } from './services/geminiService';
+
+const MAX_HISTORY_LENGTH = 50;
 
 interface AppState {
   // State
@@ -19,22 +23,32 @@ interface AppState {
   theme: 'light' | 'dark';
   isLoading: boolean;
   isCreatingModel: boolean;
+  isHistoryPanelOpen: boolean;
+  isChatAnalystOpen: boolean;
+  chatSession: Chat | null;
+  actionSuggestions: ActionSuggestion[] | null;
+  isGeneratingSuggestions: boolean;
+  suggestionError: string | null;
 
   // Actions
   initializeTheme: () => void;
   toggleTheme: () => void;
   setMode: (mode: AppMode) => void;
   setIsCreatingModel: (isCreating: boolean) => void;
+  toggleHistoryPanel: () => void;
+  toggleChatAnalyst: () => void;
 
   fetchAvailableModels: () => Promise<void>;
   loadModel: (modelId: ModelId) => Promise<void>;
   closeModel: () => void;
-  saveModel: (updatedModel: DigitalModel) => Promise<void>;
-  updateElement: (updatedElement: DigitalElement) => void;
+  saveModel: (updatedModel: DigitalModel, description: string) => Promise<void>;
+  updateElement: (updatedElement: DigitalElement, description: string) => void;
+  revertToVersion: (historyId: string) => Promise<void>;
   createModel: (config: { name?: string; description?: string; type: number; useAi: boolean }) => Promise<void>;
   deleteModel: (modelId: ModelId) => Promise<void>;
   importModel: (modelJson: DigitalModel) => Promise<void>;
   exportModel: (modelId: ModelId) => Promise<void>;
+  generateActionSuggestions: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -45,6 +59,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   theme: 'dark',
   isLoading: true,
   isCreatingModel: false,
+  isHistoryPanelOpen: false,
+  isChatAnalystOpen: false,
+  chatSession: null,
+  actionSuggestions: null,
+  isGeneratingSuggestions: false,
+  suggestionError: null,
 
   // Actions
   initializeTheme: () => {
@@ -70,8 +90,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setMode: (mode) => set({ mode }),
-
   setIsCreatingModel: (isCreating) => set({ isCreatingModel: isCreating }),
+  toggleHistoryPanel: () => set(state => ({ isHistoryPanelOpen: !state.isHistoryPanelOpen })),
+  
+  toggleChatAnalyst: () => {
+    set(state => {
+      const newIsOpen = !state.isChatAnalystOpen;
+      // If opening panel and no session exists for the current model, create one.
+      if (newIsOpen && !state.chatSession && state.model) {
+        const session = createChatSessionService(state.model);
+        if (session) {
+          return { chatSession: session, isChatAnalystOpen: newIsOpen };
+        }
+        // If session creation fails (e.g., no API key), still open panel but session remains null.
+        console.warn("Could not create chat session, AI features may be disabled.");
+      }
+      return { isChatAnalystOpen: newIsOpen };
+    });
+  },
 
   fetchAvailableModels: async () => {
     set({ isLoading: true });
@@ -86,7 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadModel: async (modelId) => {
-    set({ isLoading: true });
+    set({ isLoading: true, isHistoryPanelOpen: false, isChatAnalystOpen: false, chatSession: null, actionSuggestions: null, suggestionError: null, isGeneratingSuggestions: false });
     try {
       const newModel = await getModel(modelId);
       set({ model: newModel, mode: AppMode.Modeling, isLoading: false });
@@ -97,27 +133,60 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeModel: () => {
-    set({ model: null });
+    set({ model: null, isHistoryPanelOpen: false, isChatAnalystOpen: false, chatSession: null, actionSuggestions: null, suggestionError: null, isGeneratingSuggestions: false });
     get().fetchAvailableModels(); // Refresh list in case of changes
   },
   
-  saveModel: async (updatedModel) => {
-    set({ model: updatedModel }); // Optimistic update
+  saveModel: async (updatedModel, description) => {
+    const newHistoryEntry: HistoryEntry = {
+      id: `${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      description: description,
+      modelState: JSON.parse(JSON.stringify(updatedModel.Model)), // Deep copy
+    };
+
+    const currentHistory = updatedModel.history || [];
+    const newHistory = [newHistoryEntry, ...currentHistory].slice(0, MAX_HISTORY_LENGTH);
+
+    const modelWithHistory = { ...updatedModel, history: newHistory };
+
+    set({ model: modelWithHistory }); // Optimistic update
     try {
-      await saveModelService(updatedModel);
+      await saveModelService(modelWithHistory);
     } catch (error) {
       console.error("Failed to save model:", error);
       // Future: implement rollback logic or user-facing error
     }
   },
+  
+  revertToVersion: async (historyId: string) => {
+    const { model, saveModel } = get();
+    if (!model || !model.history) return;
 
-  updateElement: (updatedElement) => {
+    const historyEntry = model.history.find(h => h.id === historyId);
+    if (!historyEntry) {
+        console.error("History entry not found");
+        return;
+    }
+
+    // Create a new model state based on the historical data
+    const revertedModel: DigitalModel = {
+        ...model,
+        Model: JSON.parse(JSON.stringify(historyEntry.modelState)), // Deep copy
+    };
+    
+    const revertDescription = `Reverted to version from ${new Date(historyEntry.timestamp).toLocaleString()}`;
+    await saveModel(revertedModel, revertDescription);
+    set({ isHistoryPanelOpen: false });
+  },
+
+  updateElement: (updatedElement, description) => {
     const { model, saveModel } = get();
     if (!model) return;
     const newElements = model.Model.map(el => 
       el.Idug === updatedElement.Idug ? updatedElement : el
     );
-    saveModel({ ...model, Model: newElements });
+    saveModel({ ...model, Model: newElements }, description);
   },
   
   createModel: async (config) => {
@@ -183,5 +252,19 @@ export const useAppStore = create<AppState>((set, get) => ({
           // In a real app, you'd show a user-facing error here.
           alert("Could not export model. See console for details.");
       }
+  },
+
+  generateActionSuggestions: async () => {
+    const { model } = get();
+    if (!model) return;
+    set({ isGeneratingSuggestions: true, suggestionError: null, actionSuggestions: null }); // Reset
+    try {
+        const suggestions = await generateActionSuggestionsService(model);
+        set({ actionSuggestions: suggestions });
+    } catch (error: any) {
+        set({ suggestionError: error.message || "An unknown error occurred." });
+    } finally {
+        set({ isGeneratingSuggestions: false });
+    }
   },
 }));
