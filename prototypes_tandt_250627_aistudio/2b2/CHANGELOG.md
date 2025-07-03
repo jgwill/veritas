@@ -1,3 +1,15 @@
+# 2506281316
+
+## > do everything then
+
+### feat: implement AI-powered action suggestions to complete roadmap
+
+- **New Feature**: Added an "Suggest Actions with AI" button to the `PerformanceDashboard` in the "Structuring" view. This feature leverages the Gemini API to provide concrete, actionable steps for addressing critical or declining performance areas.
+- **Service Layer**: Implemented a new `generateActionSuggestions` function in `geminiService.ts`. This function constructs a specialized prompt that sends the highest-priority issues to the AI and requests a structured JSON response containing recommended actions.
+- **State Management**: Updated the Zustand store (`store.ts`) with new state properties and an action to manage the generation and display of AI suggestions, including loading and error states.
+- **UI/UX**: The `StructuringView` now includes a new "AI-Powered Action Plan" card that dynamically appears to display the suggestions returned by the AI.
+- **Roadmap**: Marked the "AI-Powered Action Suggestions" feature as complete in `ROADMAP.md`, finalizing the last major AI feature planned for the application.
+
 # 2506281315
 
 ## > you did nothing and just talked about doing it
