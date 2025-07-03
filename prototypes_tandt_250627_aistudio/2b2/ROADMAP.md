@@ -90,16 +90,12 @@ This phase focuses on turning the tool into a collaborative, enterprise-ready pl
 - [ ] **Backend & Database**: Transition from `localStorage` to a full backend (e.g., Node.js/Express) with a cloud database (e.g., PostgreSQL/MongoDB via Supabase/Firebase/Vercel Postgres).
 - [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously (e.g., using WebSockets).
 - [x] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
-- [ ] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
-
-### Architecture & API
-- **[ ] Full RESTful/GraphQL API**: Formalize the backend API with authentication middleware and standardized response formats.
-- **[ ] Cloud Deployment**: Prepare and configure the application for deployment on a cloud platform (e.g., Vercel, Netlify, AWS).
+- [x] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
 
 ### Gemini Integration
-- **[ ] AI-Powered Action Suggestions**:
+- [x] **AI-Powered Action Suggestions**:
   - For Performance Review models, have Gemini suggest concrete, actionable steps based on the analysis results (e.g., "For the 'Declining Code Quality' KPI, consider implementing mandatory code reviews for all PRs.").
-- **[ ] Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language (e.g., "What's the most critical factor in my decision model?" or "Summarize the key performance issues.").
+- [x] **Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language (e.g., "What's the most critical factor in my decision model?" or "Summarize the key performance issues.").
 
 
 
