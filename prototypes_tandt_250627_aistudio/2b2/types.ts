@@ -1,4 +1,22 @@
 
+export interface HistoryEntry {
+  id: string; // Unique ID for the history entry, e.g., a timestamp
+  timestamp: string; // ISO string of when the change was made
+  description: string; // A human-readable description of the change
+  modelState: DigitalElement[]; // A snapshot of the model's elements at this point
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ActionSuggestion {
+  area: string;
+  suggestion: string;
+}
+
 export interface DigitalElement {
   SortNo: number;
   TelescopedModel: null | any; // Define further if needed
@@ -39,6 +57,7 @@ export interface DigitalModel {
   Valid: boolean;
   FileId: string;
   TwoOnly: boolean;
+  history?: HistoryEntry[];
 }
 
 export enum AppMode {
