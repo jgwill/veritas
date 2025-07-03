@@ -9,12 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-dom/client": "18.2.0",
-    "recharts": "2.12.7?alias=react:react,react-dom:react-dom",
-    "@google/genai": "1.7.0",
-    "zustand": "4.5.4"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.12.7",
+    "@google/genai": "^1.7.0",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
