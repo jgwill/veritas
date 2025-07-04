@@ -124,6 +124,12 @@ VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
 - Added proper TypeScript declarations for CSS imports
 - Converted DigitalElement arrays to expected interface formats
 
+### Critical Runtime Fixes Applied
+- **Fixed Zustand Selector Anti-pattern**: Replaced object-creating selectors like `useAppStore(state => ({ prop1: state.prop1, prop2: state.prop2 }))` with individual selectors `useAppStore(state => state.prop1)` to prevent infinite re-renders
+- **Fixed useEffect Dependencies**: Removed function dependencies from useEffect to prevent infinite loops
+- **Fixed Store Update Logic**: Replaced state-in-state patterns in toggleChatAnalyst with direct get() calls
+- **Fixed CSS Syntax**: Corrected `min-h-[80px]w-full` to `min-h-[80px] w-full` spacing
+
 ## Development Guidelines
 
 ### Adding New Features
@@ -144,14 +150,18 @@ npm run build
 - ✅ **Tailwind CDN**: Removed CDN script from index.html 
 - ✅ **Missing Assets**: Added vite.svg favicon to public/ folder
 - ✅ **Store Updates**: Fixed Zustand store infinite re-renders in toggleChatAnalyst
-- ✅ **Build Success**: Application builds and runs without crashes
+- ✅ **Zustand Selectors**: Fixed object-creating selector patterns in all components
+- ✅ **CSS Syntax**: Fixed `min-h-[80px]w-full` spacing issue in globals.css
+- ✅ **Build & Runtime**: Application builds and runs without crashes or infinite loops
 
 ### ✅ Completed Deployment Fixes
 1. ✅ Fixed React Error #185 - removed useEffect dependencies causing infinite loops
 2. ✅ Removed Tailwind CDN from index.html head
 3. ✅ Added proper vite.svg favicon to public/ directory  
 4. ✅ Fixed Zustand store state update issues in toggleChatAnalyst
-5. ✅ Verified with `npm run preview` - runs without crashes
+5. ✅ Fixed all problematic Zustand selector patterns across components
+6. ✅ Resolved CSS syntax error `min-h-[80px]w-full` spacing issue
+7. ✅ Verified with `npm run preview` - runs without crashes or infinite loops
 
 ## Deployment Status
 ✅ **RUNTIME ISSUES RESOLVED** - Builds and runs successfully:
@@ -161,6 +171,8 @@ npm run build
 2. **Tailwind CDN Warning**: ✅ FIXED - Removed CDN script from index.html 
 3. **Missing /vite.svg**: ✅ FIXED - Added proper Vite SVG favicon to public/ directory
 4. **Store Infinite Updates**: ✅ FIXED - Refactored toggleChatAnalyst to prevent state-in-state updates
+5. **Zustand Selector Patterns**: ✅ FIXED - Fixed object-creating selectors in all components (Header, ConversationalAnalyst, HistoryPanel, CreateNewModelModal, ModelListView, StructuringView)
+6. **CSS Syntax Error**: ✅ FIXED - `min-h-[80px]w-full` spacing issue resolved
 
 ### ✅ Successful Build & Preview:
 - Build time: ~64 seconds
