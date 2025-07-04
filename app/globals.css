@@ -154,15 +154,63 @@ body {
 }
 
 .tandt-card {
-  @apply bg-card border border-border rounded-lg shadow-sm;
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700;
 }
 
 .tandt-button-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors;
 }
 
 .tandt-button-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  @apply bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-md transition-colors;
+}
+
+.tandt-input {
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
+}
+
+.tandt-textarea {
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-vertical;
+}
+
+.tandt-modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.tandt-modal-content {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
+}
+
+.tandt-sidebar {
+  @apply bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700;
+}
+
+.tandt-element-card {
+  @apply p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow cursor-pointer;
+}
+
+.tandt-element-card:hover {
+  @apply border-blue-300 dark:border-blue-600;
+}
+
+.tandt-analyzing {
+  @apply animate-pulse;
+}
+
+.tandt-chat-message {
+  @apply p-3 rounded-lg mb-2;
+}
+
+.tandt-chat-user {
+  @apply bg-blue-100 dark:bg-blue-900 ml-8;
+}
+
+.tandt-chat-assistant {
+  @apply bg-gray-100 dark:bg-gray-800 mr-8;
+}
+
+.tandt-loading-spinner {
+  @apply animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600;
 }
 
 .element-card {
@@ -194,13 +242,13 @@ body {
 }
 
 .chat-message.user {
-  @apply bg-primary text-primary-foreground ml-8;
+  @apply bg-blue-600 text-white ml-8;
 }
 
 .chat-message.assistant {
-  @apply bg-muted text-muted-foreground mr-8;
+  @apply bg-gray-200 text-gray-900 mr-8;
 }
 
 .loading-spinner {
-  @apply animate-spin rounded-full border-2 border-primary border-t-transparent;
+  @apply animate-spin rounded-full border-2 border-blue-600 border-t-transparent;
 }
