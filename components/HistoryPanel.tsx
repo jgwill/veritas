@@ -2,12 +2,10 @@ import React from 'react';
 import { useAppStore } from '../store';
 
 const HistoryPanel: React.FC = () => {
-  const { model, isHistoryPanelOpen, toggleHistoryPanel, revertToVersion } = useAppStore(state => ({
-    model: state.model,
-    isHistoryPanelOpen: state.isHistoryPanelOpen,
-    toggleHistoryPanel: state.toggleHistoryPanel,
-    revertToVersion: state.revertToVersion
-  }));
+  const model = useAppStore(state => state.model);
+  const isHistoryPanelOpen = useAppStore(state => state.isHistoryPanelOpen);
+  const toggleHistoryPanel = useAppStore(state => state.toggleHistoryPanel);
+  const revertToVersion = useAppStore(state => state.revertToVersion);
 
   if (!isHistoryPanelOpen || !model) {
     return null;
