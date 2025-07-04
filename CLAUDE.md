@@ -6,7 +6,7 @@ TandT (Think and Think) Digital Thinking Guidance is a React/TypeScript applicat
 ## Build Commands
 
 ### Essential Commands
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 
@@ -21,7 +21,7 @@ npm run lint
 
 # Preview build
 npm run preview
-```
+\`\`\`
 
 ### Deployment-Ready Build Process
 ✅ **Build Status**: Successfully building and deployment-ready
@@ -55,16 +55,16 @@ npm run preview
 - **vercel.json**: SPA routing configuration for deployment
 
 ### Environment Variables
-```bash
+\`\`\`bash
 # Required for AI features (optional - app works without)
 GEMINI_API_KEY=your_api_key_here
 GOOGLE_API_KEY=your_api_key_here  # Alternative
 VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
-```
+\`\`\`
 
 ## Directory Structure
 
-```
+\`\`\`
 /
 ├── components/           # React components
 │   ├── ui/              # shadcn/ui components  
@@ -79,7 +79,7 @@ VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
 ├── constants.ts        # Default data
 └── app/                # Next.js compatibility layer
     └── globals.css     # Global styles
-```
+\`\`\`
 
 ## Key Components & Features
 
@@ -131,11 +131,11 @@ VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
 4. **AI Integration**: Follow existing patterns in `geminiService.ts`
 
 ### Testing Build Health
-```bash
+\`\`\`bash
 # Quick health check
 npm run build
 # Should complete in ~30 seconds with no errors
-```
+\`\`\`
 
 ### Common Pitfalls to Avoid
 - ❌ Don't add complex vite.config.ts (causes path resolution issues)

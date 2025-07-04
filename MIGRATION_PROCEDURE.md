@@ -12,21 +12,21 @@ This document outlines the complete process for migrating a React/Vite prototype
 ## Phase 1: Initial Migration Setup
 
 ### 1.1 Repository Preparation
-```bash
+\`\`\`bash
 # Clean existing Next.js structure if replacing
 rm -rf app/ components/ lib/ pages/ public/
 rm next.config.js next.config.mjs tsconfig.json
 
 # Copy prototype files to root
 cp -r /path/to/prototype/* ./
-```
+\`\`\`
 
 ### 1.2 Package Configuration
 - Remove invalid dependency formats from package.json
 - Fix dependency strings (e.g., `"react-dom/client"` → `"react-dom"`)
 - Ensure proper versioning format
 - Add required scripts:
-```json
+\`\`\`json
 {
   "scripts": {
     "build": "tsc && vite build",
@@ -35,17 +35,17 @@ cp -r /path/to/prototype/* ./
     "preview": "vite preview"
   }
 }
-```
+\`\`\`
 
 ### 1.3 Vercel Configuration
 Create `vercel.json` for SPA routing:
-```json
+\`\`\`json
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
-```
+\`\`\`
 
 ## Phase 2: Build System Resolution
 
@@ -54,7 +54,7 @@ Create `vercel.json` for SPA routing:
 - **Initial Fix**: Remove problematic vite.config.ts to enable basic build
 - **Proper Solution**: Recreate with correct configuration:
 
-```typescript
+\`\`\`typescript
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -82,7 +82,7 @@ export default defineConfig({
     host: true,
   },
 })
-```
+\`\`\`
 
 ## Phase 3: TypeScript and Code Quality (V0 Agent Improvements)
 
@@ -96,7 +96,7 @@ The v0 agent made critical improvements:
 - Enhanced error handling with proper typing
 
 #### Example transformation:
-```typescript
+\`\`\`typescript
 // Before
 import React from 'react';
 const Component: React.FC<Props> = ({ prop }) => {
@@ -105,7 +105,7 @@ const Component: React.FC<Props> = ({ prop }) => {
 "use client"
 import type React from "react"
 const Component: React.FC<Props> = ({ prop }) => {
-```
+\`\`\`
 
 ### 3.2 UI Component Integration
 V0 agent added comprehensive styling and component library:
@@ -139,7 +139,7 @@ V0 agent added comprehensive styling and component library:
 ## Phase 4: Production Readiness
 
 ### 4.1 Build Optimization
-```bash
+\`\`\`bash
 # Test build process
 npm run build
 
@@ -148,7 +148,7 @@ npm run lint
 
 # Test preview deployment
 npm run preview
-```
+\`\`\`
 
 ### 4.2 Deployment Configuration
 - Ensure all environment variables are configured
@@ -178,7 +178,7 @@ V0 agent implemented:
 ### 5.2 Common Issues and Solutions
 
 #### JSON Parsing Errors
-```typescript
+\`\`\`typescript
 // Enhanced error handling
 try {
   const parsed = JSON.parse(response.trim().replace(/^```json\s*|\s*```$/g, ''));
@@ -187,7 +187,7 @@ try {
   console.warn('JSON parsing failed, attempting cleanup:', error);
   // Fallback parsing logic
 }
-```
+\`\`\`
 
 #### TypeScript Compilation Issues
 - Use `type` imports for type-only imports
@@ -204,13 +204,13 @@ try {
 ## Phase 6: Deployment and Monitoring
 
 ### 6.1 Vercel Deployment
-```bash
+\`\`\`bash
 # Deploy to Vercel
 vercel --prod
 
 # Verify deployment
 vercel inspect [deployment-url]
-```
+\`\`\`
 
 ### 6.2 Post-Deployment Verification
 - Test all major user flows

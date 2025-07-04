@@ -7,8 +7,9 @@ module.exports = {
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
     "./**/*.{ts,tsx}",
-    "./index.html"
-  ],
+    "./index.html",
+      "*.{js,ts,jsx,tsx,mdx}"
+],
   prefix: "",
   theme: {
     container: {
