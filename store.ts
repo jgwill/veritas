@@ -218,10 +218,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       if (config.useAi && config.description) {
         const generatedData = await generateModelFromDescription(config.description, config.type)
+        const elements = generatedData.Model.map(el => ({
+          name: el.DisplayName,
+          description: el.Description || ''
+        }))
         await createModelService({
           topic: generatedData.DigitalTopic,
           type: config.type,
-          elements: generatedData.Model,
+          elements: elements,
         })
       } else if (config.name) {
         await createModelService({ topic: config.name, type: config.type, elements: [] })
