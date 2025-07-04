@@ -1,5 +1,4 @@
 import { create } from "zustand"
-import type { Chat } from "@google/genai"
 import {
   AppMode,
   type DigitalModel,
@@ -36,7 +35,7 @@ interface AppState {
   isCreatingModel: boolean
   isHistoryPanelOpen: boolean
   isChatAnalystOpen: boolean
-  chatSession: Chat | null
+  chatSession: { sendMessage: (params: { message: string }) => Promise<{ text: string }> } | null
   actionSuggestions: ActionSuggestion[] | null
   isGeneratingSuggestions: boolean
   suggestionError: string | null
@@ -283,7 +282,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isGeneratingSuggestions: true, suggestionError: null, actionSuggestions: null }) // Reset
     try {
       const suggestions = await generateActionSuggestionsService(model)
-      set({ actionSuggestions: suggestions })
+      const formattedSuggestions: ActionSuggestion[] = suggestions.map((suggestion, index) => ({
+        area: `Action ${index + 1}`,
+        suggestion: suggestion
+      }))
+      set({ actionSuggestions: formattedSuggestions })
     } catch (error: any) {
       set({ suggestionError: error.message || "An unknown error occurred." })
     } finally {
