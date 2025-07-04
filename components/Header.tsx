@@ -26,16 +26,14 @@ const ModeButton: React.FC<{
 );
 
 const Header: React.FC<HeaderProps> = () => {
-  const { currentMode, setMode, onGoBack, theme, onToggleTheme, onToggleHistory, modelName, onToggleChatAnalyst } = useAppStore(state => ({
-    currentMode: state.mode,
-    setMode: state.setMode,
-    onGoBack: state.closeModel,
-    theme: state.theme,
-    onToggleTheme: state.toggleTheme,
-    onToggleHistory: state.toggleHistoryPanel,
-    modelName: state.model?.DigitalTopic || '',
-    onToggleChatAnalyst: state.toggleChatAnalyst,
-  }));
+  const currentMode = useAppStore(state => state.mode);
+  const setMode = useAppStore(state => state.setMode);
+  const onGoBack = useAppStore(state => state.closeModel);
+  const theme = useAppStore(state => state.theme);
+  const onToggleTheme = useAppStore(state => state.toggleTheme);
+  const onToggleHistory = useAppStore(state => state.toggleHistoryPanel);
+  const modelName = useAppStore(state => state.model?.DigitalTopic || '');
+  const onToggleChatAnalyst = useAppStore(state => state.toggleChatAnalyst);
 
   return (
     <header className="bg-tandt-light dark:bg-gray-800 shadow-md sticky top-0 z-20 border-b border-tandt-border dark:border-gray-700">
