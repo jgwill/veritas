@@ -104,19 +104,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleHistoryPanel: () => set((state) => ({ isHistoryPanelOpen: !state.isHistoryPanelOpen })),
 
   toggleChatAnalyst: () => {
-    set((state) => {
-      const newIsOpen = !state.isChatAnalystOpen
-      // If opening panel and no session exists for the current model, create one.
-      if (newIsOpen && !state.chatSession && state.model) {
-        const session = createChatSessionService(state.model)
-        if (session) {
-          return { chatSession: session, isChatAnalystOpen: newIsOpen }
-        }
-        // If session creation fails (e.g., no API key), still open panel but session remains null.
-        console.warn("Could not create chat session, AI features may be disabled.")
+    const { isChatAnalystOpen, chatSession, model } = get()
+    const newIsOpen = !isChatAnalystOpen
+    
+    // If opening panel and no session exists for the current model, create one.
+    if (newIsOpen && !chatSession && model) {
+      const session = createChatSessionService(model)
+      if (session) {
+        set({ chatSession: session, isChatAnalystOpen: newIsOpen })
+        return
       }
-      return { isChatAnalystOpen: newIsOpen }
-    })
+      // If session creation fails (e.g., no API key), still open panel but session remains null.
+      console.warn("Could not create chat session, AI features may be disabled.")
+    }
+    
+    set({ isChatAnalystOpen: newIsOpen })
   },
 
   fetchAvailableModels: async () => {

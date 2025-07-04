@@ -26,7 +26,7 @@ const App: React.FC = () => {
   useEffect(() => {
     initializeTheme();
     fetchAvailableModels();
-  }, [initializeTheme, fetchAvailableModels]);
+  }, []); // Remove dependencies to prevent infinite loops
 
   const renderModelContent = () => {
     if (!model) {
