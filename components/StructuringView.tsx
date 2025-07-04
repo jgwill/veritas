@@ -78,14 +78,10 @@ const DecisionDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
 // Component for Performance Review Model (Type 2)
 const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
   const [copyStatus, setCopyStatus] = useState("Copy Summary")
-  const { actionSuggestions, isGeneratingSuggestions, suggestionError, generateActionSuggestions } = useAppStore(
-    (state) => ({
-      actionSuggestions: state.actionSuggestions,
-      isGeneratingSuggestions: state.isGeneratingSuggestions,
-      suggestionError: state.suggestionError,
-      generateActionSuggestions: state.generateActionSuggestions,
-    }),
-  )
+  const actionSuggestions = useAppStore((state) => state.actionSuggestions);
+  const isGeneratingSuggestions = useAppStore((state) => state.isGeneratingSuggestions);
+  const suggestionError = useAppStore((state) => state.suggestionError);
+  const generateActionSuggestions = useAppStore((state) => state.generateActionSuggestions);
 
   const sortedElements = useMemo(() => {
     return [...model.Model].sort((a, b) => {
