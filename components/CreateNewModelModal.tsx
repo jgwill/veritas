@@ -6,10 +6,9 @@ interface CreateNewModelModalProps {
 }
 
 const CreateNewModelModal: React.FC<CreateNewModelModalProps> = () => {
-    const { onClose, onCreate } = useAppStore(state => ({
-        onClose: () => state.setIsCreatingModel(false),
-        onCreate: state.createModel
-    }));
+    const setIsCreatingModel = useAppStore(state => state.setIsCreatingModel);
+    const onCreate = useAppStore(state => state.createModel);
+    const onClose = () => setIsCreatingModel(false);
 
     const [creationMode, setCreationMode] = useState<'manual' | 'ai'>('manual');
     const [name, setName] = useState('');
