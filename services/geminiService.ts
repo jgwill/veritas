@@ -1,568 +1,486 @@
-// Server-side only service for Gemini API
-import type { DigitalModel, ActionSuggestion } from "../types"
+import { GoogleGenerativeAI } from "@google/generative-ai"
+import type { DigitalModel, DigitalElement } from "../types"
 
-// This will only work on the server side where environment variables are available
-const getApiKey = () => {
-  if (typeof window !== "undefined") {
-    console.warn("Gemini service should only be used on the server side")
-    return null
-  }
-  return process.env.API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
-}
+// Initialize Gemini AI
+let genAI: GoogleGenerativeAI | null = null
 
-// Initialize Gemini AI only on server side
-let ai: any = null
+// Check if we're on the server side and have an API key
+const isServer = typeof window === "undefined"
+const apiKey = isServer
+  ? process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.API_KEY || process.env.VITE_GOOGLE_API_KEY
+  : null
 
-const initializeAI = async () => {
-  if (typeof window !== "undefined") {
-    return null // Don't initialize on client side
-  }
-
-  const apiKey = getApiKey()
-  if (!apiKey) {
-    console.warn("Gemini API key not found. AI features will be disabled.")
-    return null
-  }
-
+if (isServer && apiKey) {
   try {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai")
-    ai = new GoogleGenerativeAI(apiKey)
-    return ai
+    genAI = new GoogleGenerativeAI(apiKey)
   } catch (error) {
-    console.error("Failed to initialize GoogleGenerativeAI:", error)
-    return null
+    console.warn("Failed to initialize Gemini AI:", error)
   }
 }
 
-// Helper function to clean and parse JSON from AI response
-const parseAIJsonResponse = (responseText: string): any => {
-  let jsonStr = responseText.trim()
-
-  // Remove markdown code fences if present
-  const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/s
-  const match = jsonStr.match(fenceRegex)
-  if (match && match[1]) {
-    jsonStr = match[1].trim()
-  }
-
-  // Find the first { and last } to extract just the JSON part
-  const firstBrace = jsonStr.indexOf("{")
-  const lastBrace = jsonStr.lastIndexOf("}")
-
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    jsonStr = jsonStr.substring(firstBrace, lastBrace + 1)
-  }
-
-  // Clean up common JSON formatting issues
-  jsonStr = jsonStr
-    .replace(/,\s*}/g, "}") // Remove trailing commas before closing braces
-    .replace(/,\s*]/g, "]") // Remove trailing commas before closing brackets
-    .replace(/\n/g, " ") // Remove newlines that might break JSON
-    .replace(/\s+/g, " ") // Normalize whitespace
-    .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:') // Add quotes around unquoted keys
-    .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
-
-  try {
-    return JSON.parse(jsonStr)
-  } catch (parseError) {
-    console.error("JSON parsing failed for:", jsonStr)
-    console.error("Parse error:", parseError)
-    throw new Error("Failed to parse AI response as valid JSON")
-  }
-}
-
-export const createChatSession = (model: DigitalModel): any => {
-  // Return a mock chat session for client-side usage
-  if (typeof window !== "undefined") {
-    return {
-      sendMessage: async (message: string) => ({
-        response: {
-          text: () => `This is a mock response to: ${message}. The actual AI features require server-side processing.`,
-        },
-      }),
-    }
-  }
-
-  if (!ai) {
-    console.warn("Cannot create chat session: Gemini AI not initialized.")
+// Helper function to get the model
+function getModel() {
+  if (!genAI) {
     return null
   }
+  return genAI.getGenerativeModel({ model: "gemini-pro" })
+}
 
-  const isDecisionModel = model.DigitalThinkingModelType === 1
-
-  const modelContext = {
-    DigitalTopic: model.DigitalTopic,
-    DigitalThinkingModelType: isDecisionModel ? "Decision Making" : "Performance Review",
-    ModelElements: model.Model.map((el) => {
-      const elementContext: any = {
-        Name: el.DisplayName,
-        Description: el.Description,
-      }
-
-      if (isDecisionModel) {
-        elementContext.DominanceFactor = el.DominanceFactor
-      }
-
-      if (el.TwoFlagAnswered) {
-        elementContext.Evaluation = el.TwoFlag ? "Acceptable" : "Unacceptable"
-      }
-
-      if (!isDecisionModel && el.ThreeFlagAnswered) {
-        const trend = el.ThreeFlag === 1 ? "Improving" : el.ThreeFlag === -1 ? "Declining" : "Stable"
-        elementContext.Trend = trend
-      }
-      return elementContext
-    }),
-  }
-
-  const modelJson = JSON.stringify(modelContext, null, 2)
-
-  const systemInstruction = `You are a helpful and insightful AI analyst for the TandT Digital Thinking application. Your task is to answer the user's questions about their current thinking model. You must base your answers STRICTLY on the data provided below in the "MODEL CONTEXT". Do not invent any information or discuss topics outside of this model. Be concise and helpful.
-
-MODEL CONTEXT:
-${modelJson}`
-
+// Helper function to parse AI JSON responses
+function parseAIJsonResponse(text: string): any {
   try {
-    const genModel = ai.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: systemInstruction,
-    })
-
-    return {
-      sendMessage: async (message: string) => {
-        try {
-          const result = await genModel.generateContent(message)
-          const response = await result.response
-          return {
-            response: {
-              text: () => response.text(),
-            },
-          }
-        } catch (error) {
-          console.error("Failed to send message:", error)
-          return {
-            response: {
-              text: () => "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
-            },
-          }
-        }
-      },
-    }
+    // First, try to parse as-is
+    return JSON.parse(text)
   } catch (error) {
-    console.error("Failed to create chat session:", error)
-    return null
+    try {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\}|\[[\s\S]*?\])\s*```/)
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[1])
+      }
+
+      // Try to find JSON-like content
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}")
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        const jsonStr = text.substring(jsonStart, jsonEnd + 1)
+        return JSON.parse(jsonStr)
+      }
+
+      // Try to find array-like content
+      const arrayStart = text.indexOf("[")
+      const arrayEnd = text.lastIndexOf("]")
+      if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
+        const arrayStr = text.substring(arrayStart, arrayEnd + 1)
+        return JSON.parse(arrayStr)
+      }
+
+      throw new Error("No valid JSON found")
+    } catch (parseError) {
+      console.warn("Failed to parse AI response as JSON:", text)
+      return null
+    }
   }
 }
 
-export const suggestElementsFromTopic = async (
-  topic: string,
-  modelType: number,
-): Promise<{ name: string; description: string }[]> => {
-  const isDecisionModel = modelType === 1
+// Generate model from description
+export async function generateModelFromDescription(description: string, type: number): Promise<DigitalModel> {
+  const model = getModel()
 
-  // Initialize AI if not already done
-  if (!ai) {
-    ai = await initializeAI()
+  if (!model) {
+    console.warn("Gemini API key not found. Using mock data.")
+    return createMockModel(description, type)
   }
-
-  if (!ai) {
-    console.log("Using mock data for Gemini service: suggestElementsFromTopic")
-    if (isDecisionModel) {
-      return [
-        { name: "Cost", description: "The overall price and budget considerations." },
-        { name: "Quality", description: "The standard of materials and craftsmanship." },
-        { name: "Features", description: "Specific functionalities and capabilities." },
-      ]
-    } else {
-      return [
-        { name: "Team Velocity", description: "The rate at which the team completes work." },
-        {
-          name: "Code Quality",
-          description: "The standard of the code being produced, measured by bugs or code reviews.",
-        },
-        { name: "Stakeholder Satisfaction", description: "The level of satisfaction from project stakeholders." },
-      ]
-    }
-  }
-
-  const prompt = isDecisionModel
-    ? `
-    Based on the decision-making topic "${topic}", generate a list of 5 to 8 relevant factors or criteria to consider.
-    Return the response as a JSON array where each object has a "name" (string) and a "description" (string, max 2 sentences).
-    Do not include any other text or markdown formatting outside of the JSON array.
-
-    Example for topic "Choosing a new laptop":
-    [
-      {
-        "name": "Performance",
-        "description": "The processing power, RAM, and graphics capabilities for your intended tasks."
-      },
-      {
-        "name": "Portability",
-        "description": "The size, weight, and battery life of the laptop for on-the-go use."
-      }
-    ]
-  `
-    : `
-    Based on the performance review topic "${topic}", generate a list of 5 to 8 relevant key performance indicators (KPIs) or areas to evaluate.
-    These should be things you can measure or assess.
-    Return the response as a JSON array where each object has a "name" (string) and a "description" (string, max 2 sentences).
-    Do not include any other text or markdown formatting outside of the JSON array.
-
-    Example for topic "Quarterly Team Performance":
-    [
-      {
-        "name": "Project Delivery Rate",
-        "description": "The percentage of projects completed on time and within budget."
-      },
-      {
-        "name": "Quality of Work",
-        "description": "The level of bugs, errors, or rework required for completed tasks."
-      }
-    ]
-  `
 
   try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-1.5-flash",
+    const modelTypeText = type === 1 ? "Decision Making" : "Performance Review"
+    const prompt = `Create a ${modelTypeText} model based on this description: "${description}"
+
+Please respond with a valid JSON object with this exact structure:
+{
+  "name": "Model Name",
+  "description": "Brief description",
+  "elements": [
+    {
+      "DisplayName": "Element Name",
+      "Description": "Element description",
+      "Weight": 0.2,
+      "Idug": "unique-id-1"
+    }
+  ]
+}
+
+Generate 4-6 relevant elements with weights that sum to 1.0. Make element names concise but descriptive.`
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        responseMimeType: "application/json",
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
       },
     })
 
-    const result = await model.generateContent(prompt)
     const response = await result.response
     const text = response.text()
 
     if (!text) {
-      throw new Error("Empty response from Gemini API")
+      throw new Error("Empty response from AI")
     }
 
-    let jsonStr = text.trim()
-    const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s
-    const match = jsonStr.match(fenceRegex)
-    if (match && match[2]) {
-      jsonStr = match[2].trim()
+    const aiData = parseAIJsonResponse(text)
+
+    if (!aiData || !aiData.elements) {
+      throw new Error("Invalid AI response format")
     }
 
-    const parsedData = JSON.parse(jsonStr)
-
-    if (Array.isArray(parsedData) && parsedData.every((item) => "name" in item && "description" in item)) {
-      return parsedData
-    } else {
-      console.error("Gemini response is not in the expected format:", parsedData)
-      throw new Error("Received an unexpected format from the AI.")
-    }
-  } catch (error) {
-    console.error("Failed to fetch suggestions from Gemini:", error)
-    throw new Error("The AI assistant is currently unavailable. Please try again later.")
-  }
-}
-
-export const generateModelFromDescription = async (
-  description: string,
-  modelType: number,
-): Promise<{ DigitalTopic: string; Model: { name: string; description: string }[] }> => {
-  // Initialize AI if not already done
-  if (!ai) {
-    ai = await initializeAI()
-  }
-
-  if (!ai) {
-    console.log("Using mock data for Gemini service: generateModelFromDescription")
+    // Create the model with AI-generated data
+    const modelId = `ai-model-${Date.now()}`
     return {
-      DigitalTopic: `Mock: ${description.substring(0, 20)}`,
-      Model: [
-        { name: "Generated Factor 1", description: "This is the first mock factor." },
-        { name: "Generated Factor 2", description: "This is the second mock factor." },
-      ],
-    }
-  }
-
-  const isDecisionModel = modelType === 1
-
-  const prompt = `
-    You are an expert consultant who helps users structure their thinking.
-    A user has provided a description of a goal. Your task is to generate a complete digital thinking model structure based on this description.
-
-    User's Goal: "${description}"
-    Model Type: ${isDecisionModel ? "Decision Making" : "Performance Review"}
-
-    Instructions:
-    1. Analyze the user's goal to determine a concise and clear "DigitalTopic". This should be a short title for their model.
-    2. Based on the goal and model type, generate a list of 5 to 8 relevant elements.
-        - If the model type is "Decision Making", these elements should be critical factors or criteria for making the decision.
-        - If the model type is "Performance Review", these elements should be key performance indicators (KPIs) or areas to evaluate.
-    3. Each element must have a "name" (string, title-cased) and a "description" (string, 1-2 sentences).
-
-    Return ONLY a valid JSON object with this exact structure:
-    {
-      "DigitalTopic": "A concise topic name you generated",
-      "Model": [
-        {
-          "name": "First Element Name",
-          "description": "A clear description for the first element."
-        },
-        {
-          "name": "Second Element Name", 
-          "description": "A clear description for the second element."
-        }
-      ]
-    }
-
-    Do not include any explanatory text, markdown formatting, or anything other than the JSON object.
-  `
-
-  try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        temperature: 0.3, // Lower temperature for more consistent JSON output
-        maxOutputTokens: 1000,
-        responseMimeType: "application/json", // Force JSON response
-      },
-    })
-
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const responseText = response.text()
-
-    if (!responseText) {
-      throw new Error("Empty response from Gemini API")
-    }
-
-    console.log("Raw AI response:", responseText) // Debug log
-
-    // Try to parse directly first since we requested JSON format
-    let parsedData: any
-    try {
-      parsedData = JSON.parse(responseText)
-    } catch (directParseError) {
-      console.log("Direct JSON parse failed, trying cleanup method")
-      parsedData = parseAIJsonResponse(responseText)
-    }
-
-    console.log("Parsed data:", parsedData) // Debug log
-
-    if (parsedData && parsedData.DigitalTopic && Array.isArray(parsedData.Model)) {
-      // Validate that each model element has the required properties
-      const isValidModel = parsedData.Model.every(
-        (item: any) => item && typeof item.name === "string" && typeof item.description === "string",
-      )
-
-      if (isValidModel) {
-        return parsedData
-      } else {
-        console.error("Model elements are not in the expected format:", parsedData.Model)
-        throw new Error("Generated model elements are missing required properties.")
-      }
-    } else {
-      console.error("Gemini model generation response is not in the expected format:", parsedData)
-      throw new Error("Failed to generate model due to unexpected format from the AI.")
+      Idug: modelId,
+      DisplayName: aiData.name || `AI Generated ${modelTypeText} Model`,
+      Description: aiData.description || description,
+      Type: type,
+      Elements: aiData.elements.map((element: any, index: number) => ({
+        Idug: element.Idug || `element-${modelId}-${index}`,
+        DisplayName: element.DisplayName || `Element ${index + 1}`,
+        Description: element.Description || "",
+        Weight: element.Weight || 1 / aiData.elements.length,
+        ParentIdug: modelId,
+        Type: type === 1 ? "Alternative" : "Criterion",
+        Status: "Active",
+        CreatedDate: new Date().toISOString(),
+        ModifiedDate: new Date().toISOString(),
+      })),
+      Status: "Active",
+      CreatedDate: new Date().toISOString(),
+      ModifiedDate: new Date().toISOString(),
     }
   } catch (error) {
     console.error("Failed to generate model from description via Gemini:", error)
+    return createMockModel(description, type)
+  }
+}
 
-    // Provide a fallback response instead of throwing
-    const fallbackTopic = description.length > 50 ? description.substring(0, 50) + "..." : description
-    const fallbackElements = isDecisionModel
+// Create mock model for fallback
+function createMockModel(description: string, type: number): DigitalModel {
+  const modelId = `mock-model-${Date.now()}`
+  const modelTypeText = type === 1 ? "Decision Making" : "Performance Review"
+
+  const mockElements =
+    type === 1
       ? [
-          { name: "Cost", description: "Financial considerations and budget constraints." },
-          { name: "Quality", description: "Standards and requirements that must be met." },
-          { name: "Timeline", description: "Time constraints and scheduling considerations." },
-          { name: "Resources", description: "Available resources and capabilities needed." },
-          { name: "Risk", description: "Potential risks and mitigation strategies." },
+          { name: "Cost Effectiveness", desc: "Financial impact and budget considerations", weight: 0.25 },
+          { name: "Implementation Feasibility", desc: "Ease of implementation and resource requirements", weight: 0.2 },
+          { name: "Strategic Alignment", desc: "Alignment with organizational goals and strategy", weight: 0.25 },
+          { name: "Risk Assessment", desc: "Potential risks and mitigation strategies", weight: 0.15 },
+          { name: "Stakeholder Impact", desc: "Effect on stakeholders and user satisfaction", weight: 0.15 },
         ]
       : [
-          { name: "Efficiency", description: "How effectively resources are being utilized." },
-          { name: "Quality", description: "The standard of output or deliverables." },
-          { name: "Timeliness", description: "Meeting deadlines and schedule adherence." },
-          { name: "Satisfaction", description: "Stakeholder and customer satisfaction levels." },
-          { name: "Growth", description: "Progress toward goals and improvement metrics." },
+          { name: "Quality Metrics", desc: "Measurable quality indicators and standards", weight: 0.3 },
+          { name: "Efficiency Measures", desc: "Process efficiency and productivity metrics", weight: 0.25 },
+          { name: "Customer Satisfaction", desc: "Customer feedback and satisfaction scores", weight: 0.2 },
+          { name: "Innovation Index", desc: "Innovation and improvement initiatives", weight: 0.15 },
+          { name: "Compliance Status", desc: "Regulatory and policy compliance levels", weight: 0.1 },
         ]
 
-    return {
-      DigitalTopic: fallbackTopic,
-      Model: fallbackElements,
-    }
+  return {
+    Idug: modelId,
+    DisplayName: `${modelTypeText} Model`,
+    Description: description,
+    Type: type,
+    Elements: mockElements.map((element, index) => ({
+      Idug: `element-${modelId}-${index}`,
+      DisplayName: element.name,
+      Description: element.desc,
+      Weight: element.weight,
+      ParentIdug: modelId,
+      Type: type === 1 ? "Alternative" : "Criterion",
+      Status: "Active",
+      CreatedDate: new Date().toISOString(),
+      ModifiedDate: new Date().toISOString(),
+    })),
+    Status: "Active",
+    CreatedDate: new Date().toISOString(),
+    ModifiedDate: new Date().toISOString(),
   }
 }
 
-export const generateAnalysisSummary = async (model: DigitalModel): Promise<string> => {
-  // Initialize AI if not already done
-  if (!ai) {
-    ai = await initializeAI()
+// Suggest elements from topic
+export async function suggestElementsFromTopic(topic: string, modelType: number): Promise<DigitalElement[]> {
+  const model = getModel()
+
+  if (!model) {
+    console.warn("Gemini API key not found. Using mock suggestions.")
+    return createMockElements(topic, modelType)
   }
-
-  if (!ai) {
-    console.log("Using mock data for Gemini analysis summary.")
-    return model.DigitalThinkingModelType === 1
-      ? "Decision: YES. This is a mock decision summary. All critical factors seem to be in order."
-      : "- Urgent Priority: 'Declining Locus of Control' because it is declining.\n- Urgent Priority: 'Regulatory Environment' because it is also declining."
-  }
-
-  const isDecisionModel = model.DigitalThinkingModelType === 1
-
-  // Create a concise summary of the model state to send to the AI
-  const analysisData = model.Model.filter((el) => el.TwoFlagAnswered) // Only include evaluated elements
-    .map((el) => {
-      let status = `Status: ${el.TwoFlag ? "Acceptable" : "Unacceptable"}`
-      if (!isDecisionModel && el.ThreeFlagAnswered) {
-        const trend = el.ThreeFlag === 1 ? "Improving" : el.ThreeFlag === -1 ? "Declining" : "Stable"
-        status += `, Trend: ${trend}`
-      }
-      if (isDecisionModel) {
-        status += `, Dominance Factor: ${el.DominanceFactor}`
-      }
-      return `- ${el.DisplayName}: ${status}`
-    })
-    .join("\n")
-
-  if (analysisData.length === 0) {
-    return "No elements have been evaluated yet. Please evaluate at least one element to get a summary."
-  }
-
-  const prompt = isDecisionModel
-    ? `
-        You are an expert strategic consultant. Below is a "Decision Making" model analysis for the topic "${model.DigitalTopic}".
-        A decision is "NO" if any highly dominant factor is "Unacceptable". Otherwise, it's "YES".
-        Based ONLY on the provided data, explain the final decision.
-
-        Instructions:
-        1. Start your response with "Decision: YES" or "Decision: NO".
-        2. Immediately follow with the one or two most critical reasons for that decision.
-        3. Be direct and insightful. DO NOT use any introductory or concluding conversational text or framing sentences.
-
-        Analysis Data:
-        ${analysisData}
-    `
-    : `
-        You are an expert management consultant. Below is a "Performance Review" analysis for the topic "${model.DigitalTopic}".
-        The goal is to identify the most critical areas needing attention. Priority is given to items that are "Unacceptable", especially if they are also "Declining".
-        Based ONLY on the provided data, generate a summary.
-
-        Instructions:
-        1. Directly list the top 1-3 most urgent priorities.
-        2. For each priority, briefly explain why it is critical based on its status and trend.
-        3. If all items are acceptable and stable/improving, state that there are no urgent priorities.
-        4. Be direct and actionable. DO NOT use any introductory or concluding conversational text or framing sentences.
-
-        Analysis Data:
-        ${analysisData}
-    `
 
   try {
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" })
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    return response.text() || "No response received from AI"
-  } catch (error) {
-    console.error("Failed to fetch analysis summary from Gemini:", error)
-    throw new Error("The AI analyst is currently unavailable. Please try again later.")
+    const typeText = modelType === 1 ? "decision-making alternatives" : "performance criteria"
+    const prompt = `Suggest 5-7 ${typeText} for the topic: "${topic}"
+
+Please respond with a valid JSON array of objects with this structure:
+[
+  {
+    "DisplayName": "Element Name",
+    "Description": "Detailed description of this element",
+    "Weight": 0.15
   }
-}
+]
 
-export const generateActionSuggestions = async (model: DigitalModel): Promise<ActionSuggestion[]> => {
-  // Initialize AI if not already done
-  if (!ai) {
-    ai = await initializeAI()
-  }
-
-  if (!ai) {
-    console.log("Using mock data for Gemini action suggestions.")
-    return [
-      {
-        area: "Locus of Market Control",
-        suggestion:
-          "Initiate a weekly sync to review key market metrics and empower the team to make tactical pricing adjustments.",
-      },
-      {
-        area: "Regulatory / legal / union environment",
-        suggestion:
-          "Schedule a quarterly review with the legal team to proactively identify and mitigate upcoming regulatory risks.",
-      },
-    ]
-  }
-
-  // Find only the critical elements to focus on
-  const criticalElements = model.Model.filter((el) => {
-    const isUnacceptable = el.TwoFlagAnswered && !el.TwoFlag
-    const isDeclining = el.ThreeFlagAnswered && el.ThreeFlag === -1
-    return isUnacceptable || isDeclining
-  })
-    .map((el) => {
-      let status = `Status: ${el.TwoFlag ? "Acceptable" : "Unacceptable"}`
-      if (el.ThreeFlagAnswered) {
-        const trend = el.ThreeFlag === 1 ? "Improving" : el.ThreeFlag === -1 ? "Declining" : "Stable"
-        status += `, Trend: ${trend}`
-      }
-      return `- ${el.DisplayName}: ${status}`
-    })
-    .join("\n")
-
-  if (criticalElements.length === 0) {
-    return []
-  }
-
-  const prompt = `
-    You are an expert management consultant specializing in creating actionable turnaround plans.
-    A user is reviewing performance for the topic "${model.DigitalTopic}". They have identified the following critical issues.
-
-    Critical Issues:
-    ${criticalElements}
-
-    Instructions:
-    1. For each critical issue listed, provide one concrete, specific, and actionable suggestion to help improve the situation.
-    2. The suggestions should be practical first steps a manager or team could take.
-    3. Return the response as a JSON array where each object has an "area" (string, the name of the issue from the list) and a "suggestion" (string, your actionable advice).
-    4. Do not include any other text or markdown formatting outside of the JSON array.
-
-    Example response:
-    [
-      {
-        "area": "Team Velocity",
-        "suggestion": "Implement daily stand-up meetings to identify and resolve blockers more quickly."
-      },
-      {
-        "area": "Stakeholder Satisfaction",
-        "suggestion": "Schedule bi-weekly demo sessions with key stakeholders to gather feedback earlier in the development cycle."
-      }
-    ]
-  `
-
-  try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    })
+Make sure weights sum to approximately 1.0 and element names are concise but descriptive.`
 
     const result = await model.generateContent(prompt)
     const response = await result.response
     const text = response.text()
 
     if (!text) {
-      throw new Error("Empty response from Gemini API")
+      throw new Error("Empty response from AI")
     }
 
-    let jsonStr = text.trim()
-    const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s
-    const match = jsonStr.match(fenceRegex)
-    if (match && match[2]) {
-      jsonStr = match[2].trim()
+    const suggestions = parseAIJsonResponse(text)
+
+    if (!Array.isArray(suggestions)) {
+      throw new Error("AI response is not an array")
     }
 
-    const parsedData = JSON.parse(jsonStr)
-
-    if (Array.isArray(parsedData) && parsedData.every((item) => "area" in item && "suggestion" in item)) {
-      return parsedData as ActionSuggestion[]
-    } else {
-      console.error("Gemini action suggestions response is not in the expected format:", parsedData)
-      throw new Error("Received an unexpected format from the AI for action suggestions.")
-    }
+    return suggestions.map((suggestion: any, index: number) => ({
+      Idug: `suggested-${Date.now()}-${index}`,
+      DisplayName: suggestion.DisplayName || `Element ${index + 1}`,
+      Description: suggestion.Description || "",
+      Weight: suggestion.Weight || 1 / suggestions.length,
+      ParentIdug: "",
+      Type: modelType === 1 ? "Alternative" : "Criterion",
+      Status: "Active",
+      CreatedDate: new Date().toISOString(),
+      ModifiedDate: new Date().toISOString(),
+    }))
   } catch (error) {
-    console.error("Failed to fetch action suggestions from Gemini:", error)
-    throw new Error("The AI assistant is currently unavailable. Please try again later.")
+    console.error("Failed to suggest elements via Gemini:", error)
+    return createMockElements(topic, modelType)
   }
+}
+
+// Create mock elements for fallback
+function createMockElements(topic: string, modelType: number): DigitalElement[] {
+  const mockSuggestions =
+    modelType === 1
+      ? [
+          { name: "Option A", desc: `Primary alternative for ${topic}`, weight: 0.2 },
+          { name: "Option B", desc: `Secondary alternative for ${topic}`, weight: 0.2 },
+          { name: "Option C", desc: `Third alternative for ${topic}`, weight: 0.2 },
+          { name: "Hybrid Approach", desc: `Combined approach for ${topic}`, weight: 0.2 },
+          { name: "Status Quo", desc: `Maintain current state for ${topic}`, weight: 0.2 },
+        ]
+      : [
+          { name: "Performance", desc: `Performance metrics for ${topic}`, weight: 0.25 },
+          { name: "Quality", desc: `Quality standards for ${topic}`, weight: 0.25 },
+          { name: "Efficiency", desc: `Efficiency measures for ${topic}`, weight: 0.25 },
+          { name: "Impact", desc: `Overall impact of ${topic}`, weight: 0.25 },
+        ]
+
+  return mockSuggestions.map((suggestion, index) => ({
+    Idug: `mock-${Date.now()}-${index}`,
+    DisplayName: suggestion.name,
+    Description: suggestion.desc,
+    Weight: suggestion.weight,
+    ParentIdug: "",
+    Type: modelType === 1 ? "Alternative" : "Criterion",
+    Status: "Active",
+    CreatedDate: new Date().toISOString(),
+    ModifiedDate: new Date().toISOString(),
+  }))
+}
+
+// Generate analysis summary
+export async function generateAnalysisSummary(model: DigitalModel): Promise<string> {
+  const model_ai = getModel()
+
+  if (!model_ai) {
+    return generateMockAnalysisSummary(model)
+  }
+
+  try {
+    const elementsText = model.Elements.map((e) => `- ${e.DisplayName} (Weight: ${e.Weight}): ${e.Description}`).join(
+      "\n",
+    )
+
+    const modelTypeText = model.Type === 1 ? "Decision Making" : "Performance Review"
+
+    const prompt = `Analyze this ${modelTypeText} model and provide a comprehensive summary:
+
+Model: ${model.DisplayName}
+Description: ${model.Description}
+
+Elements:
+${elementsText}
+
+Please provide:
+1. Overall assessment of the model structure
+2. Key insights about the element weights and balance
+3. Potential strengths and areas for improvement
+4. Recommendations for optimization
+
+Keep the response concise but informative (2-3 paragraphs).`
+
+    const result = await model_ai.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+
+    return text || generateMockAnalysisSummary(model)
+  } catch (error) {
+    console.error("Failed to generate analysis summary via Gemini:", error)
+    return generateMockAnalysisSummary(model)
+  }
+}
+
+// Generate mock analysis summary
+function generateMockAnalysisSummary(model: DigitalModel): string {
+  const modelTypeText = model.Type === 1 ? "decision-making" : "performance evaluation"
+  const elementCount = model.Elements.length
+  const avgWeight = 1 / elementCount
+  const maxWeight = Math.max(...model.Elements.map((e) => e.Weight))
+  const minWeight = Math.min(...model.Elements.map((e) => e.Weight))
+
+  return `This ${modelTypeText} model contains ${elementCount} elements with weights ranging from ${minWeight.toFixed(2)} to ${maxWeight.toFixed(2)}. The model appears ${maxWeight > avgWeight * 1.5 ? "to have some heavily weighted elements, suggesting clear priorities" : "to have relatively balanced weighting across elements"}.
+
+The structure suggests a ${model.Type === 1 ? "comprehensive approach to evaluating alternatives" : "well-rounded performance measurement framework"}. ${elementCount > 5 ? "The detailed breakdown allows for nuanced analysis" : "The focused approach should facilitate clear decision-making"}.
+
+Consider reviewing the element weights to ensure they align with your strategic priorities and stakeholder expectations. ${model.Type === 2 ? "For performance models, ensure metrics are measurable and actionable." : "For decision models, verify that all critical alternatives are represented."}`
+}
+
+// Generate action suggestions
+export async function generateActionSuggestions(elements: DigitalElement[]): Promise<string[]> {
+  const model = getModel()
+
+  if (!model) {
+    return generateMockActionSuggestions(elements)
+  }
+
+  try {
+    const criticalElements = elements.filter(
+      (e) =>
+        e.Weight > 0.2 ||
+        e.DisplayName.toLowerCase().includes("critical") ||
+        e.DisplayName.toLowerCase().includes("important"),
+    )
+
+    const elementsText = criticalElements
+      .map((e) => `- ${e.DisplayName}: ${e.Description} (Weight: ${e.Weight})`)
+      .join("\n")
+
+    const prompt = `Based on these critical model elements, suggest 3-5 specific actionable recommendations:
+
+${elementsText}
+
+Please provide practical, specific actions that can be taken to improve or address these elements. Format as a JSON array of strings.
+
+Example format:
+["Action 1 description", "Action 2 description", "Action 3 description"]`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+
+    if (!text) {
+      throw new Error("Empty response from AI")
+    }
+
+    const suggestions = parseAIJsonResponse(text)
+
+    if (Array.isArray(suggestions)) {
+      return suggestions.filter((s) => typeof s === "string" && s.length > 0)
+    }
+
+    // If not an array, try to extract suggestions from text
+    const lines = text
+      .split("\n")
+      .filter((line) => line.trim().length > 0 && (line.includes("-") || line.includes("•") || line.match(/^\d+\./)))
+
+    return lines
+      .slice(0, 5)
+      .map((line) => line.replace(/^[-•\d.\s]+/, "").trim())
+      .filter((suggestion) => suggestion.length > 0)
+  } catch (error) {
+    console.error("Failed to generate action suggestions via Gemini:", error)
+    return generateMockActionSuggestions(elements)
+  }
+}
+
+// Generate mock action suggestions
+function generateMockActionSuggestions(elements: DigitalElement[]): string[] {
+  const suggestions = [
+    "Review and validate element weights based on current strategic priorities",
+    "Gather stakeholder feedback on the relevance of each model element",
+    "Establish clear measurement criteria for quantitative assessment",
+    "Create implementation timeline with specific milestones and deliverables",
+    "Develop monitoring and evaluation framework for ongoing assessment",
+  ]
+
+  // Customize suggestions based on element characteristics
+  const highWeightElements = elements.filter((e) => e.Weight > 0.25)
+  if (highWeightElements.length > 0) {
+    suggestions.unshift(
+      `Focus immediate attention on high-priority elements: ${highWeightElements.map((e) => e.DisplayName).join(", ")}`,
+    )
+  }
+
+  const lowWeightElements = elements.filter((e) => e.Weight < 0.1)
+  if (lowWeightElements.length > 0) {
+    suggestions.push(
+      `Consider consolidating or removing low-impact elements: ${lowWeightElements.map((e) => e.DisplayName).join(", ")}`,
+    )
+  }
+
+  return suggestions.slice(0, 5)
+}
+
+// Create chat session
+export function createChatSession(model: DigitalModel) {
+  const ai_model = getModel()
+
+  if (!ai_model) {
+    // Return mock chat session
+    return {
+      sendMessage: async (message: string): Promise<string> => {
+        // Simple mock responses based on message content
+        const lowerMessage = message.toLowerCase()
+
+        if (lowerMessage.includes("help") || lowerMessage.includes("what")) {
+          return `I can help you analyze your ${model.DisplayName} model. You can ask me about element weights, relationships, or request suggestions for improvement.`
+        }
+
+        if (lowerMessage.includes("weight") || lowerMessage.includes("important")) {
+          const topElements = model.Elements.sort((a, b) => b.Weight - a.Weight)
+            .slice(0, 3)
+            .map((e) => `${e.DisplayName} (${(e.Weight * 100).toFixed(1)}%)`)
+            .join(", ")
+          return `The most heavily weighted elements in your model are: ${topElements}. These should be your primary focus areas.`
+        }
+
+        if (lowerMessage.includes("improve") || lowerMessage.includes("suggest")) {
+          return `To improve your model, consider: 1) Validating element weights with stakeholders, 2) Adding measurable criteria for each element, 3) Regular review and updates based on changing priorities.`
+        }
+
+        return `I understand you're asking about "${message}". Based on your ${model.DisplayName} model with ${model.Elements.length} elements, I'd recommend focusing on the highest-weighted elements first and ensuring all elements have clear, measurable criteria.`
+      },
+    }
+  }
+
+  // Return real chat session
+  return {
+    sendMessage: async (message: string): Promise<string> => {
+      try {
+        const context = `You are an AI assistant helping with a ${model.Type === 1 ? "Decision Making" : "Performance Review"} model called "${model.DisplayName}".
+
+Model Description: ${model.Description}
+
+Model Elements:
+${model.Elements.map((e) => `- ${e.DisplayName} (Weight: ${e.Weight}): ${e.Description}`).join("\n")}
+
+Please provide helpful, specific advice about this model. Keep responses concise and actionable.`
+
+        const prompt = `${context}\n\nUser Question: ${message}`
+
+        const result = await ai_model.generateContent(prompt)
+        const response = await result.response
+        const text = response.text()
+
+        return text || "I apologize, but I was unable to generate a response. Please try rephrasing your question."
+      } catch (error) {
+        console.error("Chat session error:", error)
+        return "I encountered an error processing your message. Please try again or rephrase your question."
+      }
+    },
+  }
+}
+
+// Export all functions
+export {
+  generateModelFromDescription,
+  suggestElementsFromTopic,
+  generateAnalysisSummary,
+  generateActionSuggestions,
+  createChatSession,
 }

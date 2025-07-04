@@ -70,7 +70,7 @@ const ChartStyle = ({ id, config }: { id: string; config: Record<string, any> })
 // Chart tooltip component
 interface ChartTooltipContentProps {
   active?: boolean
-  payload?: Array<Payload<ValueType, NameType>>
+  payload?: Payload<ValueType, NameType>[]
   label?: string
   hideLabel?: boolean
   hideIndicator?: boolean
@@ -97,7 +97,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
         )}
         {...props}
       >
-        {!hideLabel && label && <p className="font-medium text-foreground">{label}</p>}
+        {!hideLabel && label && <div className="font-medium text-foreground">{label}</div>}
         <div className="grid gap-1.5">
           {payload.map((item: any, index: number) => (
             <div
@@ -110,6 +110,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                     "h-2.5 w-2.5": indicator === "dot",
                     "w-1": indicator === "line",
                     "w-0 border-[1.5px] border-dashed bg-transparent": indicator === "dashed",
+                    "my-0.5": indicator === "line" || indicator === "dashed",
                   })}
                   style={
                     {
@@ -134,23 +135,19 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
 )
 ChartTooltipContent.displayName = "ChartTooltipContent"
 
-const ChartTooltip = RechartsPrimitive.Tooltip
-
 // Chart legend component
 interface ChartLegendContentProps {
   payload?: Array<{
     value: string
     type: string
     color: string
-    dataKey: string
   }>
   verticalAlign?: "top" | "bottom"
-  className?: string
 }
 
 const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentProps & React.ComponentProps<"div">>(
   ({ className, payload, verticalAlign = "bottom", ...props }, ref) => {
-    if (!payload || !payload.length) {
+    if (!payload?.length) {
       return null
     }
 
@@ -180,6 +177,5 @@ const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentPr
 )
 ChartLegendContent.displayName = "ChartLegendContent"
 
-const ChartLegend = RechartsPrimitive.Legend
-
-export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent }
+// Export all components
+export { ChartContainer, ChartTooltipContent, ChartLegendContent, ChartStyle }
