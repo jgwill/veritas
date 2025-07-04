@@ -130,6 +130,62 @@ VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
 - **Fixed Store Update Logic**: Replaced state-in-state patterns in toggleChatAnalyst with direct get() calls
 - **Fixed CSS Syntax**: Corrected `min-h-[80px]w-full` to `min-h-[80px] w-full` spacing
 
+## ⚠️ PERSISTENT CSS SYNTAX ERROR - REQUIRES IMMEDIATE ATTENTION
+
+### Current Status: UNRESOLVED
+Despite multiple attempts to fix the CSS syntax error, the issue persists in the build process. The error continues to appear:
+
+\`\`\`
+CssSyntaxError: <css input>:1:2512: The `min-h-[80px]w-full` class does not exist.
+\`\`\`
+
+### Root Cause Analysis
+The error indicates that Tailwind CSS is still encountering `min-h-[80px]w-full` as a single class name instead of two separate classes: `min-h-[80px]` and `w-full`. This suggests:
+
+1. **CSS Processing Issue**: The space between classes is being removed during CSS processing
+2. **Multiple CSS Sources**: There may be multiple CSS files or sources causing conflicts
+3. **Build Cache**: Previous builds may have cached the incorrect CSS
+4. **CSS Minification**: The build process might be incorrectly minifying the CSS
+
+### Files to Check Immediately
+
+1. **app/globals.css** - Line containing `.tandt-textarea` class
+2. **styles/globals.css** - Check if this file exists and contains duplicate styles
+3. **index.css** - Verify this file doesn't contain conflicting styles
+4. **Any other CSS files** in the project that might contain the `.tandt-textarea` class
+
+### Required Actions
+
+1. **Search All CSS Files**: Use `grep -r "min-h-\[80px\]" .` to find ALL occurrences
+2. **Clear Build Cache**: Delete `node_modules/.cache`, `dist/`, and `.next/` folders
+3. **Verify Single Source**: Ensure `.tandt-textarea` is defined in ONLY ONE file
+4. **Check CSS Import Order**: Verify the order of CSS imports in main files
+
+### Debugging Steps
+
+\`\`\`bash
+# 1. Search for all occurrences of the problematic class
+find . -name "*.css" -exec grep -l "min-h-\[80px\]" {} \;
+
+# 2. Clear all caches
+rm -rf node_modules/.cache dist .next
+
+# 3. Reinstall and rebuild
+npm install
+npm run build
+\`\`\`
+
+### Expected Fix Location
+The `.tandt-textarea` class should have a space between `min-h-[80px]` and `w-full`:
+
+\`\`\`css
+.tandt-textarea {
+  @apply flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+}
+\`\`\`
+
+**CRITICAL**: This error prevents the application from running properly and must be resolved before deployment.
+
 ## Development Guidelines
 
 ### Adding New Features
