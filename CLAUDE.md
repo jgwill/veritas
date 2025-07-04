@@ -137,20 +137,39 @@ npm run build
 # Should complete in ~30 seconds with no errors
 \`\`\`
 
-### Common Pitfalls to Avoid
-- ❌ Don't add complex vite.config.ts (causes path resolution issues)
-- ❌ Don't modify core type interfaces without checking all dependencies  
-- ❌ Don't import from non-existent shadcn paths in tailwind config
-- ✅ Use service layer for business logic
-- ✅ Maintain type compatibility between services and components
-- ✅ Test build process after significant changes
+### Critical Runtime Issues to Fix
+- 🚨 **CSS Spacing Error**: `min-h-[80px]w-full` needs space → `min-h-[80px] w-full` 
+- 🚨 **React Error #185**: Infinite update loops in components (check useEffect deps)
+- 🚨 **Tailwind CDN**: Remove CDN link from index.html (interferes with PostCSS)
+- 🚨 **Missing Assets**: Add favicon.ico and vite.svg to public/ folder
+- 🚨 **Store Updates**: Zustand store causing infinite re-renders (likely in toggleChatAnalyst)
+
+### Deployment Debugging Steps
+1. Check browser console for React error #185 details
+2. Fix CSS syntax errors in app/globals.css 
+3. Remove Tailwind CDN from index.html head
+4. Test with `npm run preview` before deploying
+5. Add proper error boundaries for production
 
 ## Deployment Status
-✅ **Production Ready**: Successfully building for Vercel deployment
-- Build output optimized and compressed
-- All assets properly bundled
-- No blocking errors or type issues
-- Vercel SPA routing configured
+⚠️ **CRITICAL RUNTIME ISSUES** - Builds but crashes on deployment:
+
+### Major Runtime Failures:
+1. **React Error #185**: Infinite update loop (likely in Zustand store)
+2. **CSS Syntax Error**: `min-h-[80px]w-full` missing space (should be `min-h-[80px] w-full`)
+3. **Tailwind CDN Warning**: Production build incorrectly using CDN instead of PostCSS
+4. **Missing /vite.svg**: 404 error on favicon
+
+### IMMEDIATE FIXES REQUIRED:
+```bash
+# 1. Fix CSS class in app/globals.css line ~160
+# Change: min-h-[80px]w-full
+# To: min-h-[80px] w-full
+
+# 2. Remove Tailwind CDN from index.html
+# 3. Add proper favicon to public/
+# 4. Fix Zustand store infinite update (check useEffect dependencies)
+```
 
 ## Performance Notes
 - Bundle size: ~639KB (within acceptable range)
