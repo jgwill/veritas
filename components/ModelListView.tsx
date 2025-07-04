@@ -84,27 +84,16 @@ const NewModelCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 
 
 const ModelListView: React.FC<ModelListViewProps> = () => {
-    const { 
-        models, 
-        isLoading, 
-        onLoadModel, 
-        onDeleteModel,
-        onExportModel,
-        onImportModel,
-        onNewModel, 
-        theme, 
-        onToggleTheme 
-    } = useAppStore(state => ({
-        models: state.availableModels,
-        isLoading: state.isLoading,
-        onLoadModel: state.loadModel,
-        onDeleteModel: state.deleteModel,
-        onExportModel: state.exportModel,
-        onImportModel: state.importModel,
-        onNewModel: () => state.setIsCreatingModel(true),
-        theme: state.theme,
-        onToggleTheme: state.toggleTheme
-    }));
+    const models = useAppStore(state => state.availableModels);
+    const isLoading = useAppStore(state => state.isLoading);
+    const onLoadModel = useAppStore(state => state.loadModel);
+    const onDeleteModel = useAppStore(state => state.deleteModel);
+    const onExportModel = useAppStore(state => state.exportModel);
+    const onImportModel = useAppStore(state => state.importModel);
+    const setIsCreatingModel = useAppStore(state => state.setIsCreatingModel);
+    const theme = useAppStore(state => state.theme);
+    const onToggleTheme = useAppStore(state => state.toggleTheme);
+    const onNewModel = () => setIsCreatingModel(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
