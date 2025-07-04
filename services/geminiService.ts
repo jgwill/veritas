@@ -177,24 +177,30 @@ const parseAIJsonResponse = (responseText: string): any => {
     jsonStr = match[1].trim()
   }
 
-  // Remove any leading/trailing text that might not be JSON
-  const jsonStartIndex = jsonStr.indexOf("{")
-  const jsonEndIndex = jsonStr.lastIndexOf("}")
+  // Find the first { and last } to extract just the JSON part
+  const firstBrace = jsonStr.indexOf("{")
+  const lastBrace = jsonStr.lastIndexOf("}")
 
-  if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
-    jsonStr = jsonStr.substring(jsonStartIndex, jsonEndIndex + 1)
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    jsonStr = jsonStr.substring(firstBrace, lastBrace + 1)
   }
 
-  // Try to fix common JSON issues
+  // Clean up common JSON formatting issues
   jsonStr = jsonStr
     .replace(/,\s*}/g, "}") // Remove trailing commas before closing braces
     .replace(/,\s*]/g, "]") // Remove trailing commas before closing brackets
-    .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Add quotes around unquoted keys
-    .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
     .replace(/\n/g, " ") // Remove newlines that might break JSON
     .replace(/\s+/g, " ") // Normalize whitespace
+    .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:') // Add quotes around unquoted keys
+    .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
 
-  return JSON.parse(jsonStr)
+  try {
+    return JSON.parse(jsonStr)
+  } catch (parseError) {
+    console.error("JSON parsing failed for:", jsonStr)
+    console.error("Parse error:", parseError)
+    throw new Error("Failed to parse AI response as valid JSON")
+  }
 }
 
 export const generateModelFromDescription = async (
@@ -253,13 +259,22 @@ export const generateModelFromDescription = async (
       config: {
         temperature: 0.3, // Lower temperature for more consistent JSON output
         maxOutputTokens: 1000,
+        responseMimeType: "application/json", // Force JSON response
       },
     })
 
     const responseText = response.text?.trim() || ""
     console.log("Raw AI response:", responseText) // Debug log
 
-    const parsedData = parseAIJsonResponse(responseText)
+    // Try to parse directly first since we requested JSON format
+    let parsedData: any
+    try {
+      parsedData = JSON.parse(responseText)
+    } catch (directParseError) {
+      console.log("Direct JSON parse failed, trying cleanup method")
+      parsedData = parseAIJsonResponse(responseText)
+    }
+
     console.log("Parsed data:", parsedData) // Debug log
 
     if (parsedData && parsedData.DigitalTopic && Array.isArray(parsedData.Model)) {
