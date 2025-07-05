@@ -39,38 +39,35 @@ const ElementCard: React.FC<ElementCardProps> = ({
     }
   }
 
-  const cardBg = element.Question ? "bg-tandt-card-alt-bg dark:bg-yellow-900/20" : "bg-tandt-card-bg dark:bg-gray-800"
-  const borderColor = isComparing ? "border-tandt-primary" : "border-tandt-border dark:border-gray-700"
+  const cardBg = element.Question ? "tandt-card-alt-bg" : "tandt-card-bg"
+  const borderColor = isComparing ? "border-blue-500" : "tandt-border"
 
   return (
     <div className={`border-2 ${borderColor} rounded-lg shadow-sm transition-all duration-200 ${cardBg} flex flex-col`}>
-      <div className="bg-tandt-card-header dark:bg-gray-700/50 p-3 border-b border-tandt-border dark:border-gray-700 flex justify-between items-center">
-        <h3 className="font-semibold text-sm text-tandt-dark dark:text-gray-200 truncate flex-grow">
-          {element.DisplayName}
-        </h3>
+      <div className="tandt-card-header p-3 border-b tandt-border flex justify-between items-center">
+        <h3 className="font-semibold text-sm tandt-dark truncate flex-grow">{element.DisplayName}</h3>
         {mode === AppMode.Modeling && onEdit && (
-          <button
-            onClick={() => onEdit(element)}
-            className="ml-2 text-gray-400 dark:text-gray-500 hover:text-tandt-primary dark:hover:text-white transition-colors"
-          >
+          <button onClick={() => onEdit(element)} className="ml-2 text-gray-400 hover:text-blue-600 transition-colors">
             <PencilIcon />
           </button>
         )}
       </div>
-      <div className="p-3 text-xs text-tandt-secondary dark:text-gray-400 flex-grow">
+      <div className="p-3 text-xs tandt-secondary flex-grow">
         <p className="h-16 overflow-y-auto">{element.Description || "No description provided."}</p>
       </div>
-      <div className="p-2 border-t border-tandt-border dark:border-gray-700 bg-tandt-light dark:bg-gray-800/50 rounded-b-lg">
+      <div className="p-2 border-t tandt-border tandt-light rounded-b-lg">
         {mode === AppMode.Modeling &&
           modelType === 1 && ( // Only show for Decision Making Models
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-tandt-secondary dark:text-gray-400">Dominance:</span>
-              <span className="text-sm font-bold text-tandt-primary bg-blue-100 dark:bg-blue-900/50 dark:text-blue-300 rounded-full px-2.5 py-0.5">
+              <span className="text-xs font-medium tandt-secondary">Dominance:</span>
+              <span className="text-sm font-bold text-blue-600 bg-blue-100 rounded-full px-2.5 py-0.5">
                 {element.DominanceFactor}
               </span>
               <button
                 onClick={() => onCompare && onCompare(element)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md ${isComparing ? "bg-tandt-primary text-white" : "bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 hover:bg-gray-300"}`}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  isComparing ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                }`}
                 disabled={isComparing}
               >
                 {isComparing ? "Comparing..." : "Compare"}
@@ -78,7 +75,7 @@ const ElementCard: React.FC<ElementCardProps> = ({
             </div>
           )}
         {mode === AppMode.Modeling && modelType !== 1 && (
-          <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-1">Define elements for review.</div>
+          <div className="text-center text-xs text-gray-400 py-1">Define elements for review.</div>
         )}
         {mode === AppMode.Analyzing && (
           <div className="flex items-center justify-around">
@@ -97,7 +94,7 @@ const ElementCard: React.FC<ElementCardProps> = ({
 
             {modelType === 2 && ( // Performance Review Model
               <>
-                <div className="border-l border-gray-300 dark:border-gray-600 h-6 mx-2"></div>
+                <div className="border-l border-gray-300 h-6 mx-2"></div>
                 <IconButton
                   active={element.ThreeFlagAnswered && element.ThreeFlag === 1}
                   onClick={() => handleTrend(1)}
@@ -131,28 +128,30 @@ const IconButton: React.FC<{ active: boolean; onClick: () => void; color: string
   color,
   icon,
 }) => {
-  const getButtonClasses = () => {
+  const getButtonStyles = () => {
+    const baseStyles = "p-2 rounded-full transition-all duration-200 transform hover:scale-110 cursor-pointer"
+
     if (active) {
       switch (color) {
         case "green":
-          return "bg-green-500 text-white shadow-md hover:bg-green-600"
+          return `${baseStyles} bg-green-500 text-white shadow-md hover:bg-green-600`
         case "red":
-          return "bg-red-500 text-white shadow-md hover:bg-red-600"
+          return `${baseStyles} bg-red-500 text-white shadow-md hover:bg-red-600`
         case "yellow":
-          return "bg-yellow-500 text-white shadow-md hover:bg-yellow-600"
+          return `${baseStyles} bg-yellow-500 text-white shadow-md hover:bg-yellow-600`
         default:
-          return "bg-gray-500 text-white shadow-md hover:bg-gray-600"
+          return `${baseStyles} bg-gray-500 text-white shadow-md hover:bg-gray-600`
       }
     } else {
       switch (color) {
         case "green":
-          return "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-600 dark:hover:text-green-400"
+          return `${baseStyles} bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-600`
         case "red":
-          return "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400"
+          return `${baseStyles} bg-gray-200 text-gray-500 hover:bg-red-100 hover:text-red-600`
         case "yellow":
-          return "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:text-yellow-600 dark:hover:text-yellow-400"
+          return `${baseStyles} bg-gray-200 text-gray-500 hover:bg-yellow-100 hover:text-yellow-600`
         default:
-          return "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+          return `${baseStyles} bg-gray-200 text-gray-500 hover:bg-gray-300`
       }
     }
   }
@@ -165,7 +164,7 @@ const IconButton: React.FC<{ active: boolean; onClick: () => void; color: string
         console.log("IconButton clicked, color:", color, "active:", active)
         onClick()
       }}
-      className={`p-2 rounded-full transition-all duration-200 transform hover:scale-110 cursor-pointer ${getButtonClasses()}`}
+      className={getButtonStyles()}
     >
       {icon}
     </button>

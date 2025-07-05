@@ -29,14 +29,6 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-
-    /* TandT specific colors */
-    --tandt-primary: 222.2 47.4% 11.2%;
-    --tandt-secondary: 210 40% 96%;
-    --tandt-accent: 173 58% 39%;
-    --tandt-success: 142 76% 36%;
-    --tandt-warning: 43 74% 66%;
-    --tandt-error: 0 84.2% 60.2%;
   }
 
   .dark {
@@ -76,111 +68,178 @@
   }
 }
 
-@layer components {
-  .tandt-primary {
-    @apply text-blue-600 dark:text-blue-400;
-  }
+/* TandT Application Specific Styles - Using regular CSS instead of @apply */
+.tandt-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
 
-  .tandt-secondary {
-    @apply text-gray-600 dark:text-gray-400;
-  }
-
-  .tandt-dark {
-    @apply text-gray-900 dark:text-gray-100;
-  }
-
-  .tandt-light {
-    @apply bg-gray-50 dark:bg-gray-800;
-  }
-
-  .tandt-border {
-    @apply border-gray-200 dark:border-gray-700;
-  }
-
-  .tandt-card-bg {
-    @apply bg-white dark:bg-gray-800;
-  }
-
-  .tandt-card-alt-bg {
-    @apply bg-yellow-50 dark:bg-yellow-900/20;
-  }
-
-  .tandt-card-header {
-    @apply bg-gray-50 dark:bg-gray-700/50;
-  }
-
-  .tandt-button {
-    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
-  }
-
-  .tandt-button-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
-  }
-
-  .tandt-button-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
-  }
-
-  .tandt-input {
-    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .tandt-textarea {
-    @apply flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .tandt-select {
-    @apply flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+@media (min-width: 640px) {
+  .tandt-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
-/* TandT Application Specific Styles */
-.tandt-container {
-  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+@media (min-width: 1024px) {
+  .tandt-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 }
 
 .tandt-card {
-  @apply bg-card text-card-foreground rounded-lg border shadow-sm;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .tandt-button-primary {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.tandt-button-primary:hover {
+  background-color: hsl(var(--primary) / 0.9);
 }
 
 .tandt-button-secondary {
-  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-2 focus:ring-secondary focus:ring-offset-2;
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.tandt-button-secondary:hover {
+  background-color: hsl(var(--secondary) / 0.8);
 }
 
 .tandt-input {
-  @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  display: flex;
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.tandt-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring));
 }
 
 .tandt-textarea {
-  @apply flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  display: flex;
+  min-height: 80px;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.tandt-textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring));
 }
 
 .tandt-select {
-  @apply flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  display: flex;
+  height: 2.5rem;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0.375rem;
+  border: 1px solid hsl(var(--input));
+  background-color: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
 }
 
-.tandt-badge {
-  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+.tandt-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring));
 }
 
-.tandt-badge-default {
-  @apply border-transparent bg-primary text-primary-foreground hover:bg-primary/80;
+/* Color utility classes */
+.tandt-primary {
+  color: #3b82f6;
 }
 
-.tandt-badge-secondary {
-  @apply border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80;
+.dark .tandt-primary {
+  color: #60a5fa;
 }
 
-.tandt-badge-destructive {
-  @apply border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80;
+.tandt-secondary {
+  color: #6b7280;
 }
 
-.tandt-badge-outline {
-  @apply text-foreground;
+.dark .tandt-secondary {
+  color: #9ca3af;
+}
+
+.tandt-dark {
+  color: #111827;
+}
+
+.dark .tandt-dark {
+  color: #f9fafb;
+}
+
+.tandt-light {
+  background-color: #f9fafb;
+}
+
+.dark .tandt-light {
+  background-color: #1f2937;
+}
+
+.tandt-border {
+  border-color: #e5e7eb;
+}
+
+.dark .tandt-border {
+  border-color: #374151;
+}
+
+.tandt-card-bg {
+  background-color: #ffffff;
+}
+
+.dark .tandt-card-bg {
+  background-color: #1f2937;
+}
+
+.tandt-card-alt-bg {
+  background-color: #fefce8;
+}
+
+.dark .tandt-card-alt-bg {
+  background-color: rgba(133, 77, 14, 0.2);
+}
+
+.tandt-card-header {
+  background-color: #f9fafb;
+}
+
+.dark .tandt-card-header {
+  background-color: rgba(55, 65, 81, 0.5);
 }
 
 /* Animation utilities */
@@ -232,19 +291,61 @@
 
 /* Loading spinner */
 .tandt-spinner {
-  @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite];
+  display: inline-block;
+  height: 1rem;
+  width: 1rem;
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  border: 2px solid;
+  border-color: currentColor;
+  border-right-color: transparent;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Focus styles */
-.tandt-focus {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+.tandt-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary));
 }
 
 /* Responsive utilities */
 .tandt-grid-responsive {
-  @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .tandt-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .tandt-grid-responsive {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .tandt-grid-responsive {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .tandt-flex-responsive {
-  @apply flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .tandt-flex-responsive {
+    flex-direction: row;
+  }
 }
