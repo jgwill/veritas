@@ -1,7 +1,7 @@
-# TandT Digital Thinking Guidance - Claude Code Documentation
+# TandT (Twos and Threes) Digital Thinking Guidance - Claude Code Documentation
 
 ## Overview
-TandT (Think and Think) Digital Thinking Guidance is a React/TypeScript application for creating and analyzing decision-making and performance review models using AI assistance. This application successfully migrated from Google AI Studio prototype to production-ready Vercel deployment.
+TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript application for creating and analyzing decision-making and performance review models using AI assistance. This application successfully migrated from Google AI Studio prototype to production-ready Vercel deployment.
 
 ## Build Commands
 
