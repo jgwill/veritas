@@ -1,0 +1,26 @@
+{
+  "manifestVersion": "1.0.0",
+  "bundleId": "tandt-minimal-agent-template",
+  "name": "TandT Minimal Agent Template",
+  "version": "1.0.0",
+  "description": "Template for creating a single-purpose agent",
+  "agents": [
+    {
+      "id": "agent-id-here",
+      "role": "primary",
+      "config": {}
+    }
+  ],
+  "deployment": {
+    "target": "mcp-server",
+    "environment": {},
+    "resources": {
+      "memory": "256MB",
+      "timeout": 30000
+    }
+  },
+  "license": {
+    "type": "CC-BY-SA-4.0",
+    "attribution": ["TandT Team"]
+  }
+}

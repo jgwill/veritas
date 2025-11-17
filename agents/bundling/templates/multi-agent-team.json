@@ -1,0 +1,101 @@
+{
+  "manifestVersion": "1.0.0",
+  "bundleId": "tandt-multi-agent-template",
+  "name": "TandT Multi-Agent Team Template",
+  "version": "1.0.0",
+  "description": "Template for coordinated multi-agent teams (Chimera Team pattern)",
+  "agents": [
+    {
+      "id": "coordinator",
+      "role": "primary",
+      "config": {
+        "coordinationStrategy": "hierarchical|collaborative|autonomous"
+      }
+    },
+    {
+      "id": "specialist-1",
+      "role": "specialist",
+      "config": {
+        "specialty": "security|analysis|technical"
+      }
+    },
+    {
+      "id": "specialist-2",
+      "role": "specialist"
+    },
+    {
+      "id": "companion-1",
+      "role": "companion",
+      "config": {
+        "companionType": "emotional"
+      }
+    },
+    {
+      "id": "companion-2",
+      "role": "companion",
+      "config": {
+        "companionType": "cultural"
+      }
+    }
+  ],
+  "orchestration": {
+    "mode": "hierarchical",
+    "coordinator": "coordinator",
+    "workflows": [
+      {
+        "id": "analysis-workflow",
+        "agents": ["specialist-1", "specialist-2"],
+        "type": "sequential",
+        "description": "Sequential analysis by specialists"
+      },
+      {
+        "id": "support-workflow",
+        "agents": ["companion-1", "companion-2"],
+        "type": "parallel",
+        "description": "Parallel companion support"
+      },
+      {
+        "id": "synthesis-workflow",
+        "agents": ["coordinator", "specialist-1", "companion-1"],
+        "type": "collaborative",
+        "description": "Collaborative synthesis"
+      }
+    ]
+  },
+  "protocols": {
+    "ncp": {
+      "version": "9.1.0",
+      "features": ["narrative-coherence", "mystery-encoding", "causal-constraints"]
+    },
+    "mcp": {
+      "version": "1.0.0",
+      "expose": ["tools", "resources", "prompts"]
+    }
+  },
+  "deployment": {
+    "target": "vercel",
+    "environment": {
+      "NODE_ENV": "production"
+    },
+    "resources": {
+      "memory": "1024MB",
+      "timeout": 60000
+    }
+  },
+  "license": {
+    "type": "IKSL-Bridge-v1.0",
+    "attribution": [
+      "Lakota peoples",
+      "Mani-Utenam peoples",
+      "Guillaume D-Isabelle (William)",
+      "Jerry",
+      "Team Contributors"
+    ],
+    "indigenousKnowledge": {
+      "frameworks": ["Two-Eyed Seeing", "Four Directions", "Spiral Memory"],
+      "communities": ["Lakota", "Mani-Utenam"],
+      "reciprocityRequirement": true,
+      "ceremonyProtocols": ["FourDirectionsCeremony"]
+    }
+  }
+}

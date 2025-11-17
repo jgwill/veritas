@@ -1,0 +1,53 @@
+{
+  "manifestVersion": "1.0.0",
+  "bundleId": "tandt-companion-template",
+  "name": "TandT Companion Agent Template",
+  "version": "1.0.0",
+  "description": "Template for companion agents with emotional/cultural enhancement",
+  "agents": [
+    {
+      "id": "primary-agent",
+      "role": "primary"
+    },
+    {
+      "id": "companion-agent",
+      "role": "companion",
+      "config": {
+        "companionType": "emotional|cultural|creative",
+        "activationMode": "automatic|on-demand"
+      }
+    }
+  ],
+  "orchestration": {
+    "mode": "parallel",
+    "workflows": [
+      {
+        "id": "companion-support",
+        "agents": ["primary-agent", "companion-agent"],
+        "type": "collaborative"
+      }
+    ]
+  },
+  "protocols": {
+    "mcp": {
+      "version": "1.0.0",
+      "expose": ["tools", "prompts"]
+    }
+  },
+  "deployment": {
+    "target": "mcp-server"
+  },
+  "license": {
+    "type": "IKSL-Bridge-v1.0",
+    "attribution": [
+      "Lakota peoples",
+      "Mani-Utenam peoples",
+      "Original Author Name"
+    ],
+    "indigenousKnowledge": {
+      "frameworks": ["Two-Eyed Seeing"],
+      "communities": ["Lakota", "Mani-Utenam"],
+      "reciprocityRequirement": true
+    }
+  }
+}
