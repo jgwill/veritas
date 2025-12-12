@@ -78,10 +78,10 @@ const DecisionDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
 // Component for Performance Review Model (Type 2)
 const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
   const [copyStatus, setCopyStatus] = useState("Copy Summary")
-  const actionSuggestions = useAppStore((state) => state.actionSuggestions);
-  const isGeneratingSuggestions = useAppStore((state) => state.isGeneratingSuggestions);
-  const suggestionError = useAppStore((state) => state.suggestionError);
-  const generateActionSuggestions = useAppStore((state) => state.generateActionSuggestions);
+  const actionSuggestions = useAppStore((state) => state.actionSuggestions)
+  const isGeneratingSuggestions = useAppStore((state) => state.isGeneratingSuggestions)
+  const suggestionError = useAppStore((state) => state.suggestionError)
+  const generateActionSuggestions = useAppStore((state) => state.generateActionSuggestions)
 
   const sortedElements = useMemo(() => {
     return [...model.Model].sort((a, b) => {
@@ -178,19 +178,19 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
       case 1:
         return (
           <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-            <TrendingUpIcon /> Improving
+            {/* <TrendingUpIcon /> */} Improving
           </span>
         )
       case -1:
         return (
           <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-            <TrendingDownIcon /> Declining
+            {/* <TrendingDownIcon /> */} Declining
           </span>
         )
       default:
         return (
           <span className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-            <MinusIcon /> Stable
+            {/* <MinusIcon /> */} Stable
           </span>
         )
     }
@@ -199,7 +199,7 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
   const AiActionPlanCard = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-dashed border-purple-400 dark:border-purple-600">
       <div className="flex items-center mb-4">
-        <SparklesIcon />
+        {/* <SparklesIcon /> */}
         <h3 className="ml-3 text-lg font-bold text-tandt-dark dark:text-gray-100">AI-Powered Action Plan</h3>
       </div>
       {isGeneratingSuggestions && (
@@ -274,7 +274,7 @@ const PerformanceDashboard: React.FC<{ model: DigitalModel }> = ({ model }) => {
                 disabled={isGeneratingSuggestions}
                 className="mt-3 sm:mt-0 flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <SparklesIcon />
+                {/* <SparklesIcon /> */}
                 <span className="ml-2 text-sm">{isGeneratingSuggestions ? "Thinking..." : "Suggest Actions"}</span>
               </button>
             )}
@@ -369,7 +369,7 @@ const SparklesIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
     <path
       fillRule="evenodd"
-      d="M9.401 2.628a.75.75 0 011.198 0l.233.29a.75.75 0 00.95.421l.34-.14a.75.75 0 01.93.93l-.14.34a.75.75 0 00.422.95l.29.233a.75.75 0 010 1.198l-.29.233a.75.75 0 00-.422.95l.14.34a.75.75 0 01-.93.93l-.34-.14a.75.75 0 00-.95.422l-.233.29a.75.75 0 01-1.198 0l-.233-.29a.75.75 0 00-.95-.422l-.34.14a.75.75 0 01-.93-.93l.14-.34a.75.75 0 00-.422-.95l-.29-.233a.75.75 0 010-1.198l.29-.233a.75.75 0 00.422-.95l-.14-.34a.75.75 0 01.93-.93l.34.14a.75.75 0 00.95-.422l.233-.29zM4.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM4.11 12.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.8 12.8a.75.75 0 010-1.06l.69-.69a.75.75 0 011.06 1.06l-.69.69a.75.75 0 01-1.06 0z"
+      d="M9.401 2.628a.75.75 0 011.198 0l.233.29a.75.75 0 00.95.421l.34-.14a.75.75 0 01.93.93l-.14.34a.75.75 0 00.422.95l.29.233a.75.75 0 010 1.198l-.29.233a.75.75 0 00-.422.95l-.14.34a.75.75 0 01-.93.93l.34-.14a.75.75 0 00-.95.422l-.233.29a.75.75 0 01-1.198 0l-.233-.29a.75.75 0 00-.95-.422l-.34.14a.75.75 0 01-.93-.93l.14-.34a.75.75 0 00-.422-.95l-.29-.233a.75.75 0 010-1.198l.29-.233a.75.75 0 00.422-.95l.14-.34a.75.75 0 01.93-.93l-.34-.14a.75.75 0 00-.95-.422l-.233-.29zM4.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM4.11 12.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.8 12.8a.75.75 0 010-1.06l.69-.69a.75.75 0 011.06 1.06l-.69.69a.75.75 0 01-1.06 0z"
       clipRule="evenodd"
     />
   </svg>

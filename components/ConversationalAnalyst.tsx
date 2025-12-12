@@ -6,8 +6,8 @@ import { useAppStore } from "../store"
 import type { ChatMessage } from "../types"
 
 const ConversationalAnalyst: React.FC = () => {
-  const toggleChatAnalyst = useAppStore((state) => state.toggleChatAnalyst);
-  const chatSession = useAppStore((state) => state.chatSession);
+  const toggleChatAnalyst = useAppStore((state) => state.toggleChatAnalyst)
+  const chatSession = useAppStore((state) => state.chatSession)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
