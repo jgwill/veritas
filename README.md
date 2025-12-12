@@ -1,6 +1,6 @@
 # TandT – Digital Thinking Framework
 
-TandT (Think and Think) is a comprehensive digital thinking and decision-making framework, not just a web application. It is designed to facilitate **structured, auditable, and extensible evaluation methodologies** for both individual and organizational scenarios. TandT is deeply rooted in the principles of **Structural Thinking** as developed in the CreerSaVie knowledge base, enabling users to move from subjective intuition to objective, systematic analysis.
+TandT (Twos and Threes from Robert Fritz) is a comprehensive digital thinking and decision-making framework, not just a web application. It is designed to facilitate **structured, auditable, and extensible evaluation methodologies** for both individual and organizational scenarios. TandT is deeply rooted in the principles of **Structural Thinking** as developed in the CreerSaVie knowledge base, enabling users to move from subjective intuition to objective, systematic analysis.
 
 ---
 
