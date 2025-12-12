@@ -23,27 +23,72 @@ const ElementCard: React.FC<ElementCardProps> = ({
   isComparing,
 }) => {
   const handleEvaluation = (evaluation: "accepted" | "rejected") => {
-    console.log("Evaluation clicked:", evaluation, "for element:", element.DisplayName)
+    console.log("[v0] Evaluation clicked:", {
+      elementName: element.DisplayName,
+      elementId: element.Idug,
+      evaluation,
+      currentTwoFlag: element.TwoFlag,
+      currentTwoFlagAnswered: element.TwoFlagAnswered,
+    })
+
     if (onUpdate) {
       const description = `Set status of '${element.DisplayName}' to '${evaluation}'`
-      onUpdate({ ...element, TwoFlag: evaluation === "accepted", TwoFlagAnswered: true }, description)
+      const updatedElement = {
+        ...element,
+        TwoFlag: evaluation === "accepted",
+        TwoFlagAnswered: true,
+      }
+
+      console.log("[v0] Calling onUpdate with:", {
+        elementName: updatedElement.DisplayName,
+        elementId: updatedElement.Idug,
+        newTwoFlag: updatedElement.TwoFlag,
+        newTwoFlagAnswered: updatedElement.TwoFlagAnswered,
+      })
+
+      onUpdate(updatedElement, description)
     }
   }
 
   const handleTrend = (trend: -1 | 0 | 1) => {
-    console.log("Trend clicked:", trend, "for element:", element.DisplayName)
+    console.log("[v0] Trend clicked:", {
+      elementName: element.DisplayName,
+      elementId: element.Idug,
+      trend,
+      currentThreeFlag: element.ThreeFlag,
+      currentThreeFlagAnswered: element.ThreeFlagAnswered,
+    })
+
     if (onUpdate) {
       const trendText = trend === 1 ? "improving" : trend === -1 ? "declining" : "stable"
       const description = `Set trend of '${element.DisplayName}' to '${trendText}'`
-      onUpdate({ ...element, ThreeFlag: trend, ThreeFlagAnswered: true }, description)
+      const updatedElement = {
+        ...element,
+        ThreeFlag: trend,
+        ThreeFlagAnswered: true,
+      }
+
+      console.log("[v0] Calling onUpdate with:", {
+        elementName: updatedElement.DisplayName,
+        elementId: updatedElement.Idug,
+        newThreeFlag: updatedElement.ThreeFlag,
+        newThreeFlagAnswered: updatedElement.ThreeFlagAnswered,
+      })
+
+      onUpdate(updatedElement, description)
     }
   }
 
   const cardBg = element.Question ? "tandt-card-alt-bg" : "tandt-card-bg"
   const borderColor = isComparing ? "border-blue-500" : "tandt-border"
 
+  const hasEvaluation = element.TwoFlagAnswered
+  const evaluationBorderColor = hasEvaluation ? (element.TwoFlag ? "border-green-400" : "border-red-400") : borderColor
+
   return (
-    <div className={`border-2 ${borderColor} rounded-lg shadow-sm transition-all duration-200 ${cardBg} flex flex-col`}>
+    <div
+      className={`border-2 ${evaluationBorderColor} rounded-lg shadow-sm transition-all duration-200 ${cardBg} flex flex-col`}
+    >
       <div className="tandt-card-header p-3 border-b tandt-border flex justify-between items-center">
         <h3 className="font-semibold text-sm tandt-dark truncate flex-grow">{element.DisplayName}</h3>
         {mode === AppMode.Modeling && onEdit && (
@@ -56,24 +101,23 @@ const ElementCard: React.FC<ElementCardProps> = ({
         <p className="h-16 overflow-y-auto">{element.Description || "No description provided."}</p>
       </div>
       <div className="p-2 border-t tandt-border tandt-light rounded-b-lg">
-        {mode === AppMode.Modeling &&
-          modelType === 1 && ( // Only show for Decision Making Models
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium tandt-secondary">Dominance:</span>
-              <span className="text-sm font-bold text-blue-600 bg-blue-100 rounded-full px-2.5 py-0.5">
-                {element.DominanceFactor}
-              </span>
-              <button
-                onClick={() => onCompare && onCompare(element)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  isComparing ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                }`}
-                disabled={isComparing}
-              >
-                {isComparing ? "Comparing..." : "Compare"}
-              </button>
-            </div>
-          )}
+        {mode === AppMode.Modeling && modelType === 1 && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium tandt-secondary">Dominance:</span>
+            <span className="text-sm font-bold text-blue-600 bg-blue-100 rounded-full px-2.5 py-0.5">
+              {element.DominanceFactor}
+            </span>
+            <button
+              onClick={() => onCompare && onCompare(element)}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                isComparing ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+              }`}
+              disabled={isComparing}
+            >
+              {isComparing ? "Comparing..." : "Compare"}
+            </button>
+          </div>
+        )}
         {mode === AppMode.Modeling && modelType !== 1 && (
           <div className="text-center text-xs text-gray-400 py-1">Define elements for review.</div>
         )}
@@ -92,7 +136,7 @@ const ElementCard: React.FC<ElementCardProps> = ({
               icon={<XIcon />}
             />
 
-            {modelType === 2 && ( // Performance Review Model
+            {modelType === 2 && (
               <>
                 <div className="border-l border-gray-300 h-6 mx-2"></div>
                 <IconButton
@@ -161,10 +205,10 @@ const IconButton: React.FC<{ active: boolean; onClick: () => void; color: string
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        console.log("IconButton clicked, color:", color, "active:", active)
         onClick()
       }}
       className={getButtonStyles()}
+      aria-label={`${color} button ${active ? "active" : "inactive"}`}
     >
       {icon}
     </button>

@@ -106,7 +106,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleChatAnalyst: () => {
     const { isChatAnalystOpen, chatSession, model } = get()
     const newIsOpen = !isChatAnalystOpen
-    
+
     // If opening panel and no session exists for the current model, create one.
     if (newIsOpen && !chatSession && model) {
       const session = createChatSessionService(model)
@@ -117,7 +117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       // If session creation fails (e.g., no API key), still open panel but session remains null.
       console.warn("Could not create chat session, AI features may be disabled.")
     }
-    
+
     set({ isChatAnalystOpen: newIsOpen })
   },
 
@@ -134,6 +134,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadModel: async (modelId) => {
+    console.log(`[v0] Loading model with ID: ${modelId}`)
     set({
       isLoading: true,
       isHistoryPanelOpen: false,
@@ -145,9 +146,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
     try {
       const newModel = await getModel(modelId)
+      console.log(`[v0] Model loaded successfully: ${newModel.DigitalTopic}`)
       set({ model: newModel, mode: AppMode.Modeling, isLoading: false })
     } catch (error) {
-      console.error("Failed to load model:", error)
+      console.error("[v0] Failed to load model:", error)
+      alert(
+        `Failed to load model: ${error instanceof Error ? error.message : "Unknown error"}. The model list will be refreshed.`,
+      )
+      await get().fetchAvailableModels()
       set({ isLoading: false })
     }
   },
@@ -166,6 +172,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveModel: async (updatedModel, description) => {
+    console.log("[v0] saveModel called:", {
+      description,
+      elementCount: updatedModel.Model.length,
+      evaluatedElements: updatedModel.Model.filter((el) => el.TwoFlagAnswered).map((el) => ({
+        name: el.DisplayName,
+        id: el.Idug,
+        TwoFlag: el.TwoFlag,
+        TwoFlagAnswered: el.TwoFlagAnswered,
+      })),
+    })
+
     const newHistoryEntry: HistoryEntry = {
       id: `${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -178,13 +195,58 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const modelWithHistory = { ...updatedModel, history: newHistory }
 
-    set({ model: modelWithHistory }) // Optimistic update
+    console.log("[v0] Setting model state optimistically")
+    set({ model: modelWithHistory })
+
     try {
       await saveModelService(modelWithHistory)
+      console.log("[v0] Model saved to localStorage successfully")
     } catch (error) {
-      console.error("Failed to save model:", error)
-      // Future: implement rollback logic or user-facing error
+      console.error("[v0] Failed to save model to localStorage:", error)
     }
+  },
+
+  updateElement: (updatedElement, description) => {
+    const { model, saveModel } = get()
+    if (!model) {
+      console.error("[v0] Cannot update element: no model loaded")
+      return
+    }
+
+    console.log("[v0] updateElement called:", {
+      elementName: updatedElement.DisplayName,
+      elementId: updatedElement.Idug,
+      description,
+      TwoFlag: updatedElement.TwoFlag,
+      TwoFlagAnswered: updatedElement.TwoFlagAnswered,
+      ThreeFlag: updatedElement.ThreeFlag,
+      ThreeFlagAnswered: updatedElement.ThreeFlagAnswered,
+    })
+
+    const newElements = model.Model.map((el) => {
+      if (el.Idug === updatedElement.Idug) {
+        console.log("[v0] Updating element:", {
+          oldTwoFlag: el.TwoFlag,
+          newTwoFlag: updatedElement.TwoFlag,
+          oldTwoFlagAnswered: el.TwoFlagAnswered,
+          newTwoFlagAnswered: updatedElement.TwoFlagAnswered,
+        })
+        return updatedElement
+      }
+      return el
+    })
+
+    console.log(
+      "[v0] All elements after update:",
+      newElements.map((el) => ({
+        name: el.DisplayName,
+        id: el.Idug,
+        TwoFlag: el.TwoFlag,
+        TwoFlagAnswered: el.TwoFlagAnswered,
+      })),
+    )
+
+    saveModel({ ...model, Model: newElements }, description)
   },
 
   revertToVersion: async (historyId: string) => {
@@ -208,21 +270,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isHistoryPanelOpen: false })
   },
 
-  updateElement: (updatedElement, description) => {
-    const { model, saveModel } = get()
-    if (!model) return
-    const newElements = model.Model.map((el) => (el.Idug === updatedElement.Idug ? updatedElement : el))
-    saveModel({ ...model, Model: newElements }, description)
-  },
-
   createModel: async (config) => {
     set({ isCreatingModel: false, isLoading: true })
     try {
       if (config.useAi && config.description) {
         const generatedData = await generateModelFromDescription(config.description, config.type)
-        const elements = generatedData.Model.map(el => ({
+        const elements = generatedData.Model.map((el) => ({
           name: el.DisplayName,
-          description: el.Description || ''
+          description: el.Description || "",
         }))
         await createModelService({
           topic: generatedData.DigitalTopic,
@@ -290,7 +345,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const suggestions = await generateActionSuggestionsService(model)
       const formattedSuggestions: ActionSuggestion[] = suggestions.map((suggestion, index) => ({
         area: `Action ${index + 1}`,
-        suggestion: suggestion
+        suggestion: suggestion,
       }))
       set({ actionSuggestions: formattedSuggestions })
     } catch (error: any) {

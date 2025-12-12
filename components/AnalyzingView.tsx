@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { type DigitalModel, AppMode } from "../types"
 import ElementCard from "./ElementCard"
 import { generateAnalysisSummary } from "../services/geminiService"
@@ -19,6 +19,17 @@ const AnalyzingView: React.FC<AnalyzingViewProps> = ({ model }) => {
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState<string | null>(null)
+
+  useEffect(() => {
+    console.log("[v0] AnalyzingView model updated:", {
+      elementCount: model.Model.length,
+      evaluatedElements: model.Model.filter((el) => el.TwoFlagAnswered).map((el) => ({
+        name: el.DisplayName,
+        id: el.Idug,
+        TwoFlag: el.TwoFlag,
+      })),
+    })
+  }, [model])
 
   const hasAnalysisData = useMemo(() => model.Model.some((el) => el.TwoFlagAnswered), [model])
 
@@ -141,7 +152,7 @@ const SparklesIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
     <path
       fillRule="evenodd"
-      d="M9.401 2.628a.75.75 0 011.198 0l.233.29a.75.75 0 00.95.421l.34-.14a.75.75 0 01.93.93l-.14.34a.75.75 0 00.422.95l.29.233a.75.75 0 010 1.198l-.29.233a.75.75 0 00-.422.95l.14.34a.75.75 0 01-.93.93l-.34-.14a.75.75 0 00-.95.422l-.233.29a.75.75 0 01-1.198 0l-.233-.29a.75.75 0 00-.95-.422l-.34.14a.75.75 0 01-.93-.93l.14-.34a.75.75 0 00-.422-.95l-.29-.233a.75.75 0 010-1.198l.29-.233a.75.75 0 00.422-.95l-.14-.34a.75.75 0 01.93-.93l.34.14a.75.75 0 00.95-.422l.233-.29zM4.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM4.11 12.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.8 12.8a.75.75 0 010-1.06l.69-.69a.75.75 0 011.06 1.06l-.69.69a.75.75 0 01-1.06 0z"
+      d="M9.401 2.628a.75.75 0 011.198 0l.233.29a.75.75 0 00.95.421l.34-.14a.75.75 0 01.93.93l-.14.34a.75.75 0 00.422.95l.29.233a.75.75 0 010 1.198l-.29.233a.75.75 0 00-.422.95l-.14.34a.75.75 0 01-.93.93l-.34-.14a.75.75 0 00-.95.422l-.233.29a.75.75 0 01-1.198 0l-.233-.29a.75.75 0 00-.95-.422l-.34.14a.75.75 0 01-.93-.93l.14-.34a.75.75 0 00-.422-.95l-.29-.233a.75.75 0 010-1.198l.29-.233a.75.75 0 00.422-.95l.14-.34a.75.75 0 01.93-.93l.34.14a.75.75 0 00.95-.422l.233-.29zM4.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 01-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.11 7.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM4.11 12.11a.75.75 0 011.06 0l.69.69a.75.75 0 11-1.06 1.06l-.69-.69a.75.75 0 010-1.06zM14.8 12.8a.75.75 0 010-1.06l.69-.69a.75.75 0 011.06 1.06l-.69.69a.75.75 0 01-1.06 0z"
       clipRule="evenodd"
     />
   </svg>
