@@ -1,0 +1,117 @@
+# TandT Application Development Roadmap
+
+This document outlines the phased development plan for the TandT (Think and Think) digital thinking guidance application.
+
+---
+
+## Phase 1: Core Modeling and Analysis Engine (MVP)
+
+This phase focuses on building the fundamental features required for a user to create, structure, and analyze a decision model, with clear differentiation between the two model types.
+
+### Core Features
+- [x] **Project Setup**: Initialize React 18 with TypeScript and Tailwind CSS.
+- [x] **Data Structures**: Define TypeScript interfaces for `DigitalModel` and `DigitalElement`.
+- [x] **Model Loading**: Implement functionality to load pre-defined model data (`Decision Making` & `Performance Review`).
+- [x] **Mode Switching UI**: Create the main header with navigation between "Modeling", "Analyzing", and "Structuring/Dashboard" modes.
+- [x] **Modeling View**:
+  - [x] Display all model elements as interactive cards.
+  - [x] **Full Text Editing**: Allow editing of element titles and descriptions via a modal.
+  - [x] **For Decision Making Models**:
+      - [x] Implement the core pairwise comparison mechanism via a modal.
+      - [x] Update `ComparationTableData` and `DominanceFactor` based on user input.
+      - [x] Update comparison modal prompt to reflect a trade-off question.
+  - [x] **For Performance Review Models**:
+      - [x] Simplify the view to hide all comparison and dominance-related UI elements.
+- [x] **Analyzing View**:
+  - [x] Differentiate UI controls based on `DigitalThinkingModelType`.
+    - **Decision Making (Type 1)**: Show only Acceptable/Unacceptable (👍/👎) controls.
+    - **Performance Review (Type 2)**: Show both Acceptable/Unacceptable (👍/👎) and Trend (📈/➖/📉) controls.
+  - [x] Implement the core decision algorithm for Decision Making models.
+  - [x] Display a context-aware title (e.g., "Decision Is:" vs. "Analysis Summary").
+- [x] **Dashboard/Structuring View**:
+  - [x] **For Decision Making Models**:
+      - [x] Create a bar chart to visualize the `DominanceFactor` of each element.
+      - [x] Display a simple ranked list of elements.
+  - [x] **For Performance Review Models**:
+      - [x] Create a "Performance Dashboard" that shows a prioritized list of action items based on analysis results (unacceptable/getting worse).
+- [x] **State Reset**: Automatically reset evaluation flags when a new model is loaded for a clean analysis session.
+
+### Architecture & API
+- **[x] Component-Based Architecture**: Decompose UI into reusable components.
+- **[x] State Management**: Utilize React Hooks for managing the active `DigitalModel` state.
+- **[x] Local API Endpoints (Conceptual)**: Structure services as if they were hitting APIs.
+
+### Gemini Integration
+- **[x] Element Generation**:
+  - [x] Add a "Suggest Elements with AI" feature in the Modeling view.
+  - [x] UI to input a topic.
+  - [x] Service call to Gemini API to generate a JSON list of relevant factors.
+  - [x] Functionality to add the suggested elements to the current model.
+  - [x] Tweak Gemini prompt based on the `DigitalThinkingModelType`.
+
+---
+
+## Phase 2: Enhanced Analysis, UX, and Persistence
+
+This phase builds on the MVP to enhance the user experience, add more detailed analysis views, and introduce persistence.
+
+### Features
+- [x] **Full Three-State Analysis**: Incorporate the `ThreeFlag` (trend) data into the Performance Dashboard with better visuals.
+- [x] **"You Have / You Don't Have" View**: For Performance Review models, create the detailed Focus Hierarchy summary screen to clearly show which areas need attention based on the analysis.
+- [x] **Model Management**:
+    - [x] Create a dedicated landing page to list/manage models.
+    - [x] Implement creation of new models via a modal.
+    - [x] Implement deletion of models from the landing page.
+- [x] **Local Persistence**: Integrate `localStorage` to save all model changes, so work is not lost on refresh.
+
+### Architecture & API
+- [x] **API Expansion**:
+  - The `modelService` now conceptually provides `GET /api/models`, `POST /api/models`, `DELETE /api/models/:id`, `PUT /api/models/:id`.
+- [x] **Refactor State Management**: Introduce a more robust state management solution (Zustand) to centralize state and actions, improving maintainability and decoupling components.
+
+### Gemini Integration
+- [x] **AI-Powered Model Generation**:
+    - [x] During model creation, allow users to describe their goal in natural language.
+    - [x] Use Gemini to generate a complete starter `DigitalModel` JSON, including relevant elements.
+    - [x] Tweak the prompt based on whether it's a "Decision Making" or "Performance Review" model.
+- [x] **AI-Powered Analysis Summary**:
+    - After an analysis is complete, send the results to Gemini.
+    - Prompt Gemini to generate a natural-language paragraph explaining *why* the decision was reached or summarizing the performance review.
+    - Display this summary on the results page (Analyzing or Structuring view).
+
+---
+
+## Phase 3: Collaboration, Advanced Features, and Deployment
+
+This phase focuses on turning the tool into a collaborative, enterprise-ready platform.
+
+### Features
+- [ ] **User Accounts & Authentication**: Integrate a simple authentication system (e.g., Firebase Auth, Supabase).
+- [ ] **Backend & Database**: Transition from `localStorage` to a full backend (e.g., Node.js/Express) with a cloud database (e.g., PostgreSQL/MongoDB via Supabase/Firebase/Vercel Postgres).
+- [ ] **Real-time Collaboration**: Allow multiple users to view and edit a model simultaneously (e.g., using WebSockets).
+- [x] **Import/Export**: Implement functionality to import/export models as JSON files for backup and sharing.
+- [x] **History / Versioning**: Keep a history of changes to a model, allowing users to view or revert to previous versions.
+
+### Gemini Integration
+- [x] **AI-Powered Action Suggestions**:
+  - For Performance Review models, have Gemini suggest concrete, actionable steps based on the analysis results (e.g., "For the 'Declining Code Quality' KPI, consider implementing mandatory code reviews for all PRs.").
+- [x] **Conversational AI Analyst**: Create a chat interface where a user can ask questions about their model in natural language (e.g., "What's the most critical factor in my decision model?" or "Summarize the key performance issues.").
+
+
+
+--------
+IMPORTED IDEA and CONCEPTS to Explore
+---------
+
+
+
+
+
+
+**1. Digital Performance Review Models**
+- Purpose: Track performance trends over time
+- Evaluation Methods:
+  - Binary acceptability (1=Acceptable, 0=Unacceptable) 
+  - Performance trend tracking (-1=Getting Worse, 0=Stay Same, 1=Getting Better)
+- **NO dominance calculations required**
+- Focus: Review performance and identify what's primary to work on
