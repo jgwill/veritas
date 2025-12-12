@@ -44,7 +44,7 @@ Resolution: Models persist with history → Decisions become traceable → Think
 
 ### Data Structure
 
-```typescript
+\`\`\`typescript
 LocalStorage Format:
 {
   TANDT_MODELS: JSON.stringify([
@@ -79,7 +79,7 @@ LocalStorage Format:
     }
   ])
 }
-```
+\`\`\`
 
 ### Save Operations
 
@@ -95,7 +95,7 @@ LocalStorage Format:
 - User can trigger if desired (even if auto-saving active)
 
 **Implementation**:
-```typescript
+\`\`\`typescript
 async function saveModel(model: DigitalModel) {
   const models = getAllModels()
   const existingIndex = models.findIndex(m => m.Idug === model.Idug)
@@ -109,7 +109,7 @@ async function saveModel(model: DigitalModel) {
   localStorage.setItem('TANDT_MODELS', JSON.stringify(models))
   showToast('Model saved')
 }
-```
+\`\`\`
 
 ---
 
@@ -166,7 +166,7 @@ History preserves the evolution of thinking:
 
 ### History Entry Structure
 
-```typescript
+\`\`\`typescript
 interface HistoryEntry {
   timestamp: ISO8601 string  // When this entry was created
   description?: string        // Optional user description
@@ -180,7 +180,7 @@ interface HistoryEntry {
   changeType: 'comparison' | 'evaluation' | 'model_edit' | 'creation'
   changedElementId?: string   // What changed (if specific element)
 }
-```
+\`\`\`
 
 ### History Tracking
 
@@ -204,18 +204,18 @@ interface HistoryEntry {
 - Keeps storage usage bounded
 
 **Pruning Strategy**:
-```typescript
+\`\`\`typescript
 if (model.history.length >= 50) {
   // Remove oldest 10 entries
   model.history = model.history.slice(10)
 }
-```
+\`\`\`
 
 ### History UI: Timeline View
 
 **HistoryPanel Component** (visible in ModelingView and AnalyzingView):
 
-```
+\`\`\`
 ┌─────────────────────────────────┐
 │ History Timeline                │
 ├─────────────────────────────────┤
@@ -239,7 +239,7 @@ if (model.history.length >= 50) {
 │                                 │
 │ [Show More]                     │
 └─────────────────────────────────┘
-```
+\`\`\`
 
 ### Revert Capability
 
@@ -264,7 +264,7 @@ if (model.history.length >= 50) {
 **Access Point**: Export button in any view
 
 **Export Options**:
-```
+\`\`\`
 Format: [▼ JSON]
 ├─ JSON (Complete data, all history)
 ├─ CSV (Elements only, for spreadsheet)
@@ -278,12 +278,12 @@ Include:
 ☑ Model Metadata
 
 [Export] [Cancel]
-```
+\`\`\`
 
 ### JSON Export (Complete)
 
 **Format**:
-```json
+\`\`\`json
 {
   "format": "tandt_model_v1",
   "exportDate": "2024-01-02T12:30:00Z",
@@ -299,7 +299,7 @@ Include:
   },
   "exportedBy": "TandT v1.0"
 }
-```
+\`\`\`
 
 **Use Cases**:
 - Email to colleague for feedback
@@ -310,12 +310,12 @@ Include:
 ### CSV Export (Elements Only)
 
 **Format**:
-```
+\`\`\`
 Name,Description,Type 1 Dominance,Type 2 State,Type 2 Trend
 Technical Skills,"Ability to do the job",0.75,Acceptable,Stable
 Cultural Fit,"Works well with team",0.83,Acceptable,Improving
 Salary,"Budget fit",0.40,Unacceptable,Stable
-```
+\`\`\`
 
 **Use Cases**:
 - Import to spreadsheet for analysis
@@ -334,7 +334,7 @@ Salary,"Budget fit",0.40,Unacceptable,Stable
 - History: List of recent changes (if included)
 
 **Example PDF Section**:
-```
+\`\`\`
 ═══════════════════════════════════════
 Senior Engineer Hiring Decision
 ═══════════════════════════════════════
@@ -367,7 +367,7 @@ NEXT STEPS
 • Revise salary band
 • OR consider different seniority level
 • OR extend timeline to find suitable candidate
-```
+\`\`\`
 
 ### Import: Load External Model
 
@@ -392,7 +392,7 @@ NEXT STEPS
   - User choice: "Replace" or "Create Copy"
 
 **Import Verification**:
-```typescript
+\`\`\`typescript
 function validateImportFile(json: any): boolean {
   return (
     json.format === 'tandt_model_v1' &&
@@ -402,7 +402,7 @@ function validateImportFile(json: any): boolean {
     Array.isArray(json.model.Model)
   )
 }
-```
+\`\`\`
 
 ---
 
@@ -411,7 +411,7 @@ function validateImportFile(json: any): boolean {
 ### ModelListView: Browse & Manage
 
 **Display**:
-```
+\`\`\`
 ┌────────────────────────────────────────┐
 │ Your Models (5 total)                  │
 ├────────────────────────────────────────┤
@@ -434,7 +434,7 @@ function validateImportFile(json: any): boolean {
 │ [Create New Model]                   │
 │ [Import Model]                       │
 └────────────────────────────────────────┘
-```
+\`\`\`
 
 **Sorting Options**:
 - Most Recently Modified (default)
@@ -500,14 +500,14 @@ If format changes:
 3. On load: Check version, run migration if needed
 
 **Migration Example**:
-```typescript
+\`\`\`typescript
 function migrateModel(model: any, fromVersion: string): DigitalModel {
   if (fromVersion === 'v1') {
     return model  // No changes needed
   }
   // Future migrations here
 }
-```
+\`\`\`
 
 ### Backward Compatibility
 
@@ -522,28 +522,28 @@ function migrateModel(model: any, fromVersion: string): DigitalModel {
 ### Current Usage Estimates
 
 Typical small model:
-```
+\`\`\`
 Model data: ~2KB
 History (20 entries): ~5KB
 Total per model: ~7KB
-```
+\`\`\`
 
 Multiple models:
-```
+\`\`\`
 10 models: ~70KB (well within 5-10MB limit)
 100 models: ~700KB (still comfortable)
-```
+\`\`\`
 
 ### Monitoring Storage Usage
 
 **In Settings** (future):
-```
+\`\`\`
 Storage Usage: 245 KB of 10 MB available
 
 ☐ Auto-cleanup: Delete models not accessed in [90 days]
 ☐ Prune history: Keep only 20 most recent entries per model
 [Clear Cache] [Check Usage] [Export All Models]
-```
+\`\`\`
 
 ---
 

@@ -30,7 +30,7 @@ User flow:
 
 **Step 1: Collect User Input**
 
-```
+\`\`\`
 Modal Form:
 ├── Model Type: [Decision Making] or [Performance Review]
 ├── Topic/Goal: [Text field]
@@ -39,13 +39,13 @@ Modal Form:
 └── Optional Context: [Text field - multiline]
     Placeholder: "e.g., Remote role, will lead junior engineers"
                  "e.g., Focus on delivery velocity"
-```
+\`\`\`
 
 **Step 2: Call AI (Gemini)**
 
 System sends to Gemini API:
 
-```
+\`\`\`
 Prompt Template (Type 1 - Decision):
 "Create a decision-making model for: [USER_TOPIC]
 Context: [USER_CONTEXT if provided]
@@ -62,9 +62,9 @@ Return as JSON:
 }
 
 Focus on factors that would actually block or enable this decision."
-```
+\`\`\`
 
-```
+\`\`\`
 Prompt Template (Type 2 - Performance):
 "Create a performance review model for: [USER_TOPIC]
 Context: [USER_CONTEXT if provided]
@@ -81,7 +81,7 @@ Return as JSON:
 }
 
 Focus on dimensions that reveal whether performance is healthy."
-```
+\`\`\`
 
 **Step 3: Parse AI Response**
 
@@ -92,7 +92,7 @@ System processes response:
 
 **Step 4: Display Suggestions for Review**
 
-```
+\`\`\`
 Modal shows:
 ┌─────────────────────────────────────────┐
 │ Suggested Elements for [Topic]          │
@@ -115,7 +115,7 @@ Modal shows:
 │ [+ Add Custom Element]                  │
 │ [← Back] [Create Model] [Cancel]        │
 └─────────────────────────────────────────┘
-```
+\`\`\`
 
 **Step 5: User Refinement**
 
@@ -142,14 +142,14 @@ System creates model with:
 While in Modeling mode, user can ask AI to suggest elements for their model:
 
 **Trigger**:
-```
+\`\`\`
 Button: "Get AI Suggestions for [Topic]"
 Modal: Shows AI-generated suggestions for this specific model
 User: Can add any suggestions to their current model
-```
+\`\`\`
 
 **Prompt Structure**:
-```
+\`\`\`
 User Topic: "Hiring for product manager role"
 Current Elements: ["Technical Understanding", "Product Sense"]
 
@@ -162,10 +162,10 @@ Suggest 3-5 additional factors to consider.
 Focus on factors that would affect the hiring decision.
 
 Return as simple list of suggestions."
-```
+\`\`\`
 
 **Display Format**:
-```
+\`\`\`
 Suggestions for Your Model:
 
 + Communication & Storytelling
@@ -176,7 +176,7 @@ Suggestions for Your Model:
 
 + Data-Driven Decision Making
   → Add to model
-```
+\`\`\`
 
 ---
 
@@ -194,7 +194,7 @@ After evaluating a model, user can ask AI to provide contextual analysis showing
 
 **Prompt to Gemini**:
 
-```
+\`\`\`
 Type 1 (Decision) Prompt:
 "Model Topic: [Topic]
 Elements Evaluated: [List of elements, sorted by DominanceFactor]
@@ -207,9 +207,9 @@ Provide a 3-4 sentence summary of:
 3. Any patterns or insights from the evaluation
 
 Keep it concise and actionable."
-```
+\`\`\`
 
-```
+\`\`\`
 Type 2 (Performance) Prompt:
 "Model Topic: [Topic]
 Performance Dimensions: [List of dimensions]
@@ -221,10 +221,10 @@ Provide a 3-4 sentence summary of:
 3. Any positive trends worth reinforcing
 
 Keep it concise and actionable."
-```
+\`\`\`
 
 **Display Format**:
-```
+\`\`\`
 AI Analysis Summary
 
 This team shows strong morale and communication, which is improving after
@@ -233,7 +233,7 @@ it's both unacceptable (40% miss rate) and declining (down from 20% last
 quarter). Focus immediate attention here before regression cascades to
 other metrics. Consider whether external factors (scope creep, tooling)
 are the root cause.
-```
+\`\`\`
 
 ---
 
@@ -248,7 +248,7 @@ In Structuring mode, user can ask AI to generate specific, actionable recommenda
 **Trigger**: "Generate Action Plan" button in StructuringView
 
 **Prompt to Gemini**:
-```
+\`\`\`
 Model Topic: [Topic]
 Current Performance State: [Dimensions sorted by priority]
 
@@ -264,10 +264,10 @@ For each critical issue, suggest:
 3. Success metric (how to know it's working)
 
 Format: Markdown with clear sections for each action."
-```
+\`\`\`
 
 **Example Output**:
-```
+\`\`\`
 ## Action Plan: Q3 Team Performance
 
 ### 🔴 CRITICAL: Delivery Speed
@@ -294,12 +294,12 @@ production issues
 3. Require one ADR per major decision for next month
 
 **Success Metric**: New engineer onboarding time drops from 3 weeks to 2 weeks
-```
+\`\`\`
 
 ### Type 1: Decision-Focused Context
 
 **Prompt to Gemini**:
-```
+\`\`\`
 Decision Model: [Topic]
 Decision Result: [YES/NO]
 Factors & Dominance: [Ranked list with dominance scores]
@@ -312,10 +312,10 @@ Provide context for next steps:
 3. Key risks or dependencies to monitor
 
 Keep it brief (2-3 sentences per section)."
-```
+\`\`\`
 
 **Example Output**:
-```
+\`\`\`
 ## Decision Outcome: YES - Hire Candidate
 
 Decision Made: All factors acceptable. Proceed with offer.
@@ -328,7 +328,7 @@ Next Steps:
 Key Risks:
 - New hire may take longer to ramp than expected (mitigate with mentorship)
 - Team capacity to onboard in parallel with delivery (plan sprint accordingly)
-```
+\`\`\`
 
 ---
 
@@ -339,7 +339,7 @@ Key Risks:
 Users can ask follow-up questions in natural language to deepen their understanding of the model and its implications.
 
 **Examples of User Questions**:
-```
+\`\`\`
 Type 1 (Decision):
 - "What if we could improve communication skills in candidate A?"
 - "How does this compare to our last hiring decision?"
@@ -349,7 +349,7 @@ Type 2 (Performance):
 - "What's the average performance on delivery speed in similar teams?"
 - "If we keep declining at this rate, when would this be critical?"
 - "Which dimension should we improve first?"
-```
+\`\`\`
 
 ### Chat Session Structure
 
@@ -359,7 +359,7 @@ Type 2 (Performance):
 - Each message includes full context (stateless conversation)
 
 **Message Format**:
-```
+\`\`\`
 User Input: "What if we changed our expectations for this factor?"
 
 System Context Added:
@@ -382,10 +382,10 @@ User Question: [User Input]
 
 Respond conversationally, staying focused on this specific model and decision.
 Keep response to 2-3 sentences."
-```
+\`\`\`
 
 **Response Display**:
-```
+\`\`\`
 Chat Panel:
 
 You: "What if we raised our salary offer to match candidate expectations?"

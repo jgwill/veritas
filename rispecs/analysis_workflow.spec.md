@@ -46,7 +46,7 @@ When entering Analyzing mode, system:
 ### Step 1: Present Element for Evaluation
 
 **Interface**:
-```
+\`\`\`
 ┌─────────────────────────────────────┐
 │ Evaluate: [Factor Name]             │
 ├─────────────────────────────────────┤
@@ -63,7 +63,7 @@ When entering Analyzing mode, system:
 │                                     │
 │ [← Previous] [Next →]               │
 └─────────────────────────────────────┘
-```
+\`\`\`
 
 ### Step 2: Evaluation Question
 
@@ -74,12 +74,12 @@ User chooses:
 - **NO** (TwoFlag = false): Factor is unacceptable, blocks decision
 
 **Guidance Text** (below question):
-```
+\`\`\`
 Consider: [Factor Description]
 
 Think about whether this situation meets or exceeds what's needed for a
 successful outcome. If this factor is unacceptable, the decision will be NO.
-```
+\`\`\`
 
 ### Step 3: Evaluate All Factors
 
@@ -109,7 +109,7 @@ When all factors evaluated (all TwoFlagAnswered = true):
 ### Step 5: Display Decision
 
 **Decision Banner**:
-```
+\`\`\`
 If YES:
 ┌─────────────────────────────────────────────┐
 │ ✅ DECISION: YES                            │
@@ -138,7 +138,7 @@ If NO:
 │                                             │
 │ [View Results] [Revise Evaluation] [Export] │
 └─────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### Step 6: Decision Reflection
 
@@ -156,7 +156,7 @@ After decision, user can:
 ### Step 1: Present Dimension for Evaluation
 
 **Interface**:
-```
+\`\`\`
 ┌──────────────────────────────────────┐
 │ Evaluate: [Dimension Name]           │
 ├──────────────────────────────────────┤
@@ -176,7 +176,7 @@ After decision, user can:
 │                                      │
 │ [← Previous] [Next →]                │
 └──────────────────────────────────────┘
-```
+\`\`\`
 
 ### Step 2: State Evaluation
 
@@ -187,12 +187,12 @@ User chooses:
 - **NO**: Unacceptable, needs improvement
 
 **Guidance**:
-```
+\`\`\`
 Consider what "acceptable" means:
 [Dimension Description]
 
 Is the current reality meeting this standard?
-```
+\`\`\`
 
 ### Step 3: Trend Evaluation
 
@@ -204,14 +204,14 @@ User chooses:
 - **⬇️ Declining**: Getting worse over time
 
 **Guidance**:
-```
+\`\`\`
 Compare current state to:
 - Last evaluation period
 - Historical trend over 3+ months
 - Direction of change
 
 Is this improving, stable, or declining?
-```
+\`\`\`
 
 ### Step 4: Evaluate All Dimensions
 
@@ -237,7 +237,7 @@ When all dimensions evaluated:
 ### Step 6: Display Performance Summary
 
 **Performance Dashboard**:
-```
+\`\`\`
 ┌────────────────────────────────────┐
 │ Performance Evaluation Complete    │
 ├────────────────────────────────────┤
@@ -259,7 +259,7 @@ When all dimensions evaluated:
 │                                    │
 │ [View Details] [AI Actions] [Export]
 └────────────────────────────────────┘
-```
+\`\`\`
 
 ### Step 7: Performance Reflection
 
@@ -302,7 +302,7 @@ User can return to Analyzing any time:
 ### Element Card View
 
 **In AnalyzingView**, elements shown as cards:
-```
+\`\`\`
 ┌──────────────────────────┐
 │ Technical Skills        │
 ├──────────────────────────┤
@@ -311,7 +311,7 @@ User can return to Analyzing any time:
 │                          │
 │ [Evaluate] [Edit]       │
 └──────────────────────────┘
-```
+\`\`\`
 
 Each card:
 - Shows element name
@@ -359,7 +359,7 @@ User can compare current evaluation to previous:
 
 ### Scenario 1: Hiring Decision (Type 1)
 
-```
+\`\`\`
 Model: "Hire Senior Engineer"
 Factors: Technical Skills, Cultural Fit, Leadership, Salary, Growth Potential
 
@@ -380,11 +380,11 @@ Model.Reason = "Leadership unacceptable for this role level"
 
 User Insight: "We need a mid-level engineer who's ready to lead. This candidate
 is junior. What if we created a different model for junior hires?"
-```
+\`\`\`
 
 ### Scenario 2: Quarterly Performance Review (Type 2)
 
-```
+\`\`\`
 Model: "Q3 Engineering Team Performance"
 Dimensions: Code Quality, Delivery Speed, Documentation, Testing, Morale, Mentorship
 
@@ -409,7 +409,7 @@ Action Focus:
 2. Improve documentation (important but less urgent)
 3. Prevent code quality regression (watch)
 4. Recognize morale/mentorship wins
-```
+\`\`\`
 
 ---
 
@@ -462,7 +462,7 @@ Each complete evaluation creates a version entry:
 
 ### State Machine: Evaluation Flow
 
-```
+\`\`\`
 State: NOT_EVALUATED
   ↓ User enters Analyzing
 State: IN_EVALUATION
@@ -480,11 +480,11 @@ State: DECISION_RENDERED (Type 1)
 
 State: PRIORITIES_RENDERED (Type 2)
   └─ Dimensions sorted by priority
-```
+\`\`\`
 
 ### Auto-Save Mechanism
 
-```typescript
+\`\`\`typescript
 function saveEvaluationState() {
   const evaluationEntry = {
     timestamp: Date.now(),
@@ -499,7 +499,7 @@ function saveEvaluationState() {
   model.history.push(evaluationEntry)
   persistModel()
 }
-```
+\`\`\`
 
 ---
 

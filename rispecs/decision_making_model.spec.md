@@ -22,7 +22,7 @@ Resolution: Model makes criteria explicit → Decision becomes defensible → Te
 ## Model Architecture
 
 ### Type 1 Configuration
-```
+\`\`\`
 DigitalModel {
   ModelType: 1  // Identifies this as decision-making
   Elements: DigitalElement[]  // Decision factors
@@ -30,10 +30,10 @@ DigitalModel {
   Decided: boolean  // Has evaluation been performed
   Decision: boolean  // Final YES/NO outcome
 }
-```
+\`\`\`
 
 ### Type 1 DigitalElement Structure
-```
+\`\`\`
 DigitalElement {
   // Identity
   Idug: string  // Unique element ID
@@ -61,7 +61,7 @@ DigitalElement {
   Status: number  // Custom status code
   Meta: any  // Extensible metadata
 }
-```
+\`\`\`
 
 ---
 
@@ -90,7 +90,7 @@ For each pair comparison, user chooses:
 
 ### Dominance Score Calculation
 
-```
+\`\`\`
 DominanceFactor = (total_wins - total_losses) / total_comparisons
 
 Example:
@@ -101,7 +101,7 @@ DominanceFactor = (4 - 1) / 6 = 0.50  (middle-high importance)
 Culture comparison results: [+1, +1, +1, +1, 0, +1]
 Wins: 5, Losses: 0, Ties: 1
 DominanceFactor = (5 - 0) / 6 = 0.83  (very important)
-```
+\`\`\`
 
 ### Natural Progression
 
@@ -120,7 +120,7 @@ User switches to **Analyzing Mode** and answers for each factor:
 
 ### Decision Algorithm
 
-```
+\`\`\`
 Algorithm: Calculate Decision Outcome
 
 INPUT: Model with all elements having TwoFlagAnswered = true
@@ -136,7 +136,7 @@ LOGIC:
   Return YES
 
 OUTPUT: Model.Decision (boolean) + DecisionReason (string)
-```
+\`\`\`
 
 ### Key Insight: Mandatory Factors
 
@@ -145,7 +145,7 @@ This logic treats all factors as mandatory by default. A single unacceptable fac
 This reflects real-world constraints: If one critical factor fails, the decision fails.
 
 **Example Decision Scenario**:
-```
+\`\`\`
 Factors Evaluated:
 ✓ Technical Skills: YES (acceptable)
 ✓ Cultural Fit: YES (acceptable)
@@ -162,7 +162,7 @@ Sorted by Dominance (if this was real):
 4. Salary (0.40) - NO ← Blocks decision
 
 Decision Output: "Cannot proceed. Salary requirement exceeds available budget."
-```
+\`\`\`
 
 ---
 
@@ -173,7 +173,7 @@ Decision Output: "Cannot proceed. Salary requirement exceeds available budget."
 During **Modeling Mode**, user opens comparison modal for each pair:
 
 **Presentation**:
-```
+\`\`\`
 [Factor A Name] vs [Factor B Name]
 
 [Factor A Description]          [Factor B Description]
@@ -181,29 +181,29 @@ During **Modeling Mode**, user opens comparison modal for each pair:
 [< A Wins] [Equal] [B Wins >]
 
 Current State: [Factor A]: 0.45  [Factor B]: 0.60
-```
+\`\`\`
 
 ### Comparison Storage
 
 Comparisons are stored bidirectionally:
 
-```
+\`\`\`
 Element_A.ComparationTableData[Element_B] = +1   (A wins)
 Element_B.ComparationTableData[Element_A] = -1   (B loses)
-```
+\`\`\`
 
 This ensures symmetry: If A beats B, then B loses to A.
 
 ### Comparison Table Data Structure
 
-```typescript
+\`\`\`typescript
 ComparationTableData: {
   "element_id_2": -1,   // Lost to element 2
   "element_id_3": 0,    // Tied with element 3
   "element_id_4": 1,    // Beat element 4
   "element_id_5": 1,    // Beat element 5
 }
-```
+\`\`\`
 
 ---
 
@@ -259,7 +259,7 @@ User sees:
 
 ## Natural Progression Pattern
 
-```
+\`\`\`
 Create Model
   ↓ User names factors
   ↓
@@ -280,7 +280,7 @@ Insight Gained
 Optional: Revise Model
   ↓ User realizes important factor was missing
   ↓ Go back to Modeling, add factor, redo comparisons
-```
+\`\`\`
 
 ---
 
@@ -375,20 +375,20 @@ Must handle:
 
 ### Sorting Logic
 When displaying factors sorted by DominanceFactor:
-```typescript
+\`\`\`typescript
 elements.sort((a, b) => b.DominanceFactor - a.DominanceFactor)
 // Higher dominance first (most important factors first)
-```
+\`\`\`
 
 ### Decision Rendering
 After all evaluations, render decision:
-```typescript
+\`\`\`typescript
 const unacceptableFactors = elements.filter(e => e.TwoFlagAnswered && !e.TwoFlag)
 const decision = unacceptableFactors.length === 0 ? YES : NO
 const reason = unacceptableFactors.length > 0
   ? `Unacceptable: ${unacceptableFactors[0].DisplayName}`  // List primary blocker
   : "All factors acceptable"
-```
+\`\`\`
 
 ### Dominance Recalculation Trigger
 Recalculate dominance whenever:

@@ -78,14 +78,14 @@ TandT structures thinking through three distinct modes that users naturally prog
 
 Every model in TandT is built from a single entity type:
 
-```
+\`\`\`
 DigitalModel
 ├── Identity: Unique ID, topic, name
 ├── Configuration: Type (Decision vs Performance), element list
 ├── State: Valid, decided, decision flag
 ├── Analysis: History (up to 50 versions), creation/modification timestamps
 └── Elements: Array of DigitalElement (decision factors or performance dimensions)
-```
+\`\`\`
 
 Each **DigitalElement** contains:
 - **Display Identity**: Name, description
@@ -105,9 +105,9 @@ TandT focuses on creating useful decision frameworks, not fixing broken thinking
 
 ### Advancement Pattern: Iteration Toward Clarity
 Users naturally progress through cycles:
-```
+\`\`\`
 Modeling → Analyzing → Structuring → (Insight) → Back to Modeling (refined)
-```
+\`\`\`
 
 Each cycle deepens understanding because users see how their model performs against reality.
 

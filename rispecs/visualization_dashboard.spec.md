@@ -46,7 +46,7 @@ When entering Structuring mode:
 **Chart Type**: Vertical bar chart (Recharts)
 
 **Data Structure**:
-```
+\`\`\`
 Elements sorted by DominanceFactor (descending)
 [
   { name: "Cultural Fit", dominance: 0.83, evaluated: true, evaluation: "accepted" },
@@ -55,10 +55,10 @@ Elements sorted by DominanceFactor (descending)
   { name: "Salary", dominance: 0.40, evaluated: true, evaluation: "rejected" },
   { name: "Growth Potential", dominance: 0.35, evaluated: true, evaluation: "accepted" }
 ]
-```
+\`\`\`
 
 **Chart Rendering**:
-```
+\`\`\`
 Dominance Distribution
 0.83 ██████████ Cultural Fit ✅
 0.75 █████████ Technical Skills ✅
@@ -68,7 +68,7 @@ Dominance Distribution
 
 Evaluation: ❌ DECISION: NO
 Reason: Leadership unacceptable for this role level
-```
+\`\`\`
 
 **Color Coding**:
 - ✅ Green bar: Acceptable factor
@@ -83,7 +83,7 @@ Reason: Leadership unacceptable for this role level
 ### Decision Statement
 
 **Display Below Chart**:
-```
+\`\`\`
 ┌────────────────────────────────────────────┐
 │ ❌ DECISION: NO                            │
 ├────────────────────────────────────────────┤
@@ -103,10 +103,10 @@ Reason: Leadership unacceptable for this role level
 │ • Create separate hiring model for junior │
 │ • Re-evaluate if circumstances change     │
 └────────────────────────────────────────────┘
-```
+\`\`\`
 
 **If Decision = YES**:
-```
+\`\`\`
 ┌────────────────────────────────────────────┐
 │ ✅ DECISION: YES                           │
 ├────────────────────────────────────────────┤
@@ -123,14 +123,14 @@ Reason: Leadership unacceptable for this role level
 │ • Plan onboarding                          │
 │ • Communicate to team                      │
 └────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### Mandatory Factor Analysis
 
 **Section**: "Critical Success Factors"
 
 Display which factors could have blocked the decision:
-```
+\`\`\`
 Factors That Would Block This Decision:
 ┌──────────────────────────────────────┐
 │ • Cultural Fit (dominance: 0.83)     │
@@ -151,14 +151,14 @@ Factors That Currently Block Decision:
 │   Currently: ❌ Unacceptable         │
 │   (Blocked by Leadership first)      │
 └──────────────────────────────────────┘
-```
+\`\`\`
 
 **Insight**: Show user which factors actually controlled the outcome
 
 ### Comparison to Previous Decisions
 
 **If history exists**:
-```
+\`\`\`
 Comparison to Last Similar Decision:
 ┌─────────────────────────────────────┐
 │ Previous: Hired Senior Engineer      │
@@ -171,7 +171,7 @@ Comparison to Last Similar Decision:
 │ Pattern: Leadership more important  │
 │ for this role; salary less critical │
 └─────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -183,7 +183,7 @@ Comparison to Last Similar Decision:
 
 **Layout**: 2x3 Grid showing priorities
 
-```
+\`\`\`
 ┌────────────────────────────────────────────────────┐
 │        PERFORMANCE EVALUATION MATRIX               │
 ├─────────────────────┬─────────────────────────────┤
@@ -205,7 +205,7 @@ Comparison to Last Similar Decision:
 │                     │    (95%→down)   • Speed     │
 │                     │                 (↓↓urgent)  │
 └─────────────────────┴─────────────────────────────┘
-```
+\`\`\`
 
 **Color Coding**:
 - 🔴 Red (CRITICAL): Unacceptable + Declining
@@ -216,7 +216,7 @@ Comparison to Last Similar Decision:
 ### Prioritized Action List
 
 **Display Below Matrix**:
-```
+\`\`\`
 ACTION PRIORITIES
 (Sorted by urgency)
 
@@ -242,13 +242,13 @@ ACTION PRIORITIES
   1. Team Morale
      Improving! Mentorship program is working
      Action: Continue program, consider expanding
-```
+\`\`\`
 
 ### Trend Visualization
 
 **Mini Sparklines** (if multiple periods available):
 
-```
+\`\`\`
 Delivery Speed Trend (Last 4 Quarters):
 80% ─┐
      ├─ ┌─ 75% ─┐
@@ -261,12 +261,12 @@ Delivery Speed Trend (Last 4 Quarters):
 
 Trend: Steady decline (urgent)
 Action: Change course or accept lower delivery speed
-```
+\`\`\`
 
 ### Comparative Assessment
 
 **If Previous Evaluation Exists**:
-```
+\`\`\`
 Performance Change Since Last Review:
 
 Dimension          Last Quarter   Now      Change
@@ -280,7 +280,7 @@ Deployment Freq.   1x/week        1x/week  → 0%   🟢
 
 Overall Trend: Mixed (some improving, some declining)
 Focus: Fix delivery speed regression
-```
+\`\`\`
 
 ---
 
@@ -289,7 +289,7 @@ Focus: Fix delivery speed regression
 ### Mode Switcher & Navigation
 
 **In Header**:
-```
+\`\`\`
 [← Modeling] [Analyzing] [Structuring] [→]
 
 Buttons:
@@ -297,30 +297,30 @@ Buttons:
 - Edit Model: Add factors/dimensions
 - Export Results: Save visualization as JSON/PDF
 - Share Model: Generate link for sharing
-```
+\`\`\`
 
 ### Data Display Options
 
 **Toggle Views**:
-```
+\`\`\`
 ☑ Show Dominance (Type 1) / Priority Matrix (Type 2)
 ☑ Show Decision Statement / Action List
 ☐ Show Comparison to Previous
 ☐ Show AI Insights
 ☑ Dark Mode
-```
+\`\`\`
 
 ### Export Options
 
 **Export Button** opens menu:
-```
+\`\`\`
 Export Results As:
 • JSON (machine-readable, all data)
 • CSV (spreadsheet for tracking)
 • PDF (formatted report for sharing)
 • Image (chart visualization only)
 • Markdown (for documentation)
-```
+\`\`\`
 
 ### AI Insights Panel
 
@@ -343,7 +343,7 @@ For Type 2:
 ### Drill-Down Details
 
 **Click on Factor/Dimension**:
-```
+\`\`\`
 Click on "Cultural Fit" bar:
 
 ┌─────────────────────────────────────┐
@@ -366,30 +366,30 @@ Click on "Cultural Fit" bar:
 │                                     │
 │ [← Back]                            │
 └─────────────────────────────────────┘
-```
+\`\`\`
 
 ### Hover States
 
 **Hover on Chart Bar**:
-```
+\`\`\`
 Tooltip appears:
 
 Technical Skills
 Dominance: 0.75
 Status: ✅ Acceptable
 Evaluation: Strong performance in technical assessment
-```
+\`\`\`
 
 ### Sort & Filter
 
 **Sorting Options**:
-```
+\`\`\`
 Sort by:
 ☑ Dominance (Type 1)
 ☐ Alphabetical
 ☐ Status (Type 2 - priorities)
 ☐ Recent changes
-```
+\`\`\`
 
 ---
 
@@ -397,7 +397,7 @@ Sort by:
 
 ### Mobile Layout (Type 1 Decision)
 
-```
+\`\`\`
 [Phone screen]
 ┌─────────────────┐
 │ Dominance      │
@@ -416,11 +416,11 @@ Sort by:
 │ [AI Analysis]  │
 │ [Export]       │
 └─────────────────┘
-```
+\`\`\`
 
 ### Mobile Layout (Type 2 Performance)
 
-```
+\`\`\`
 [Phone screen]
 ┌─────────────────┐
 │ CRITICAL        │
@@ -439,7 +439,7 @@ Sort by:
 │                │
 │ [Full View]    │
 └─────────────────┘
-```
+\`\`\`
 
 ---
 

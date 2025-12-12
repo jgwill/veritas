@@ -22,17 +22,17 @@ Resolution: Model makes state (acceptable/unacceptable) + trend (improving/stabl
 ## Model Architecture
 
 ### Type 2 Configuration
-```
+\`\`\`
 DigitalModel {
   ModelType: 2  // Identifies this as performance review
   Elements: DigitalElement[]  // Performance dimensions
   Valid: boolean  // Is model ready for evaluation
   Decided: boolean  // Has evaluation been performed
 }
-```
+\`\`\`
 
 ### Type 2 DigitalElement Structure
-```
+\`\`\`
 DigitalElement {
   // Identity
   Idug: string  // Unique element ID
@@ -58,7 +58,7 @@ DigitalElement {
   Status: number  // Custom status code
   Meta: any  // Extensible metadata
 }
-```
+\`\`\`
 
 ### Key Difference from Type 1
 
@@ -81,12 +81,12 @@ This reflects how performance management works: Each dimension matters in its ow
 - **NO** (TwoFlag = false): Dimension is unacceptable, needs attention
 
 **Example States**:
-```
+\`\`\`
 Code Quality: YES (code passes review standards, bugs low)
 Delivery Speed: NO (consistently missing sprint deadlines)
 Team Morale: YES (low turnover, positive feedback)
 Documentation: NO (hard to understand how systems work)
-```
+\`\`\`
 
 ### Trend Evaluation (ThreeFlag)
 
@@ -103,12 +103,12 @@ Documentation: NO (hard to understand how systems work)
 - Consider velocity: Is it improving/declining rapidly or slowly?
 
 **Example Trends**:
-```
+\`\`\`
 Code Quality: -1 (declining - bug reports up 40% vs. last quarter)
 Delivery Speed: -1 (declining - cycle time increased from 5 to 8 days)
 Team Morale: +1 (improving - new mentorship program showing results)
 Documentation: 0 (stable - hasn't improved but not getting worse)
-```
+\`\`\`
 
 ---
 
@@ -138,7 +138,7 @@ This ranking naturally emerges from the data:
 5. **Acceptable + Improving** = Success (working and improving)
 
 **Example Team Performance Review**:
-```
+\`\`\`
 Dimension Evaluation Results:
 
 Code Quality: Acceptable, Declining
@@ -170,7 +170,7 @@ Deployment Frequency: Acceptable, Stable
 ├─ Trend: ➡️ 0 (same cadence for 3 quarters)
 ├─ Priority: 🟢 MAINTAIN (keep current approach)
 └─ Action: "No changes needed. Team is steady."
-```
+\`\`\`
 
 ---
 
@@ -231,7 +231,7 @@ User sees:
 ### Analyzing Mode View
 
 **Format per dimension**:
-```
+\`\`\`
 ┌─────────────────────────────────────────┐
 │ Code Quality                            │
 │ What acceptable looks like: Passes code │
@@ -241,7 +241,7 @@ User sees:
 │                                         │
 │ Trend: ⬆️ Improving ➡️ Stable ⬇️ Declining
 └─────────────────────────────────────────┘
-```
+\`\`\`
 
 User selects:
 1. State (acceptable/unacceptable)
@@ -250,7 +250,7 @@ User selects:
 ### Structuring Mode View
 
 **Performance Dashboard**:
-```
+\`\`\`
 ┌────────────────────────────────────────────────────┐
 │         Q3 Team Performance Review                 │
 ├────────────────────────────────────────────────────┤
@@ -271,7 +271,7 @@ User selects:
 │  • Team Morale: Up 25% since mentorship started  │
 │                                                    │
 └────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -385,13 +385,13 @@ User selects:
 ## Technical Implementation Notes
 
 ### State + Trend Storage
-```typescript
+\`\`\`typescript
 element.TwoFlag: boolean  // State (acceptable = true, unacceptable = false)
 element.ThreeFlag: -1 | 0 | 1  // Trend (declining = -1, stable = 0, improving = +1)
-```
+\`\`\`
 
 ### Priority Calculation
-```typescript
+\`\`\`typescript
 function getPriority(state: boolean, trend: -1 | 0 | 1): string {
   if (!state && trend === -1) return 'CRITICAL'    // Unacceptable + Declining
   if (!state && trend === 0) return 'IMPORTANT'    // Unacceptable + Stable
@@ -400,26 +400,26 @@ function getPriority(state: boolean, trend: -1 | 0 | 1): string {
   if (state && trend === 0) return 'MAINTAIN'      // Acceptable + Stable
   if (state && trend === 1) return 'SUCCESS'       // Acceptable + Improving
 }
-```
+\`\`\`
 
 ### Dashboard Sorting
-```typescript
+\`\`\`typescript
 // Sort dimensions by priority for display
 const priorityOrder = ['CRITICAL', 'IMPORTANT', 'WATCH', 'PREVENT', 'MAINTAIN', 'SUCCESS']
 dimensions.sort((a, b) =>
   priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority)
 )
-```
+\`\`\`
 
 ### Trend Indicator Display
-```typescript
+\`\`\`typescript
 // Visual representation of trend
 const trendIcon = {
   '-1': '⬇️ Declining',
   '0': '➡️ Stable',
   '1': '⬆️ Improving'
 }
-```
+\`\`\`
 
 ---
 

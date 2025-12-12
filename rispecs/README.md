@@ -89,7 +89,7 @@ TandT transforms subjective thinking into systematic, auditable, evidence-based 
 
 ### Data Flow Architecture
 
-```
+\`\`\`
 CREATE MODEL
 ├─ Manual: User provides name + adds elements
 └─ AI-Generated: User describes goal → AI suggests elements
@@ -142,13 +142,13 @@ OPTIONAL: AI ANALYSIS
 ├─ Summary: "What drove this decision?"
 ├─ Actions: "What should we do about this?"
 └─ Chat: "What if we changed this factor?"
-```
+\`\`\`
 
 ### Specification Dependencies
 
 **All specs are autonomous** (can be read independently), but there are logical dependencies:
 
-```
+\`\`\`
 app.spec.md (READ FIRST - Overview)
     ├─→ decision_making_model.spec.md (Type 1 details)
     │   └─→ analysis_workflow.spec.md (Type 1 evaluation)
@@ -171,7 +171,7 @@ Suggested Reading Order:
 4. visualization_dashboard.spec.md
 5. model_generation.spec.md (if implementing AI)
 6. model_persistence.spec.md (implementation detail for all)
-```
+\`\`\`
 
 ---
 
@@ -182,33 +182,33 @@ Suggested Reading Order:
 Every spec describes how **structural tension** drives natural progression:
 
 **General Pattern**:
-```
+\`\`\`
 Current Reality (problem, unclear situation)
          ↓ (tension)
 Desired Outcome (clear, resolved, understood)
          ↓ (natural forces)
 Natural Progression (steps user takes to get there)
-```
+\`\`\`
 
 **Examples**:
 
 Type 1 Decision:
-```
+\`\`\`
 Current: "Which candidate should we hire?" (unclear)
          ↓
 Desired: "Clear YES/NO with auditable reasoning"
          ↓
 Progression: Create model → Compare factors → Evaluate → Decision renders
-```
+\`\`\`
 
 Type 2 Performance:
-```
+\`\`\`
 Current: "How is the team actually doing?" (scattered feedback)
          ↓
 Desired: "Clear priorities (critical → success)"
          ↓
 Progression: Define dimensions → Evaluate state+trend → Priorities calculated
-```
+\`\`\`
 
 ### Three Application Modes
 
