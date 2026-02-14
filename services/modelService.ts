@@ -266,37 +266,81 @@ export const deleteModel = async (modelId: ModelId): Promise<void> => {
 }
 
 export const importModel = async (modelToImport: DigitalModel): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 50))
-
   if (!modelToImport.Idug || !modelToImport.DigitalTopic || !Array.isArray(modelToImport.Model)) {
     throw new Error("Invalid model format. The file does not appear to be a valid TandT model.")
   }
 
-  const models = getModelsFromStorage()
-  const existingModelIndex = models.findIndex((m) => m.Idug === modelToImport.Idug)
+  try {
+    // Check if a model with the same topic already exists
+    const existingModels = await getAvailableModels()
+    const hasDuplicate = existingModels.some(m => m.name === modelToImport.DigitalTopic)
+    
+    const modelName = hasDuplicate 
+      ? `${modelToImport.DigitalTopic} (Imported)` 
+      : modelToImport.DigitalTopic
 
-  const modelCopy = JSON.parse(JSON.stringify(modelToImport))
-
-  if (existingModelIndex > -1) {
-    modelCopy.Idug = `model-${Date.now()}`
-    modelCopy.DigitalTopic = `${modelCopy.DigitalTopic} (Imported)`
-    models.push(modelCopy)
-  } else {
-    models.push(modelCopy)
+    // Create the model via API
+    const response = await fetch('/api/models', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        name: modelName,
+        description: modelToImport.Note || `Imported model from previous version`,
+        modelType: modelToImport.DigitalThinkingModelType,
+        modelData: {
+          Model: modelToImport.Model,
+          history: modelToImport.history || []
+        }
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to import model')
+    }
+    
+    console.log('[v0] Model imported successfully')
+  } catch (error) {
+    console.error('[v0] Failed to import model:', error)
+    throw error
   }
-
-  saveModelsToStorage(models)
 }
 
 export const exportModel = async (modelId: ModelId): Promise<{ modelData: DigitalModel; fileName: string }> => {
-  await new Promise((resolve) => setTimeout(resolve, 50))
-  const models = getModelsFromStorage()
-  const modelToExport = models.find((m) => m.Idug === modelId)
+  try {
+    const response = await fetch(`/api/models/${modelId}`, {
+      headers: getAuthHeaders()
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch model for export')
+    }
+    
+    const data = await response.json()
+    const dbModel = data.model
+    
+    // Convert database model to DigitalModel format for export
+    const modelToExport: DigitalModel = {
+      Idug: dbModel.id,
+      DigitalTopic: dbModel.name,
+      ModelName: dbModel.name.replace(/\s/g, ""),
+      DigitalThinkingModelType: dbModel.model_type,
+      Model: dbModel.model_data?.Model || [],
+      history: dbModel.model_data?.history || [],
+      Note: dbModel.description || "",
+      AutoSaveModel: true,
+      HasIssue: false,
+      Decision: false,
+      Decided: false,
+      FileSuffix: "",
+      Valid: true,
+      FileId: `${dbModel.name.replace(/\s/g, "")}__${dbModel.id}`,
+      TwoOnly: dbModel.model_type === 1,
+    }
 
-  if (!modelToExport) {
-    throw new Error(`Model with ID ${modelId} not found for export.`)
+    const fileName = `${modelToExport.DigitalTopic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}__${modelToExport.Idug}.json`
+    return { modelData: modelToExport, fileName }
+  } catch (error) {
+    console.error('[v0] Failed to export model:', error)
+    throw error
   }
-
-  const fileName = `${modelToExport.DigitalTopic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.json`
-  return { modelData: modelToExport, fileName }
 }
