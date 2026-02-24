@@ -28,6 +28,7 @@
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.5.5",
     "use-sync-external-store": "latest",
+    "uuid": "^13.0.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
