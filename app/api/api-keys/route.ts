@@ -5,22 +5,43 @@ import { createHash, randomBytes } from 'crypto'
 const sql = neon(process.env.DATABASE_URL!)
 
 async function getUserFromSession(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  const token = authHeader.substring(7)
-  // API key management endpoints only accept session tokens
-  if (token.startsWith('tandt_sk_')) return null
-  const rows = await sql`
-    SELECT u.id, u.email, u.display_name
-    FROM sessions s JOIN users u ON s.user_id = u.id
-    WHERE s.token = ${token} AND s.expires_at > NOW()
-  `
-  return rows.length > 0 ? rows[0] : null
+  try {
+    const authHeader = request.headers.get('Authorization')
+    console.log('[v0] getUserFromSession - authHeader:', authHeader ? 'present' : 'missing')
+    
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.log('[v0] getUserFromSession - no Bearer prefix')
+      return null
+    }
+    
+    const token = authHeader.substring(7)
+    console.log('[v0] getUserFromSession - token length:', token.length, 'starts with tandt_sk_:', token.startsWith('tandt_sk_'))
+    
+    // API key management endpoints only accept session tokens
+    if (token.startsWith('tandt_sk_')) {
+      console.log('[v0] getUserFromSession - rejecting API key, need session token')
+      return null
+    }
+    
+    const rows = await sql`
+      SELECT u.id, u.email, u.display_name
+      FROM sessions s JOIN users u ON s.user_id = u.id
+      WHERE s.token = ${token} AND s.expires_at > NOW()
+    `
+    
+    console.log('[v0] getUserFromSession - query returned rows:', rows.length)
+    return rows.length > 0 ? rows[0] : null
+  } catch (error) {
+    console.error('[v0] getUserFromSession error:', error)
+    return null
+  }
 }
 
 // GET - list all API keys for user (never returns full key, only prefix)
 export async function GET(request: Request) {
+  console.log('[v0] GET /api/api-keys called')
   const user = await getUserFromSession(request)
+  console.log('[v0] GET /api/api-keys - user:', user?.id || 'null')
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const keys = await sql`
