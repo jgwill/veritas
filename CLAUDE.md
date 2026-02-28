@@ -11,7 +11,6 @@ TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript applicat
 ## `https://veritas.sanctuaireagentique.com`
 
 * main branch deployed on vercel.app that should work when we need it.
-* `VERITAS_API_KEY`  from .env is the variable used  for communicating with 
 
 ## Build Commands
 
@@ -72,6 +71,8 @@ npm run preview
 GEMINI_API_KEY=your_api_key_here
 GOOGLE_API_KEY=your_api_key_here  # Alternative
 VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
+VERITAS_REGISTRATION_OPEN will turn off registration, set "true" to enable it
+VERITAS_API_KEY  from .env is the variable used  for communicating with https://veritas.sanctuaireagentique.com online deployment
 \`\`\`
 
 ## Directory Structure
