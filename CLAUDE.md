@@ -3,6 +3,11 @@
 ## Overview
 TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript application for creating and analyzing decision-making and performance review models using AI assistance. This application successfully migrated from Google AI Studio prototype to production-ready Vercel deployment.
 
+## `https://veritas.sanctuaireagentique.com`
+
+* main branch deployed on vercel.app that should work when we need it.
+* `VERITAS_API_KEY`  from .env is the variable used  for communicating with 
+
 ## Build Commands
 
 ### Essential Commands
