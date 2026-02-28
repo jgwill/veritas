@@ -15,7 +15,7 @@ TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript applicat
 ## Build Commands
 
 ### Essential Commands
-\`\`\`bash
+```bash
 # Install dependencies
 npm install
 
@@ -30,7 +30,7 @@ npm run lint
 
 # Preview build
 npm run preview
-\`\`\`
+```
 
 ### Deployment-Ready Build Process
 ✅ **Build Status**: Successfully building and deployment-ready
@@ -66,18 +66,16 @@ npm run preview
 - **vercel.json**: SPA routing configuration for deployment
 
 ### Environment Variables
-\`\`\`bash
+```
 # Required for AI features (optional - app works without)
-GEMINI_API_KEY=your_api_key_here
-GOOGLE_API_KEY=your_api_key_here  # Alternative
-VITE_GEMINI_API_KEY=your_api_key_here  # Client-side alternative
+VERITAS_GEMINI_API_KEY=your_api_key_here
 VERITAS_REGISTRATION_OPEN will turn off registration, set "true" to enable it
 VERITAS_API_KEY  from .env is the variable used  for communicating with https://veritas.sanctuaireagentique.com online deployment
-\`\`\`
+```
 
 ## Directory Structure
 
-\`\`\`
+```
 /
 ├── components/           # React components
 │   ├── ui/              # shadcn/ui components  
@@ -92,7 +90,7 @@ VERITAS_API_KEY  from .env is the variable used  for communicating with https://
 ├── constants.ts        # Default data
 └── app/                # Next.js compatibility layer
     └── globals.css     # Global styles
-\`\`\`
+```
 
 ## Key Components & Features
 
@@ -181,11 +179,11 @@ The issue was caused by:
 4. **AI Integration**: Follow existing patterns in `geminiService.ts`
 
 ### Testing Build Health
-\`\`\`bash
+```bash
 # Quick health check
 npm run build
 # Should complete in ~30 seconds with no errors
-\`\`\`
+```
 
 ### ✅ Fixed Runtime Issues
 - ✅ **React Error #185**: Fixed useEffect infinite loops in App.tsx (removed dependencies)
