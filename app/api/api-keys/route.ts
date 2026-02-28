@@ -34,25 +34,36 @@ export async function GET(request: Request) {
 
 // POST - generate a new API key (returns full key ONCE)
 export async function POST(request: Request) {
-  const user = await getUserFromSession(request)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  try {
+    const user = await getUserFromSession(request)
+    console.log('[v0] POST /api/api-keys - user:', user?.id || 'null')
+    
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json().catch(() => ({}))
-  const name: string = body.name || 'API Key'
+    const body = await request.json().catch(() => ({}))
+    const name: string = body.name || 'API Key'
 
-  // Generate: tandt_sk_<32 random hex bytes>
-  const rawKey = `tandt_sk_${randomBytes(32).toString('hex')}`
-  const keyPrefix = rawKey.substring(0, 14) // "tandt_sk_xxxxxx"
-  const keyHash = createHash('sha256').update(rawKey).digest('hex')
+    // Generate: tandt_sk_<32 random hex bytes>
+    const rawKey = `tandt_sk_${randomBytes(32).toString('hex')}`
+    const keyPrefix = rawKey.substring(0, 14) // "tandt_sk_xxxxxx"
+    const keyHash = createHash('sha256').update(rawKey).digest('hex')
 
-  const rows = await sql`
-    INSERT INTO api_keys (user_id, name, key_hash, key_prefix)
-    VALUES (${user.id}, ${name}, ${keyHash}, ${keyPrefix})
-    RETURNING id, name, key_prefix, is_active, created_at
-  `
+    console.log('[v0] Inserting API key for user:', user.id, 'name:', name)
 
-  // Return the full key ONCE — it will not be retrievable again
-  return NextResponse.json({ key: rawKey, meta: rows[0] }, { status: 201 })
+    const rows = await sql`
+      INSERT INTO api_keys (id, user_id, name, key_hash, key_prefix)
+      VALUES (gen_random_uuid(), ${user.id}, ${name}, ${keyHash}, ${keyPrefix})
+      RETURNING id, name, key_prefix, is_active, created_at
+    `
+
+    console.log('[v0] API key created:', rows[0]?.id)
+
+    // Return the full key ONCE — it will not be retrievable again
+    return NextResponse.json({ key: rawKey, meta: rows[0] }, { status: 201 })
+  } catch (error: any) {
+    console.error('[v0] Error creating API key:', error)
+    return NextResponse.json({ error: error.message || 'Failed to create API key' }, { status: 500 })
+  }
 }
 
 // DELETE - revoke an API key
