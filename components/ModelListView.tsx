@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ModelSummary, ModelId, DigitalModel } from '../types';
 import { useAppStore } from '../store';
+import { ApiKeySettings } from './ApiKeySettings';
 
 interface ModelListViewProps {
   // All props removed, will use store
@@ -94,6 +95,7 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
     const theme = useAppStore(state => state.theme);
     const onToggleTheme = useAppStore(state => state.toggleTheme);
     const onNewModel = () => setIsCreatingModel(true);
+    const [isApiKeySettingsOpen, setIsApiKeySettingsOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +134,14 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
                             <UploadIcon />
                             <span className="ml-2 hidden sm:inline">Import Model</span>
                         </button>
+                        <button
+                            onClick={() => setIsApiKeySettingsOpen(true)}
+                            title="API Access"
+                            className="flex items-center px-3 py-2 text-sm font-semibold rounded-md bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                        >
+                            <KeyIcon />
+                            <span className="ml-2 hidden sm:inline">API Access</span>
+                        </button>
                         <button onClick={onToggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
                         </button>
@@ -152,6 +162,11 @@ const ModelListView: React.FC<ModelListViewProps> = () => {
                     </div>
                 )}
             </div>
+
+            <ApiKeySettings
+                isOpen={isApiKeySettingsOpen}
+                onClose={() => setIsApiKeySettingsOpen(false)}
+            />
         </div>
     );
 };
@@ -163,5 +178,6 @@ const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
 const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
 const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" /></svg>;
+const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>;
 
 export default ModelListView;
