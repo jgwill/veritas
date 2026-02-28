@@ -1,4 +1,6 @@
 # TandT Application Development Roadmap
+**status:** Probably outdated
+
 
 This document outlines the phased development plan for the TandT (Twos and Threes from Robert Fritz) digital thinking guidance application.
 
