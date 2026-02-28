@@ -14,6 +14,15 @@ function generateToken(): string {
 
 export async function POST(request: Request) {
   try {
+    // Check if registration is open
+    const registrationOpen = process.env.VERITAS_REGISTRATION_OPEN === 'true'
+    if (!registrationOpen) {
+      return NextResponse.json(
+        { error: 'Registration is currently closed' },
+        { status: 403 }
+      )
+    }
+
     const { email, password, displayName } = await request.json()
     
     if (!email || !password) {
