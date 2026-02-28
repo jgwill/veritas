@@ -3,6 +3,11 @@
 ## Overview
 TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript application for creating and analyzing decision-making and performance review models using AI assistance. This application successfully migrated from Google AI Studio prototype to production-ready Vercel deployment.
 
+## Related LLMS-txt guidances
+
+* `https://llms.jgwill.com/llms-digital-decision-making.md` for Digital Decision
+* `https://llms.jgwill.com/llms-managerial-moment-of-truth.md` for MMOT and Performance Review.
+
 ## `https://veritas.sanctuaireagentique.com`
 
 * main branch deployed on vercel.app that should work when we need it.
