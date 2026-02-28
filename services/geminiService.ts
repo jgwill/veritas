@@ -4,18 +4,14 @@ import { DigitalModel, DigitalElement } from '../types';
 // Initialize Gemini AI - handle both client and server environments
 let genAI: GoogleGenerativeAI | null = null;
 
-// Try to get API key from various sources
+// Get API key from the single canonical environment variable
 const getApiKey = () => {
   if (typeof window !== 'undefined') {
     // Client-side: API key should come from server or be configured elsewhere
     return null;
   }
-  // Server-side: try various environment variable names
-  return process.env.GEMINI_API_KEY || 
-         process.env.GOOGLE_API_KEY || 
-         process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-         process.env.VITE_GEMINI_API_KEY ||
-         '';
+  // Server-side: use the single VERITAS_GEMINI_API_KEY variable
+  return process.env.VERITAS_GEMINI_API_KEY || '';
 };
 
 const apiKey = getApiKey();
