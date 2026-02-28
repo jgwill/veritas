@@ -1,45 +1,9 @@
 import { neon } from '@neondatabase/serverless'
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
+import { getUserFromRequest } from '@/lib/auth'
 
 const sql = neon(process.env.DATABASE_URL!)
-
-/**
- * Resolve a user from either:
- *  - Bearer <session_token>  (browser sessions)
- *  - Bearer tandt_sk_<api_key>  (LLM / programmatic access)
- */
-async function getUserFromRequest(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-
-  const token = authHeader.substring(7)
-
-  // API key path
-  if (token.startsWith('tandt_sk_')) {
-    const keyHash = createHash('sha256').update(token).digest('hex')
-    const rows = await sql`
-      SELECT u.id, u.email, u.display_name, ak.id as api_key_id
-      FROM api_keys ak
-      JOIN users u ON ak.user_id = u.id
-      WHERE ak.key_hash = ${keyHash} AND ak.is_active = true
-    `
-    if (rows.length === 0) return null
-    // Update last_used_at in background (fire-and-forget)
-    sql`UPDATE api_keys SET last_used_at = NOW() WHERE id = ${rows[0].api_key_id}`.catch(() => {})
-    return rows[0]
-  }
-
-  // Session token path
-  const rows = await sql`
-    SELECT u.id, u.email, u.display_name
-    FROM sessions s
-    JOIN users u ON s.user_id = u.id
-    WHERE s.token = ${token} AND s.expires_at > NOW()
-  `
-  return rows.length > 0 ? rows[0] : null
-}
 
 /**
  * Build DigitalElement objects from a simple element list.

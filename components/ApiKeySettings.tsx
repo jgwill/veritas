@@ -1,107 +1,44 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { getAuthToken } from '../services/authService';
-
-interface ApiKey {
-  id: string;
-  name: string;
-  key_prefix: string;
-  last_used_at: string | null;
-  is_active: boolean;
-  created_at: string;
-}
+import React, { useState } from 'react';
 
 interface ApiKeySettingsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const authHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
-
 export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [revealedKey, setRevealedKey] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchKeys = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/api-keys', { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load API keys');
-      const data = await res.json();
-      setKeys(data.keys || []);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchKeys();
-      setRevealedKey(null);
-      setCopiedKey(false);
-    }
-  }, [isOpen, fetchKeys]);
-
-  const handleCreate = async () => {
-    setCreating(true);
-    setError(null);
-    setRevealedKey(null);
-    try {
-      const res = await fetch('/api/api-keys', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ name: newKeyName.trim() || 'API Key' }),
-      });
-      if (!res.ok) throw new Error('Failed to create API key');
-      const data = await res.json();
-      setRevealedKey(data.key);
-      setNewKeyName('');
-      await fetchKeys();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleRevoke = async (keyId: string) => {
-    try {
-      await fetch(`/api/api-keys?id=${keyId}`, { method: 'DELETE', headers: authHeaders() });
-      setKeys(prev => prev.filter(k => k.id !== keyId));
-      if (revealedKey) setRevealedKey(null);
-    } catch {
-      setError('Failed to revoke key');
-    }
-  };
-
-  const copyKey = async () => {
-    if (!revealedKey) return;
-    await navigator.clipboard.writeText(revealedKey);
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
-  };
+  const [copiedExample, setCopiedExample] = useState(false);
 
   if (!isOpen) return null;
 
-  const schemaUrl = `${window.location.origin}/api/llm/schema`;
-  const generateUrl = `${window.location.origin}/api/llm/generate-model`;
+  const generateUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/api/llm/generate-model` 
+    : '/api/llm/generate-model';
+  
+  const schemaUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/api/llm/schema` 
+    : '/api/llm/schema';
+
+  const exampleCurl = `curl -X POST "${generateUrl}" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_VERITAS_API_KEY" \\
+  -d '{
+    "topic": "Q2 Engineering Team Performance",
+    "model_type": 2,
+    "description": "Mid-year review of the core engineering team.",
+    "elements": [
+      { "name": "Code Quality", "state": 1, "trend": 1 },
+      { "name": "Delivery Velocity", "state": 0, "trend": 0 },
+      { "name": "Technical Debt", "state": -1, "trend": -1 }
+    ]
+  }'`;
+
+  const handleCopyExample = async () => {
+    await navigator.clipboard.writeText(exampleCurl);
+    setCopiedExample(true);
+    setTimeout(() => setCopiedExample(false), 2000);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/70 z-50 flex items-center justify-center p-4">
@@ -121,126 +58,81 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ isOpen, onClose 
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Intro */}
+          {/* Setup Instructions */}
           <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 p-4">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              Use API keys to allow LLMs and external tools to create models on your behalf. Keys are prefixed with{' '}
-              <code className="font-mono bg-blue-100 dark:bg-blue-800 px-1 rounded">tandt_sk_</code>.{' '}
-              The full key is shown only once at creation.
-            </p>
+            <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Setup Instructions</h3>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
+              <li>
+                Go to your Vercel project settings and add an environment variable:
+                <code className="ml-2 bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded font-mono">VERITAS_API_KEY</code>
+              </li>
+              <li>
+                Generate a secure random key, e.g.: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded font-mono text-xs">openssl rand -hex 32</code>
+              </li>
+              <li>
+                Use this key as a Bearer token in your API requests
+              </li>
+            </ol>
           </div>
 
-          {/* Revealed key banner */}
-          {revealedKey && (
-            <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 p-4">
-              <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-2 uppercase tracking-wide">
-                New key — copy it now, it will not be shown again
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 font-mono text-xs bg-white dark:bg-gray-900 border border-green-300 dark:border-green-700 rounded px-3 py-2 break-all text-green-800 dark:text-green-200">
-                  {revealedKey}
-                </code>
-                <button
-                  onClick={copyKey}
-                  className="shrink-0 px-3 py-2 text-sm font-semibold rounded-md bg-green-600 hover:bg-green-700 text-white transition-colors"
-                >
-                  {copiedKey ? 'Copied!' : 'Copy'}
-                </button>
+          {/* Endpoint Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-2">LLM Endpoint</h3>
+            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-3 font-mono text-sm text-gray-700 dark:text-gray-300">
+              POST /api/llm/generate-model
+            </div>
+          </div>
+
+          {/* Model Types */}
+          <div>
+            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-2">Model Types</h3>
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-start gap-3">
+                <code className="shrink-0 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded font-mono">model_type: 2</code>
+                <span>Performance Review — Evaluate elements with state (-1/0/1) and trend (-1/0/1)</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <code className="shrink-0 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded font-mono">model_type: 1</code>
+                <span>Decision Making — Pairwise comparison to build dominance hierarchy</span>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Create key */}
+          {/* Example Request */}
           <div>
-            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-3">Create new API key</h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newKeyName}
-                onChange={e => setNewKeyName(e.target.value)}
-                placeholder="Key name (e.g. Claude, GPT-4)"
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-tandt-dark dark:text-gray-200 focus:ring-2 focus:ring-tandt-primary outline-none"
-                onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              />
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200">Example Request</h3>
               <button
-                onClick={handleCreate}
-                disabled={creating}
-                className="px-4 py-2 text-sm font-semibold rounded-md bg-tandt-primary text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                onClick={handleCopyExample}
+                className="text-xs text-tandt-primary hover:underline"
               >
-                {creating ? 'Generating...' : 'Generate'}
+                {copiedExample ? 'Copied!' : 'Copy'}
               </button>
             </div>
+            <pre className="rounded-lg bg-gray-900 text-gray-100 p-4 text-xs overflow-x-auto leading-relaxed">
+              {exampleCurl}
+            </pre>
           </div>
 
-          {/* Existing keys */}
-          <div>
-            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-3">Your API keys</h3>
-            {loading ? (
-              <div className="text-sm text-gray-400 py-4 text-center">Loading...</div>
-            ) : keys.length === 0 ? (
-              <div className="text-sm text-gray-400 py-4 text-center rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-                No API keys yet. Generate one above.
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {keys.map(k => (
-                  <li key={k.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-tandt-dark dark:text-gray-200 truncate">{k.name}</p>
-                      <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                        {k.key_prefix}••••••••••••••••
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        Created {new Date(k.created_at).toLocaleDateString()}
-                        {k.last_used_at && ` · Last used ${new Date(k.last_used_at).toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleRevoke(k.id)}
-                      className="shrink-0 ml-3 px-3 py-1.5 text-xs font-semibold rounded-md text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                    >
-                      Revoke
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Usage reference */}
-          <div>
-            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-3">LLM usage reference</h3>
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs font-mono">
-              <div className="bg-gray-100 dark:bg-gray-900 px-4 py-2 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                POST {generateUrl}
-              </div>
-              <pre className="p-4 overflow-x-auto bg-white dark:bg-gray-950 text-gray-700 dark:text-gray-300 leading-relaxed">{`Authorization: Bearer tandt_sk_<your_key>
-Content-Type: application/json
-
-{
-  "topic": "Q2 Engineering Team Performance",
-  "model_type": 2,
-  "description": "Mid-year review of the core engineering team.",
-  "elements": [
-    { "name": "Code Quality", "state": 1, "trend": 1 },
-    { "name": "Delivery Velocity", "state": 0, "trend": 0 },
-    { "name": "Technical Debt", "state": -1, "trend": -1 }
-  ]
-}`}</pre>
-            </div>
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Full OpenAPI schema available at{' '}
-              <a href={schemaUrl} target="_blank" rel="noreferrer" className="text-tandt-primary underline">
+          {/* Schema Link */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Full OpenAPI schema:{' '}
+              <a href={schemaUrl} target="_blank" rel="noreferrer" className="text-tandt-primary hover:underline">
                 {schemaUrl}
               </a>
             </p>
           </div>
+        </div>
 
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
-              {error}
-            </p>
-          )}
+        {/* Footer */}
+        <div className="p-6 pt-0">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -253,6 +145,7 @@ const KeyIcon: React.FC<{ className?: string }> = ({ className }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
   </svg>
 );
+
 const XIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
