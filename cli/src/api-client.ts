@@ -105,7 +105,7 @@ export class ApiError extends Error {
 }
 
 function getBaseUrl(): string {
-  return (process.env.VERITAS_API_URL || 'https://veritas.sanctuaireagentique.com').replace(/\/+$/, '');
+  return (process.env.VERITAS_API_URL || 'http://localhost:3123').replace(/\/+$/, '');
 }
 
 function getApiKey(): string {

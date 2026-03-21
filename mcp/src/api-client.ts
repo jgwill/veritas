@@ -32,7 +32,7 @@ export class VeritasApiClient {
     this.baseUrl = (
       baseUrl ||
       process.env.VERITAS_API_URL ||
-      "https://veritas.sanctuaireagentique.com"
+      "http://localhost:3123"
     ).replace(/\/$/, "");
 
     this.apiKey = apiKey || process.env.VERITAS_API_KEY || "";

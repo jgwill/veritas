@@ -25,9 +25,18 @@ npm install
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `VERITAS_API_KEY` | Yes | — | Bearer token for API authentication |
-| `VERITAS_API_URL` | No | `https://veritas.sanctuaireagentique.com` | API base URL |
+| `VERITAS_API_URL` | No | `http://localhost:3123` | API base URL |
+| `VERITAS_ENV_FILE` | No | — | Path to a `.env` file to load at startup |
 | `VERITAS_TOOLS` | No | `NETWORK_TOOLS,LOCAL_TOOLS` | Comma-separated tool groups to enable |
 | `VERITAS_DISABLED_TOOLS` | No | — | Comma-separated tool names to disable (e.g., `veritas_delete_model`) |
+
+### Env File Resolution
+
+The MCP server automatically loads `VERITAS_*` variables from `.env` files in this order (first value found wins, already-set env vars always take precedence):
+
+1. **`VERITAS_ENV_FILE`** — if set via MCP host `env` config, load that file first
+2. **`./.env`** — project-local env file
+3. **`$HOME/.env`** — user-global env file
 
 ### MCP Host Setup
 
@@ -40,7 +49,7 @@ npm install
       "command": "npx",
       "args": ["tsx", "/path/to/veritas/mcp/src/index.ts"],
       "env": {
-        "VERITAS_API_KEY": "your-api-key-here"
+        "VERITAS_ENV_FILE": "/path/to/your/.env"
       }
     }
   }
@@ -56,7 +65,7 @@ npm install
       "command": "npx",
       "args": ["tsx", "/path/to/veritas/mcp/src/index.ts"],
       "env": {
-        "VERITAS_API_KEY": "your-api-key-here"
+        "VERITAS_ENV_FILE": "/path/to/your/.env"
       }
     }
   }
@@ -72,7 +81,7 @@ npm install
       "command": "npx",
       "args": ["tsx", "${workspaceFolder}/mcp/src/index.ts"],
       "env": {
-        "VERITAS_API_KEY": "your-api-key-here"
+        "VERITAS_ENV_FILE": "${workspaceFolder}/.env"
       }
     }
   }

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "veritas-mcp": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "/workspace/repos/jgwill/veritas/mcp/src/index.ts"
+      ],
+      "env": {
+        "VERITAS_ENV_FILE": "/workspace/repos/jgwill/veritas/.env"
+      }
+    }
+  }
+}

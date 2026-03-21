@@ -16,15 +16,32 @@ npm link
 
 ## Configuration
 
-Two environment variables drive the CLI:
+### Environment Variables
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `VERITAS_API_KEY` | **Yes** | — | Static UUID bearer token for API authentication |
-| `VERITAS_API_URL` | No | `https://veritas.sanctuaireagentique.com` | API base URL override |
+| `VERITAS_API_URL` | No | `http://localhost:3123` | API base URL override |
+| `VERITAS_ENV_FILE` | No | — | Explicit path to a `.env` file to load |
+
+### Env File Resolution
+
+The CLI automatically loads `VERITAS_*` variables from `.env` files in this order (first value found wins, already-set env vars always take precedence):
+
+1. **`VERITAS_ENV_FILE`** — if set, load that file first
+2. **`./.env`** — project-local env file
+3. **`$HOME/.env`** — user-global env file
 
 ```bash
+# Option A: export directly
 export VERITAS_API_KEY="your-uuid-token-here"
+export VERITAS_API_URL="https://veritas.sanctuaireagentique.com"
+
+# Option B: put in .env (project or $HOME)
+echo 'VERITAS_API_KEY="your-uuid-token-here"' >> .env
+
+# Option C: point to a shared env file
+export VERITAS_ENV_FILE="/path/to/shared/.env"
 ```
 
 ## Commands

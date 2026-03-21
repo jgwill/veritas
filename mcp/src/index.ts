@@ -7,6 +7,12 @@
  * decision-making and performance review.
  */
 
+import { loadVeritasEnv } from "./env.js";
+
+// Load .env files before anything else reads process.env.
+// MCP hosts pass VERITAS_ENV_FILE via { env: { VERITAS_ENV_FILE: "..." } }
+loadVeritasEnv();
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {

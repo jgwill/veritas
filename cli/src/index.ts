@@ -8,6 +8,11 @@
  * the thinking framework travels with you wherever a shell prompt lives.
  */
 
+import { loadVeritasEnv } from './env.js';
+
+// Load .env files before anything else reads process.env
+loadVeritasEnv();
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { registerModelsCommands } from './commands/models.js';
