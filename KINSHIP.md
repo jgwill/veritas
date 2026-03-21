@@ -1,7 +1,7 @@
 # KINSHIP
 
 ## 1. Identity and Purpose
-- Name: veritas (jgwill/veritas) — codename for Truth-and-Trust
+- Name: veritas (jgwill/veritas) — codename for Twos and Threes
 - Local role in this system: MMOT evaluator — applies the Managerial Moment of Truth to structural tension charts, evaluating whether current reality is honestly acknowledged and whether actions advance or oscillate
 - What this place tends / protects: Honest assessment. The courage to say "not acceptable" when current reality is glossed over or tensions are prematurely resolved.
 - What this place offers (its gifts): MMOT evaluation framework, truth-and-trust scoring, accountability checks. MCP server (9 tools), CLI tool, MMOT evaluation engine. Both network mode (API) and local mode (LLM-driven evaluation).
