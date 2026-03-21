@@ -73,7 +73,7 @@ TandT is a direct software embodiment of the **Structural Thinking** principles 
 
 ## Further Reading & Specifications
 
-{{ TODO link with ./rispecs }}
+- **Specifications**: See [`rispecs/`](./rispecs/) for detailed requirements and design specifications.
 
 
 - **Sample Models**: See `samples/` for real-world JSON model examples.

@@ -98,7 +98,7 @@ export function registerGenerateCommand(program: Command): void {
             console.log(chalk.bold(`\nElements (${els.length}):`));
             for (const el of els) {
               const state = modelType === 2
-                ? chalk.dim(` [state:${el.ThreeFlag ?? '?'} trend:${el.TwoFlag ? '↑' : '↓'}]`)
+                ? chalk.dim(` [acceptance:${el.TwoFlag ? 'acceptable ✓' : 'unacceptable ✗'} trend:${el.ThreeFlag > 0 ? '↑' : el.ThreeFlag < 0 ? '↓' : '→'}]`)
                 : '';
               console.log(`  ${chalk.green('•')} ${el.DisplayName || el.NameElement}${state}`);
             }

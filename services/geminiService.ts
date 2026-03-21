@@ -3,16 +3,12 @@ import { DigitalModel, DigitalElement } from '../types';
 
 const GEMINI_KEY_STORAGE = 'VERITAS_USER_GEMINI_API_KEY';
 
-// Get API key - checks localStorage first (user's key), then env var (server default)
+// Get API key - checks localStorage for user's personal key
 const getApiKey = (): string | null => {
   // Client-side: check localStorage for user's personal API key
   if (typeof window !== 'undefined') {
     const userKey = localStorage.getItem(GEMINI_KEY_STORAGE);
     if (userKey) return userKey;
-  }
-  // Server-side or fallback: use environment variable
-  if (typeof process !== 'undefined' && process.env?.VERITAS_GEMINI_API_KEY) {
-    return process.env.VERITAS_GEMINI_API_KEY;
   }
   return null;
 };

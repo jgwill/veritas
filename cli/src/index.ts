@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env node
 /**
  * veritas — CLI for TandT Performance Review & Decision Making models.
  *

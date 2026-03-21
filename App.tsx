@@ -51,13 +51,20 @@ const App: React.FC = () => {
       return null;
     }
 
-    // If viewing a snapshot, create a temporary model with snapshot data
-    const displayModel = viewingSnapshot 
+    // If viewing a snapshot, create a temporary model with snapshot data.
+    // In Modeling mode, always use the live model (snapshots are read-only).
+    const isModelingMode = mode === AppMode.Modeling;
+    const displayModel = viewingSnapshot && !isModelingMode
       ? { ...model, Model: viewingSnapshot.elements_data }
       : model;
 
     switch (mode) {
       case AppMode.Modeling:
+        // Entering Modeling mode while viewing a snapshot clears the snapshot view
+        // to prevent unintentionally overwriting the live model with snapshot data.
+        if (viewingSnapshot) {
+          clearViewingSnapshot();
+        }
         return <ModelingView model={displayModel} />;
       case AppMode.Analyzing:
         return (

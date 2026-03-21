@@ -4,11 +4,12 @@
   "description": "CLI tool for veritas TandT Performance Review & Decision Making models",
   "type": "module",
   "bin": {
-    "veritas": "src/index.ts"
+    "veritas": "dist/index.js"
   },
   "scripts": {
     "start": "npx tsx src/index.ts",
     "build": "tsc",
+    "prepare": "tsc",
     "dev": "tsx src/index.ts"
   },
   "dependencies": {

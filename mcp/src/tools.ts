@@ -93,7 +93,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
               trend: {
                 type: "number",
                 description:
-                  "Performance Review only: -1 concern, 0 neutral, 1 strength.",
+                  "Performance Review only. Acceptance assessment: 1 = acceptable/strength, -1 = unacceptable/concern. (Maps to TwoFlag boolean; 0 treated as unacceptable)",
               },
             },
             required: ["name"],

@@ -84,8 +84,8 @@ export async function POST(
     }
     
     const snapshots = await sql`
-      INSERT INTO analysis_snapshots (model_id, user_id, snapshot_name, elements_data, summary_notes, data)
-      VALUES (${modelId}, ${user.id}, ${snapshotName || null}, ${JSON.stringify(elementsData)}, ${summaryNotes || null}, ${JSON.stringify(elementsData)})
+      INSERT INTO analysis_snapshots (model_id, user_id, snapshot_name, elements_data, summary_notes)
+      VALUES (${modelId}, ${user.id}, ${snapshotName || null}, ${JSON.stringify(elementsData)}, ${summaryNotes || null})
       RETURNING id, model_id, snapshot_name, snapshot_date, elements_data, summary_notes, created_at
     `
     
