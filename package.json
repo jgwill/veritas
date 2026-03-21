@@ -1,12 +1,12 @@
 {
   "name": "tandt-application",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3123",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 3123",
     "lint": "next lint"
   },
   "dependencies": {
