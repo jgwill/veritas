@@ -1,7 +1,7 @@
 # PDE Facet 01: MCP Server & CLI Tool
 
 **UUID**: facet-01-mcp-server-cli
-**Direction**: NORTH (Action — what executes the cycle)
+**Direction**: NORTH (Action — what executes the cycle) ← NOTE: direction mapping under active discussion, see .mw/README.md
 **Priority**: PRIMARY INTENT
 
 ## What Wants to Be Created
@@ -23,8 +23,9 @@ A new `./mcp/` directory containing a Model Context Protocol server and a compan
   - `veritas_perform_mmot` — Execute MMOT four-step evaluation on a model
   - `veritas_export_model` / `veritas_import_model` — JSON import/export
 - A CLI tool (`veritas-cli` or `npx veritas`) that wraps the same API calls
-- Both MCP and CLI authenticate via `VERITAS_API_KEY` environment variable
+- Both MCP and CLI authenticate via `VERITAS_API_KEY` environment variable (static UUID token, not JWT — see `.env`)
 - An LLM using these tools can autonomously generate a complete Performance Review Model
+- `veritas_generate_model` calls the API's `/api/llm/generate-model` which uses Gemini server-side — the LLM calling the tool does NOT construct the model JSON itself, it sends a description and gets back a complete `DigitalModel`
 
 ## Current Reality
 
@@ -53,11 +54,41 @@ A new `./mcp/` directory containing a Model Context Protocol server and a compan
 10. **WEST**: Validate MCP server starts and responds to tool calls
 11. **WEST**: Validate CLI commands execute against deployed API
 
+## ⚠️ Key Structural Tension: MMOT Ownership
+
+coaia-narrative already has `perform_mmot_evaluation` as a tool that evaluates STC charts using the MMOT 4-step process. Veritas is building MMOT MCP tools for its own `DigitalModel` evaluation. These serve DIFFERENT purposes:
+- **coaia-narrative MMOT**: evaluates STC chart progress (Entity/Relation JSONL) — is the chart advancing or oscillating?
+- **veritas MMOT**: evaluates Performance Review Models (DigitalModel with DigitalElements) — are DESIGN and EXECUTION elements acceptable?
+
+The veritas MCP should NOT duplicate coaia-narrative's STC evaluation. It should own `DigitalModel` evaluation. If STC evaluation is needed, delegate to coaia-narrative.
+
+## ⚠️ Network vs Local — TWO MODES REQUIRED
+
+The MCP is a network client (calls `veritas.sanctuaireagentique.com`). The `.mw/` vision is local-first. **Both modes must coexist.**
+
+**Network mode**: Model CRUD, AI generation via Veritas API (requires `VERITAS_API_KEY`)
+**Local mode**: MMOT evaluation on local JSONL charts, writes artifacts to `.mw/north/`
+
+**Precedent**: `mcp-pde` (network, Anthropic API) vs `mia-code/miaco decompose` (local, spawns claude/gemini/copilot binary). Same decomposition, two modes.
+
+**DELEGATE (subagent with claude-opus-4.6)**: Have a subagent analyze `/a/src/mia-code/miaco/src/decompose.ts` and `/a/src/mia-code/miaco/src/commands/stc.ts` to understand the local-engine pattern (spawning LLM binaries). Then design how `veritas-cli mmot evaluate --local -M .mw/south/chart.jsonl` would work — spawning a local LLM to generate MMOT evaluation, writing results to `.mw/north/`. This is the same pattern miaco uses for PDE decomposition.
+
+**DELEGATE (subagent with claude-opus-4.6)**: Have a subagent analyze `/a/src/mia-code/miaco/src/commands/chart.ts` and propose what `miaco mmot evaluate` would look like as a new miaco command that wraps veritas' local evaluation. Reference: the miaco CLI already has `decompose` (east), `stc convert` (south→south), `chart` (south). Adding `mmot` gives it the west→north leg. Propose rispecs at `/a/src/mia-code/rispecs/mmot-integration.spec.md`.
+
+## Type Reference
+
+`DigitalModel` has `DigitalThinkingModelType: number` where:
+- Type 1 = Decision Making Model (binary yes/no evaluation of elements)
+- Type 2 = Performance Review Model (DESIGN + EXECUTION element categories with state/trend)
+
+Each `DigitalElement` has `ThreeFlag` (-1/0/1) for evaluation state and `Status` for lifecycle.
+
 ## Files Needed
 
-- `/workspace/repos/jgwill/veritas/types.ts` — Core type definitions
+- `/workspace/repos/jgwill/veritas/types.ts` — Core type definitions (DigitalModel, DigitalElement)
 - `/workspace/repos/jgwill/veritas/services/modelService.ts` — API endpoint patterns
-- `/workspace/repos/jgwill/veritas/services/geminiService.ts` — AI integration patterns
+- `/workspace/repos/jgwill/veritas/services/geminiService.ts` — AI integration (uses Gemini server-side via VERITAS_GEMINI_API_KEY)
+- `/workspace/repos/jgwill/veritas/constants.ts` — Example Performance Review Model with 8+ elements
 - `/workspace/repos/jgwill/veritas/services/authService.ts` — Auth patterns
 - `/a/src/coaia-narrative/rispecs/mcp_api_specification.spec.md` — MCP tool design precedent
 - `/a/src/coaia-narrative/rispecs/mcp_tool_interface.spec.md` — MCP interface patterns

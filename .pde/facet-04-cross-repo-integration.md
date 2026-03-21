@@ -28,9 +28,16 @@ Integration proposals that connect veritas MCP/CLI to the broader ecosystem: coa
 1. **SOUTH**: Analyze coaia-narrative's `mmot_evaluation_loop.spec.md` for alignment points
 2. **SOUTH**: Analyze mia-code's `mcp.rispecs.md` and `core.rispecs.md` for integration patterns
 3. **SOUTH**: Analyze medicine-wheel's `ontology-core.spec.md` for type bridges
-4. **NORTH**: Author `veritas-integration.spec.md` for mia-code rispecs
-5. **NORTH**: Author `veritas-mmot-bridge.spec.md` for medicine-wheel rispecs
-6. **NORTH**: Document coaia-narrative schema alignment in veritas rispecs
+
+**DELEGATE (subagent with claude-opus-4.6)**: Read `/a/src/coaia-narrative/rispecs/mmot_evaluation_loop.spec.md` + `/a/src/coaia-narrative/schema/tools/stc/` and document exactly how coaia-narrative's `perform_mmot_evaluation` works, what it evaluates, and where veritas' `DigitalModel` evaluation diverges. Output: a compatibility report at `./rispecs/coaia-narrative-alignment.spec.md`.
+
+**DELEGATE (subagent with claude-opus-4.6)**: Read `/a/src/mia-code/miaco/src/decompose.ts`, `/a/src/mia-code/miaco/src/commands/stc.ts`, `/a/src/mia-code/miaco/src/commands/chart.ts`, and `/a/src/mia-code/rispecs/`. Propose `mmot-integration.spec.md` for mia-code that adds `miaco mmot evaluate` command. Key paths: local LLM engine pattern in `decompose.ts`, chart storage in `storage.ts`. Output as local file `./proposals/mia-code-mmot-integration.spec.md`.
+
+**DELEGATE (subagent with claude-opus-4.6)**: Read `/workspace/repos/jgwill/medicine-wheel/rispecs/ontology-core.spec.md` and `/a/src/IAIP/rispecs/ceremonial-technology.kin.md`. Propose how veritas' `DigitalModel`/`DigitalElement` types relate to ontology-core's `StructuralTensionChart`/`ActionStep` types. Output: `./proposals/medicine-wheel-veritas-bridge.spec.md`.
+
+4. **NORTH**: Author `veritas-integration.spec.md` for mia-code rispecs (from subagent proposal)
+5. **NORTH**: Author `veritas-mmot-bridge.spec.md` for medicine-wheel rispecs (from subagent proposal)
+6. **NORTH**: Document coaia-narrative schema alignment in veritas rispecs (from subagent report)
 7. **WEST**: Validate proposals don't conflict with existing specs
 8. **WEST**: Verify kinship references are bidirectional
 

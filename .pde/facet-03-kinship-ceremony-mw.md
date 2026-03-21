@@ -55,6 +55,14 @@ A deepened kinship web connecting veritas to its relational ecosystem: coaia-nar
 - `/home/mia/.openclaw/workspace/ceremonies/jgwill-src-403--2603170917--4606479c-c0fd-4d23-96b9-96729f653f5d/KINSHIP.md`
 - `/home/mia/.openclaw/workspace/.mw/` (structure reference)
 
+## ⚠️ Direction Mapping Note
+
+The mcp-pde engine maps WEST=Validation, NORTH=Action. The Indigenous framework (IAIP four-directions.spec.md, ontology-core) maps WEST=Action, NORTH=Reflection/Wisdom. All PDE facets inherit the mcp-pde mapping. Read `/home/mia/.openclaw/workspace/.mw/README.md` for the corrected mapping before labeling directions.
+
+## ⚠️ `.mw/` Scope Decision
+
+`.mw/` was designed as a workspace-level convention. If veritas creates its own `.mw/`, it should hold veritas' OWN development cycle introspection, not its evaluations of others. Evaluations of external work belong in the ceremony workspace that commissioned the evaluation.
+
 ## Ambiguities
 
 - [IMPLICIT] Should veritas write to external KINSHIP.md files directly, or propose changes? → Propose + write where appropriate
