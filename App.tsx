@@ -15,7 +15,6 @@ import ConversationalAnalyst from './components/ConversationalAnalyst';
 import { AuthPage } from './components/auth/AuthPage';
 import { Scratchpad } from './components/Scratchpad';
 import { AnalysisHistory } from './components/AnalysisHistory';
-import SnapshotCompareView from './components/SnapshotCompareView';
 
 const App: React.FC = () => {
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -32,7 +31,6 @@ const App: React.FC = () => {
     initializeTheme,
     fetchAvailableModels,
     viewingSnapshot,
-    isCompareMode,
     clearViewingSnapshot,
   } = useAppStore();
 
@@ -51,11 +49,6 @@ const App: React.FC = () => {
   const renderModelContent = () => {
     if (!model) {
       return null;
-    }
-
-    // Show compare view if in compare mode
-    if (isCompareMode) {
-      return <SnapshotCompareView />;
     }
 
     // If viewing a snapshot, create a temporary model with snapshot data
