@@ -47,6 +47,33 @@ TandT transforms subjective thinking into systematic, auditable, evidence-based 
 - Quarterly workflow: How performance tracked and improved over time
 - Complete lifecycle from creation through action planning
 
+### MCP & CLI Specifications
+
+**🔌 [mcp_server.spec.md](./mcp_server.spec.md)** - MCP Server
+- 9 MCP tools exposing the full Veritas model lifecycle to LLM agents
+- Dual-mode architecture: Network (API CRUD) + Local (MMOT evaluation)
+- Tool groups: NETWORK_TOOLS, LOCAL_TOOLS, CORE_TOOLS
+- Authentication via VERITAS_API_KEY Bearer token
+- MMOT domain boundary: evaluates DigitalModel elements, not STC charts
+
+**⌨️ [cli_tool.spec.md](./cli_tool.spec.md)** - CLI Tool
+- Command structure: `veritas models {list|get|delete|export|import}`, `veritas generate`, `veritas mmot evaluate`, `veritas schema`
+- Dual output modes: human (chalk formatting) + machine (`--json`)
+- Local MMOT evaluation from file (no API key required)
+- Commander.js patterns with examples for each command
+
+**🔄 [mmot_generation.spec.md](./mmot_generation.spec.md)** - MMOT Generation Workflow
+- Autonomous LLM workflow: Generate → Review → Evaluate → Iterate → Present
+- Four-step MMOT cycle: Acknowledge → Analyze → Plan → Document
+- Bootstrap paradox: first evaluation is demonstration, not trusted verdict
+- Evaluation creates NEW structural tension (advancing, not reactive)
+
+**📡 [api_client.spec.md](./api_client.spec.md)** - API Client
+- Typed HTTP client for Veritas API at veritas.sanctuaireagentique.com
+- Shared foundation consumed by both MCP server and CLI
+- Endpoints: /api/models (CRUD), /api/llm/generate-model, /api/llm/schema
+- Error type hierarchy with HTTP status mapping and retry strategy
+
 ### Feature Specs
 
 **🤖 [model_generation.spec.md](./model_generation.spec.md)** - AI Integration
@@ -162,6 +189,11 @@ app.spec.md (READ FIRST - Overview)
     │
     ├─→ model_persistence.spec.md (Storage - all modes depend on this)
     │
+    ├─→ api_client.spec.md (HTTP client for API access)
+    │   ├─→ mcp_server.spec.md (MCP tools - consumes API client)
+    │   └─→ cli_tool.spec.md (CLI commands - consumes API client)
+    │       └─→ mmot_generation.spec.md (Autonomous MMOT workflow)
+    │
     └─→ analysis_workflow.spec.md (Core evaluation workflow)
 
 Suggested Reading Order:
@@ -171,6 +203,10 @@ Suggested Reading Order:
 4. visualization_dashboard.spec.md
 5. model_generation.spec.md (if implementing AI)
 6. model_persistence.spec.md (implementation detail for all)
+7. api_client.spec.md (if building MCP/CLI)
+8. mcp_server.spec.md (MCP tool interface)
+9. cli_tool.spec.md (CLI command interface)
+10. mmot_generation.spec.md (autonomous MMOT workflow)
 \`\`\`
 
 ---
@@ -392,6 +428,6 @@ These specifications are open for sharing and adaptation. Preserve the creative 
 
 ---
 
-**Last Updated**: December 8, 2024
+**Last Updated**: March 21, 2026
 **Format**: Markdown (GitHub-flavored)
 **Compliance**: RISE Framework v1.0, SpecLang Autonomy Principle
