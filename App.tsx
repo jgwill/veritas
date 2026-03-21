@@ -15,6 +15,7 @@ import ConversationalAnalyst from './components/ConversationalAnalyst';
 import { AuthPage } from './components/auth/AuthPage';
 import { Scratchpad } from './components/Scratchpad';
 import { AnalysisHistory } from './components/AnalysisHistory';
+import SnapshotCompareView from './components/SnapshotCompareView';
 
 const App: React.FC = () => {
   const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
@@ -30,6 +31,9 @@ const App: React.FC = () => {
     isChatAnalystOpen,
     initializeTheme,
     fetchAvailableModels,
+    viewingSnapshot,
+    isCompareMode,
+    clearViewingSnapshot,
   } = useAppStore();
 
   // Runs once on mount
@@ -49,15 +53,69 @@ const App: React.FC = () => {
       return null;
     }
 
+    // Show compare view if in compare mode
+    if (isCompareMode) {
+      return <SnapshotCompareView />;
+    }
+
+    // If viewing a snapshot, create a temporary model with snapshot data
+    const displayModel = viewingSnapshot 
+      ? { ...model, Model: viewingSnapshot.elements_data }
+      : model;
+
     switch (mode) {
       case AppMode.Modeling:
-        return <ModelingView model={model} />;
+        return <ModelingView model={displayModel} />;
       case AppMode.Analyzing:
-        return <AnalyzingView model={model} />;
+        return (
+          <div>
+            {viewingSnapshot && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Viewing snapshot: {viewingSnapshot.snapshot_name || 'Unnamed'}
+                  </span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">
+                    ({new Date(viewingSnapshot.snapshot_date).toLocaleDateString()})
+                  </span>
+                </div>
+                <button
+                  onClick={clearViewingSnapshot}
+                  className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Back to Current
+                </button>
+              </div>
+            )}
+            <AnalyzingView model={displayModel} />
+          </div>
+        );
       case AppMode.Structuring:
-        return <StructuringView model={model} />;
+        return (
+          <div>
+            {viewingSnapshot && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Viewing snapshot: {viewingSnapshot.snapshot_name || 'Unnamed'}
+                  </span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">
+                    ({new Date(viewingSnapshot.snapshot_date).toLocaleDateString()})
+                  </span>
+                </div>
+                <button
+                  onClick={clearViewingSnapshot}
+                  className="px-3 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Back to Current
+                </button>
+              </div>
+            )}
+            <StructuringView model={displayModel} />
+          </div>
+        );
       default:
-        return <ModelingView model={model} />;
+        return <ModelingView model={displayModel} />;
     }
   };
 
@@ -118,6 +176,20 @@ const App: React.FC = () => {
             currentElementsData={model.Model}
             isOpen={isHistoryOpen}
             onClose={() => setIsHistoryOpen(false)}
+            onRestoreSnapshot={(elementsData, snapshot) => {
+              // Use the full snapshot object if provided, otherwise create minimal one
+              const snapshotObj = snapshot || {
+                id: 'temp',
+                model_id: model.Idug,
+                snapshot_name: 'Selected Snapshot',
+                snapshot_date: new Date().toISOString(),
+                elements_data: elementsData,
+                summary_notes: null,
+                created_at: new Date().toISOString(),
+              };
+              useAppStore.getState().viewSnapshot(snapshotObj);
+              setIsHistoryOpen(false);
+            }}
           />
         </>
       )}

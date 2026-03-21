@@ -21,7 +21,7 @@ interface AnalysisHistoryProps {
   currentElementsData: any
   isOpen: boolean
   onClose: () => void
-  onRestoreSnapshot?: (elementsData: any) => void
+  onRestoreSnapshot?: (elementsData: any, snapshot?: Snapshot) => void
 }
 
 export function AnalysisHistory({ 
@@ -215,7 +215,7 @@ export function AnalysisHistory({
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation()
-                            onRestoreSnapshot(snapshot.elements_data)
+                            onRestoreSnapshot(snapshot.elements_data, snapshot)
                           }}
                           className="w-full"
                         >

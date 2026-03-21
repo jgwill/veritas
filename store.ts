@@ -7,6 +7,7 @@ import {
   type DigitalElement,
   type HistoryEntry,
   type ActionSuggestion,
+  type AnalysisSnapshot,
 } from "./types"
 import {
   getAvailableModels,
@@ -39,6 +40,13 @@ interface AppState {
   actionSuggestions: ActionSuggestion[] | null
   isGeneratingSuggestions: boolean
   suggestionError: string | null
+  
+  // Snapshot state
+  snapshots: AnalysisSnapshot[]
+  isSnapshotPanelOpen: boolean
+  viewingSnapshot: AnalysisSnapshot | null
+  comparingSnapshots: [AnalysisSnapshot | null, AnalysisSnapshot | null]
+  isCompareMode: boolean
 
   // Actions
   initializeTheme: () => void
@@ -59,6 +67,14 @@ interface AppState {
   importModel: (modelJson: DigitalModel) => Promise<void>
   exportModel: (modelId: ModelId) => Promise<void>
   generateActionSuggestions: () => Promise<void>
+  
+  // Snapshot actions
+  fetchSnapshots: () => Promise<void>
+  toggleSnapshotPanel: () => void
+  viewSnapshot: (snapshot: AnalysisSnapshot) => void
+  clearViewingSnapshot: () => void
+  enterCompareMode: (snapshot1: AnalysisSnapshot, snapshot2: AnalysisSnapshot) => void
+  exitCompareMode: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -75,6 +91,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   actionSuggestions: null,
   isGeneratingSuggestions: false,
   suggestionError: null,
+  
+  // Snapshot state
+  snapshots: [],
+  isSnapshotPanelOpen: false,
+  viewingSnapshot: null,
+  comparingSnapshots: [null, null],
+  isCompareMode: false,
 
   // Actions
   initializeTheme: () => {
@@ -353,5 +376,70 @@ export const useAppStore = create<AppState>((set, get) => ({
     } finally {
       set({ isGeneratingSuggestions: false })
     }
+  },
+
+  // Snapshot actions
+  fetchSnapshots: async () => {
+    const { model } = get()
+    if (!model) return
+    
+    try {
+      const token = localStorage.getItem('auth_token')
+      const response = await fetch(`/api/models/${model.Idug}/snapshots`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        set({ snapshots: data.snapshots || [] })
+      }
+    } catch (error) {
+      console.error('Failed to fetch snapshots:', error)
+    }
+  },
+
+  toggleSnapshotPanel: () => {
+    const { isSnapshotPanelOpen, model } = get()
+    const newIsOpen = !isSnapshotPanelOpen
+    
+    if (newIsOpen && model) {
+      get().fetchSnapshots()
+    }
+    
+    set({ 
+      isSnapshotPanelOpen: newIsOpen,
+      viewingSnapshot: null,
+      isCompareMode: false,
+      comparingSnapshots: [null, null]
+    })
+  },
+
+  viewSnapshot: (snapshot: AnalysisSnapshot) => {
+    set({ 
+      viewingSnapshot: snapshot,
+      isCompareMode: false,
+      comparingSnapshots: [null, null]
+    })
+  },
+
+  clearViewingSnapshot: () => {
+    set({ viewingSnapshot: null })
+  },
+
+  enterCompareMode: (snapshot1: AnalysisSnapshot, snapshot2: AnalysisSnapshot) => {
+    set({
+      isCompareMode: true,
+      comparingSnapshots: [snapshot1, snapshot2],
+      viewingSnapshot: null
+    })
+  },
+
+  exitCompareMode: () => {
+    set({
+      isCompareMode: false,
+      comparingSnapshots: [null, null]
+    })
   },
 }))
