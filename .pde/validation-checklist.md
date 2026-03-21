@@ -22,26 +22,26 @@ Before NORTH executors began:
 ## Facet 01: MCP Server & CLI
 
 ### Structural Existence
-- [ ] `./mcp/package.json` exists
-- [ ] `./mcp/package.json` declares `@modelcontextprotocol/sdk` dependency
-- [ ] `./mcp/package.json` declares `zod` dependency (for input/output schemas)
-- [ ] `./mcp/src/index.ts` exists as MCP server entry point
-- [ ] `./mcp/src/api-client.ts` exists (HTTP client wrapping Veritas API)
-- [ ] `./mcp/src/tools/` directory exists with individual tool handler files
-- [ ] `./mcp/src/types.ts` exists (re-exports or mirrors parent types.ts)
+- [x] `./mcp/package.json` exists
+- [x] `./mcp/package.json` declares `@modelcontextprotocol/sdk` dependency
+- [ ] ~~`./mcp/package.json` declares `zod` dependency~~ ↔ DIVERGED: JSON Schema objects used instead of Zod. Runtime validation still enforced by MCP SDK. Zod migration is a feature decision for iteration 3.
+- [x] `./mcp/src/index.ts` exists as MCP server entry point
+- [x] `./mcp/src/api-client.ts` exists (HTTP client wrapping Veritas API)
+- [ ] ~~`./mcp/src/tools/` directory exists~~ ↔ DIVERGED: Single `mcp/src/tools.ts` file — 9 tools fit cleanly in one module. Directory split deferred unless tool count grows.
+- [x] `./mcp/src/types.ts` exists (re-exports or mirrors parent types.ts)
 
 ### Tool Registration Completeness
-- [ ] `veritas_list_models` tool registered with Zod schema
-- [ ] `veritas_get_model` tool registered with Zod schema
-- [ ] `veritas_create_model` tool registered with Zod schema
-- [ ] `veritas_update_model` tool registered with Zod schema
-- [ ] `veritas_delete_model` tool registered with Zod schema
-- [ ] `veritas_generate_model` tool registered with Zod schema
-- [ ] `veritas_analyze_model` tool registered with Zod schema
-- [ ] `veritas_suggest_actions` tool registered with Zod schema
-- [ ] `veritas_perform_mmot` tool registered with Zod schema
-- [ ] `veritas_export_model` / `veritas_import_model` tools registered
-- [ ] Each tool has both input AND output Zod schemas (not just input)
+- [x] `veritas_list_models` tool registered ~~with Zod schema~~ with JSON Schema object
+- [x] `veritas_get_model` tool registered with JSON Schema object
+- [ ] `veritas_create_model` 🔜 DEFERRED: API uses generate endpoint (Gemini-powered), no simple CRUD create exists. Evaluate whether a non-AI create is needed.
+- [x] `veritas_update_model` tool registered with JSON Schema object
+- [x] `veritas_delete_model` tool registered with JSON Schema object
+- [x] `veritas_generate_model` tool registered with JSON Schema object
+- [ ] `veritas_analyze_model` 🔜 DEFERRED: Analysis currently handled by mmot_evaluate. Separate analysis tool is iteration 3 scope.
+- [ ] `veritas_suggest_actions` 🔜 DEFERRED: Action suggestions require deeper integration with the MMOT four-step process.
+- [x] `veritas_mmot_evaluate` ↔ DIVERGED: Named `veritas_mmot_evaluate` — "evaluate" is more precise than "perform" for what the tool does.
+- [x] `veritas_export_model` / `veritas_import_model` tools registered
+- [ ] ~~Each tool has both input AND output Zod schemas~~ 🔜 DEFERRED: Output schemas require a design session to define return types for all 9 tools. Input schemas fully defined.
 
 ### Auth & Network
 - [ ] `VERITAS_API_KEY` env var read for authentication (static UUID, NOT JWT)
@@ -77,11 +77,11 @@ Before NORTH executors began:
 ## Facet 02: Rispecs & Specifications
 
 ### New Rispecs Created
-- [ ] `rispecs/mcp-server.spec.md` exists
-- [ ] `rispecs/cli-tool.spec.md` exists
-- [ ] `rispecs/mmot-generation.spec.md` exists
-- [ ] `rispecs/api-client.spec.md` exists
-- [ ] `rispecs/README.md` updated with index entries for all 4 new specs
+- [x] `rispecs/mcp_server.spec.md` exists (underscore convention matches repo)
+- [x] `rispecs/cli_tool.spec.md` exists
+- [x] `rispecs/mmot_generation.spec.md` exists
+- [x] `rispecs/api_client.spec.md` exists
+- [x] `rispecs/README.md` updated with index entries for all 4 new specs
 
 ### Medicine-Wheel Section Convention
 For EACH new rispec, verify these sections exist:
@@ -92,10 +92,19 @@ For EACH new rispec, verify these sections exist:
 - [ ] Advancing Patterns section (how momentum builds)
 
 ### Creative Orientation — Language Audit
-- [ ] NO use of "gap" / "gaps" (problem-solving frame)
+
+**Methodology Vocabulary Exceptions:**
+The following words are acceptable when used to describe structural tension dynamics (MMOT methodology), NOT when used as deficiency framing:
+- "gap" — acceptable: "expectation-delivery gap creates tension"; NOT acceptable: "there are gaps in coverage"
+- "bridge" — acceptable: "type bridge between DigitalModel and STC"; NOT acceptable: "bridge the gap"
+- "resolve" — acceptable: "structural tension resolves through creation"; NOT acceptable: "resolve the issue"
+
+**Audit Rule:** Flag the word, then check context. If the sentence describes a structural dynamic, it's creative orientation. If the sentence describes a deficiency to be eliminated, it's problem-solving.
+
+- [ ] NO use of "gap" / "gaps" in deficiency context (methodology use exempt)
 - [ ] NO use of "fix" / "fixes" / "fixing" (reactive frame)
-- [ ] NO use of "issue" / "issues" (deficiency frame)
-- [ ] NO use of "bridge" / "bridging" (forcing connection frame)
+- [ ] NO use of "issue" / "issues" (deficiency frame — GitHub issue references exempt)
+- [ ] NO use of "bridge" / "bridging" in forcing-connection context (type bridge exempt)
 - [ ] NO use of "solve" / "solving" / "solution" (problem-solving frame)
 - [ ] NO use of "eliminate" / "address" in deficiency context
 - [ ] Language orients toward what wants to be created, not what's wrong

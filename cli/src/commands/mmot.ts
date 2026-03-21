@@ -40,14 +40,16 @@ type Phase = 'acknowledge' | 'analyze' | 'plan' | 'feedback' | 'full';
 // Evaluation logic (local — runs against model data without LLM call)
 // ---------------------------------------------------------------------------
 
-function stateLabel(flag: number): string {
-  if (flag > 0) return 'improving';
-  if (flag < 0) return 'declining';
-  return 'neutral';
+// TwoFlag = binary acceptance (acceptable/unacceptable) — MMOT domain semantics
+function acceptanceLabel(flag: boolean): string {
+  return flag ? 'acceptable ✓' : 'unacceptable ✗';
 }
 
-function trendLabel(flag: boolean): string {
-  return flag ? 'strength (↑)' : 'weakness (↓)';
+// ThreeFlag = directional trend (-1 declining, 0 stable, 1 improving)
+function trendLabel(flag: number): string {
+  if (flag > 0) return 'improving ↑';
+  if (flag < 0) return 'declining ↓';
+  return 'stable →';
 }
 
 function runAcknowledge(rec: ApiModelRecord): MmotPhaseResult {
@@ -80,10 +82,10 @@ function runAnalyze(rec: ApiModelRecord): MmotPhaseResult {
 
   for (const el of elements) {
     const name = el.DisplayName || el.NameElement;
-    const state = stateLabel(el.ThreeFlag ?? 0);
-    const trend = trendLabel(el.TwoFlag);
+    const acceptance = acceptanceLabel(el.TwoFlag);
+    const trend = trendLabel(el.ThreeFlag ?? 0);
     lines.push(`  ${name}`);
-    lines.push(`    State: ${state} | Trend: ${trend}`);
+    lines.push(`    Acceptance: ${acceptance} | Trend: ${trend}`);
     if (el.Description) lines.push(`    Context: ${el.Description}`);
     lines.push('');
   }

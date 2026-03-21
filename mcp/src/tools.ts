@@ -560,52 +560,60 @@ async function handleMmotEvaluate(
   const outputDir = resolve(params.outputDir || ".mw/north");
   await mkdir(outputDir, { recursive: true });
 
-  // 4. Run LLM evaluation
+  // 4. Run LLM evaluation — explicit strategy, not cascading failures
   const llmBinary = params.llmBinary || "gemini";
   let evaluation: string;
 
-  try {
-    const { stdout } = await execFileAsync(llmBinary, [], {
-      encoding: "utf-8",
-      timeout: 120_000,
-      env: { ...process.env },
-      // Pass prompt via stdin
-      maxBuffer: 1024 * 1024,
-    });
-    // If the binary reads stdin, we need a different approach
-    // Try spawning with stdin pipe
-    evaluation = stdout;
-  } catch {
-    // Fallback: try passing prompt as argument
-    try {
-      const { stdout } = await execFileAsync(
-        llmBinary,
-        ["-p", prompt],
-        {
-          encoding: "utf-8",
-          timeout: 120_000,
-          maxBuffer: 1024 * 1024,
-        }
-      );
-      evaluation = stdout;
-    } catch (innerErr) {
-      // If no LLM binary available, return the prompt itself for manual evaluation
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const promptFile = resolve(
-        outputDir,
-        `mmot-prompt-${timestamp}.md`
-      );
-      await writeFile(promptFile, prompt, "utf-8");
+  type LlmStrategy = "flag" | "prompt-only";
 
-      return {
-        success: false,
-        mode: "prompt-only",
-        message: `LLM binary '${llmBinary}' not available. MMOT prompt saved for manual evaluation.`,
-        promptFile,
-        prompt,
-        error: innerErr instanceof Error ? innerErr.message : String(innerErr),
-      };
-    }
+  function detectLlmStrategy(binary: string): LlmStrategy {
+    if (!binary || binary === "prompt-only") return "prompt-only";
+    return "flag";
+  }
+
+  const strategy = detectLlmStrategy(llmBinary);
+
+  if (strategy === "prompt-only") {
+    // Prompt-only is a first-class outcome, not a failure fallback
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const promptFile = resolve(outputDir, `mmot-prompt-${timestamp}.md`);
+    await writeFile(promptFile, prompt, "utf-8");
+
+    return {
+      success: true,
+      mode: "prompt-only",
+      message: `MMOT prompt saved for manual evaluation (strategy: prompt-only).`,
+      promptFile,
+      prompt,
+    };
+  }
+
+  // strategy === "flag" — invoke LLM binary with -p flag
+  try {
+    const { stdout } = await execFileAsync(
+      llmBinary,
+      ["-p", prompt],
+      {
+        encoding: "utf-8",
+        timeout: 120_000,
+        maxBuffer: 1024 * 1024,
+      }
+    );
+    evaluation = stdout;
+  } catch (err) {
+    // LLM binary unavailable — graceful fallback to prompt-only
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const promptFile = resolve(outputDir, `mmot-prompt-${timestamp}.md`);
+    await writeFile(promptFile, prompt, "utf-8");
+
+    return {
+      success: false,
+      mode: "prompt-only",
+      message: `LLM binary '${llmBinary}' not available. MMOT prompt saved for manual evaluation.`,
+      promptFile,
+      prompt,
+      error: err instanceof Error ? err.message : String(err),
+    };
   }
 
   // 5. Write output
