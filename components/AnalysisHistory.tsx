@@ -33,6 +33,7 @@ export function AnalysisHistory({
   const [compareMode, setCompareMode] = useState(false)
   const [selectedForCompare, setSelectedForCompare] = useState<AnalysisSnapshot[]>([])
   const [showCompareView, setShowCompareView] = useState(false)
+  const [compareWithCurrent, setCompareWithCurrent] = useState<AnalysisSnapshot | null>(null)
 
   useEffect(() => {
     if (isOpen && modelId) {
@@ -130,7 +131,28 @@ export function AnalysisHistory({
 
   if (!isOpen) return null
 
-  // Comparison View
+  // Compare with Current View
+  if (compareWithCurrent) {
+    const currentSnapshot: AnalysisSnapshot = {
+      id: 'current',
+      model_id: modelId,
+      snapshot_name: 'Current Analysis',
+      snapshot_date: new Date().toISOString(),
+      elements_data: currentElementsData,
+      summary_notes: null,
+      created_at: new Date().toISOString()
+    }
+    return (
+      <CompareView 
+        snapshot1={compareWithCurrent} 
+        snapshot2={currentSnapshot}
+        onBack={() => setCompareWithCurrent(null)}
+        formatDate={formatDate}
+      />
+    )
+  }
+
+  // Comparison View (two snapshots)
   if (showCompareView && selectedForCompare.length === 2) {
     return (
       <CompareView 
@@ -314,20 +336,34 @@ export function AnalysisHistory({
                         </p>
                       )}
                       
-                      {onRestoreSnapshot && (
+                      <div className="flex gap-2">
+                        {onRestoreSnapshot && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onRestoreSnapshot(snapshot.elements_data, snapshot)
+                            }}
+                            className="flex-1"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation()
-                            onRestoreSnapshot(snapshot.elements_data, snapshot)
+                            setCompareWithCurrent(snapshot)
                           }}
-                          className="w-full"
+                          className="flex-1"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View This Analysis
+                          <GitCompare className="h-4 w-4 mr-2" />
+                          vs Current
                         </Button>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -352,10 +388,13 @@ function CompareView({
   onBack: () => void
   formatDate: (date: string) => string
 }) {
-  // Sort by date to show older first
-  const [older, newer] = new Date(snapshot1.snapshot_date) < new Date(snapshot2.snapshot_date) 
-    ? [snapshot1, snapshot2] 
-    : [snapshot2, snapshot1]
+  // Sort by date to show older first (unless one is "current")
+  const isCurrentComparison = snapshot2.id === 'current'
+  const [older, newer] = isCurrentComparison 
+    ? [snapshot1, snapshot2]
+    : new Date(snapshot1.snapshot_date) < new Date(snapshot2.snapshot_date) 
+      ? [snapshot1, snapshot2] 
+      : [snapshot2, snapshot1]
 
   const getStateLabel = (element: DigitalElement) => {
     if (!element.TwoFlagAnswered) return 'Not evaluated'
@@ -363,10 +402,17 @@ function CompareView({
   }
 
   const getTrendLabel = (element: DigitalElement) => {
-    if (!element.ThreeFlagAnswered) return 'Not evaluated'
+    if (!element.ThreeFlagAnswered) return '-'
     if (element.ThreeFlag === 1) return 'Improving'
     if (element.ThreeFlag === -1) return 'Declining'
     return 'Stable'
+  }
+
+  const getTrendIcon = (element: DigitalElement) => {
+    if (!element.ThreeFlagAnswered) return null
+    if (element.ThreeFlag === 1) return <ArrowUp className="h-3 w-3 text-green-500" />
+    if (element.ThreeFlag === -1) return <ArrowDown className="h-3 w-3 text-red-500" />
+    return <Minus className="h-3 w-3 text-gray-400" />
   }
 
   const getStateChange = (oldEl: DigitalElement | undefined, newEl: DigitalElement | undefined) => {
@@ -394,6 +440,7 @@ function CompareView({
     return {
       id,
       name: oldEl?.DisplayName || newEl?.DisplayName || 'Unknown',
+      description: oldEl?.Description || newEl?.Description || '',
       oldEl,
       newEl,
       stateChange: getStateChange(oldEl, newEl)
@@ -405,115 +452,144 @@ function CompareView({
   const unchanged = comparisons.filter(c => c.stateChange === 'same').length
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[600px] bg-card border-l border-border shadow-xl z-50 flex flex-col">
+    <div className="fixed inset-y-0 right-0 w-[700px] bg-card border-l border-border shadow-xl z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <GitCompare className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold text-foreground">Snapshot Comparison</h2>
+          <h2 className="font-semibold text-foreground">
+            {isCurrentComparison ? 'Compare with Current' : 'Snapshot Comparison'}
+          </h2>
         </div>
         <Button variant="ghost" size="sm" onClick={onBack}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Summary */}
-      <div className="p-4 border-b border-border bg-muted/30">
+      {/* Visual Summary Header */}
+      <div className="p-4 border-b border-border bg-gradient-to-r from-muted/50 to-muted/30">
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-background rounded-lg border">
-            <p className="text-xs text-muted-foreground">Older</p>
-            <p className="font-medium text-sm">{older.snapshot_name || 'Unnamed'}</p>
+          <div className="p-3 bg-background rounded-lg border-2 border-dashed border-muted-foreground/30">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Before</p>
+            <p className="font-medium text-foreground mt-1">{older.snapshot_name || 'Unnamed'}</p>
             <p className="text-xs text-muted-foreground">{formatDate(older.snapshot_date)}</p>
           </div>
-          <div className="text-center p-3 bg-background rounded-lg border">
-            <p className="text-xs text-muted-foreground">Newer</p>
-            <p className="font-medium text-sm">{newer.snapshot_name || 'Unnamed'}</p>
+          <div className={`p-3 rounded-lg border-2 ${isCurrentComparison ? 'bg-primary/10 border-primary' : 'bg-background border-dashed border-muted-foreground/30'}`}>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {isCurrentComparison ? 'Now' : 'After'}
+            </p>
+            <p className="font-medium text-foreground mt-1">{newer.snapshot_name || 'Unnamed'}</p>
             <p className="text-xs text-muted-foreground">{formatDate(newer.snapshot_date)}</p>
           </div>
         </div>
         
-        <div className="flex justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-sm">{improved} improved</span>
+        {/* Progress Summary */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{improved}</div>
+            <div className="text-xs text-green-700 dark:text-green-300 font-medium">Improved</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-            <span className="text-sm">{unchanged} unchanged</span>
+          <div className="text-center p-3 rounded-lg bg-gray-500/10 border border-gray-500/30">
+            <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{unchanged}</div>
+            <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">Unchanged</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span className="text-sm">{declined} declined</span>
+          <div className="text-center p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{declined}</div>
+            <div className="text-xs text-red-700 dark:text-red-300 font-medium">Declined</div>
           </div>
         </div>
       </div>
 
-      {/* Comparison Table */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left py-2 font-medium">Element</th>
-              <th className="text-center py-2 font-medium">Before</th>
-              <th className="text-center py-2 font-medium">After</th>
-              <th className="text-center py-2 font-medium">Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comparisons.map(comp => (
-              <tr key={comp.id} className="border-b border-border/50">
-                <td className="py-3 font-medium">{comp.name}</td>
-                <td className="py-3 text-center">
+      {/* Comparison Cards */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {comparisons.map(comp => {
+          const bgClass = comp.stateChange === 'improved' 
+            ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+            : comp.stateChange === 'declined'
+              ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+              : 'bg-background border-border'
+          
+          return (
+            <div key={comp.id} className={`p-4 rounded-lg border ${bgClass}`}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h4 className="font-medium text-foreground">{comp.name}</h4>
+                  {comp.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{comp.description}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {comp.stateChange === 'improved' && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
+                      <ArrowUp className="h-3 w-3" /> Improved
+                    </span>
+                  )}
+                  {comp.stateChange === 'declined' && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium">
+                      <ArrowDown className="h-3 w-3" /> Declined
+                    </span>
+                  )}
+                  {comp.stateChange === 'same' && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium">
+                      <Minus className="h-3 w-3" /> Unchanged
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Before */}
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">Before</p>
                   {comp.oldEl ? (
-                    <div>
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs ${
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
                         !comp.oldEl.TwoFlagAnswered 
                           ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                           : comp.oldEl.TwoFlag 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' 
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                       }`}>
                         {getStateLabel(comp.oldEl)}
                       </span>
+                      {comp.oldEl.ThreeFlagAnswered && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          {getTrendIcon(comp.oldEl)} {getTrendLabel(comp.oldEl)}
+                        </span>
+                      )}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">Not in this snapshot</span>
                   )}
-                </td>
-                <td className="py-3 text-center">
+                </div>
+                
+                {/* After */}
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">{isCurrentComparison ? 'Now' : 'After'}</p>
                   {comp.newEl ? (
-                    <div>
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs ${
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
                         !comp.newEl.TwoFlagAnswered 
                           ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                           : comp.newEl.TwoFlag 
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' 
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
                       }`}>
                         {getStateLabel(comp.newEl)}
                       </span>
+                      {comp.newEl.ThreeFlagAnswered && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          {getTrendIcon(comp.newEl)} {getTrendLabel(comp.newEl)}
+                        </span>
+                      )}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <span className="text-muted-foreground text-xs">Not in this snapshot</span>
                   )}
-                </td>
-                <td className="py-3 text-center">
-                  {comp.stateChange === 'improved' && (
-                    <ArrowUp className="h-4 w-4 text-green-500 mx-auto" />
-                  )}
-                  {comp.stateChange === 'declined' && (
-                    <ArrowDown className="h-4 w-4 text-red-500 mx-auto" />
-                  )}
-                  {comp.stateChange === 'same' && (
-                    <Minus className="h-4 w-4 text-gray-400 mx-auto" />
-                  )}
-                  {!comp.stateChange && (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
