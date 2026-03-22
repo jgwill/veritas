@@ -1,31 +1,29 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DigitalModel, DigitalElement } from '../types';
 
-// Initialize Gemini AI - handle both client and server environments
-let genAI: GoogleGenerativeAI | null = null;
+const GEMINI_KEY_STORAGE = 'VERITAS_USER_GEMINI_API_KEY';
 
-// Try to get API key from various sources
-const getApiKey = () => {
+// Get API key - checks localStorage for user's personal key
+const getApiKey = (): string | null => {
+  // Client-side: check localStorage for user's personal API key
   if (typeof window !== 'undefined') {
-    // Client-side: API key should come from server or be configured elsewhere
-    return null;
+    const userKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+    if (userKey) return userKey;
   }
-  // Server-side: try various environment variable names
-  return process.env.GEMINI_API_KEY || 
-         process.env.GOOGLE_API_KEY || 
-         process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-         process.env.VITE_GEMINI_API_KEY ||
-         '';
+  return null;
 };
 
-const apiKey = getApiKey();
-if (apiKey) {
+// Create a fresh Gemini AI instance with current API key
+const getGenAI = (): GoogleGenerativeAI | null => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
   try {
-    genAI = new GoogleGenerativeAI(apiKey);
+    return new GoogleGenerativeAI(apiKey);
   } catch (error) {
     console.warn('Failed to initialize Gemini AI:', error);
+    return null;
   }
-}
+};
 
 // Helper function to parse AI JSON responses
 function parseAIJsonResponse(text: string): any {
@@ -66,6 +64,7 @@ function parseAIJsonResponse(text: string): any {
 
 // Generate model from description
 export async function generateModelFromDescription(description: string, type: number): Promise<DigitalModel> {
+  const genAI = getGenAI();
   if (!genAI) {
     console.warn('Gemini API not available, using mock data');
     return createMockModel(description, type);
@@ -219,6 +218,7 @@ function createMockModel(description: string, type: number): DigitalModel {
 
 // Suggest elements from topic - returns simplified format for GeminiAssistant
 export async function suggestElementsFromTopic(topic: string, modelType: number): Promise<{name: string; description: string}[]> {
+  const genAI = getGenAI();
   if (!genAI) {
     console.warn('Gemini API not available, using mock suggestions');
     return createMockSuggestions(topic, modelType);
@@ -283,6 +283,7 @@ function createMockSuggestions(topic: string, modelType: number): {name: string;
 
 // Generate analysis summary
 export async function generateAnalysisSummary(model: DigitalModel): Promise<string> {
+  const genAI = getGenAI();
   if (!genAI) {
     return generateMockAnalysisSummary(model);
   }
@@ -339,6 +340,7 @@ Consider reviewing the element weights to ensure they align with your strategic 
 
 // Generate action suggestions
 export async function generateActionSuggestions(model: DigitalModel): Promise<string[]> {
+  const genAI = getGenAI();
   if (!genAI) {
     return generateMockActionSuggestions(model.Model);
   }
@@ -420,6 +422,7 @@ function generateMockActionSuggestions(elements: DigitalElement[]): string[] {
 
 // Create chat session
 export function createChatSession(model: DigitalModel) {
+  const genAI = getGenAI();
   if (!genAI) {
     // Return mock chat session
     return {

@@ -1,0 +1,24 @@
+{
+  "name": "veritas-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for veritas TandT Performance Review & Decision Making models",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "veritas-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "start": "npx tsx src/index.ts",
+    "build": "tsc",
+    "prepare": "tsc",
+    "dev": "npx tsx --watch src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "tsx": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

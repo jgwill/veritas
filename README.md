@@ -72,12 +72,10 @@ TandT is a direct software embodiment of the **Structural Thinking** principles 
 ---
 
 ## Further Reading & Specifications
-- **SpecLang Specifications**: The true source of truth for TandT's architecture, business logic, and workflows. See:
-  - [TandTApplicationOverview.spec.md](../TandTApplicationOverview.spec.md)
-  - [TandTCoreBusinessLogic.spec.md](../TandTCoreBusinessLogic.spec.md)
-  - [TandTDataLayer.spec.md](../TandTDataLayer.spec.md)
-  - [TandTServiceLayer.spec.md](../TandTServiceLayer.spec.md)
-  - [TandTUserInterfaceWorkflow.spec.md](../TandTUserInterfaceWorkflow.spec.md)
+
+- **Specifications**: See [`rispecs/`](./rispecs/) for detailed requirements and design specifications.
+
+
 - **Sample Models**: See `samples/` for real-world JSON model examples.
 - **Ledgers**: See `codex/ledgers/` for detailed iteration logs and technical decisions.
 - **CreerSaVie**: For the philosophical and methodological foundation.
@@ -86,3 +84,5 @@ TandT is a direct software embodiment of the **Structural Thinking** principles 
 
 ## Evolution
 TandT has evolved from a legacy WinForms/.NET application to a modern, extensible digital thinking platform, with SpecLang as its specification backbone. The README is only a summary—**the specs are the real documentation**.
+
+

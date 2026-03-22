@@ -5,6 +5,16 @@ export interface HistoryEntry {
   modelState: DigitalElement[]; // A snapshot of the model's elements at this point
 }
 
+export interface AnalysisSnapshot {
+  id: string;
+  model_id: string;
+  snapshot_name: string | null;
+  snapshot_date: string;
+  elements_data: DigitalElement[];
+  summary_notes: string | null;
+  created_at: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
