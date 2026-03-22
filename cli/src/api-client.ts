@@ -149,7 +149,8 @@ export async function listModels(): Promise<ModelSummary[]> {
 }
 
 export async function getModel(id: string): Promise<ApiModelRecord> {
-  return request<ApiModelRecord>(`/api/models/${encodeURIComponent(id)}`);
+  const data = await request<{ model: ApiModelRecord }>(`/api/models/${encodeURIComponent(id)}`);
+  return data.model;
 }
 
 export async function deleteModel(id: string): Promise<void> {
@@ -162,20 +163,22 @@ export async function createModel(payload: {
   modelType: number;
   modelData: { Model: DigitalElement[]; history?: HistoryEntry[] };
 }): Promise<ApiModelRecord> {
-  return request<ApiModelRecord>('/api/models', {
+  const data = await request<{ model: ApiModelRecord }>('/api/models', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  return data.model;
 }
 
 export async function updateModel(
   id: string,
   payload: { name?: string; description?: string; modelData?: unknown; isArchived?: boolean },
 ): Promise<ApiModelRecord> {
-  return request<ApiModelRecord>(`/api/models/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
+  const data = await request<{ model: ApiModelRecord }>(`/api/models/${encodeURIComponent(id)}`, {
+    method: 'PUT',
     body: JSON.stringify(payload),
   });
+  return data.model;
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +200,18 @@ export async function generateModel(params: GenerateModelParams): Promise<{
 // ---------------------------------------------------------------------------
 
 export async function getSchema(): Promise<Record<string, unknown>> {
-  // No dedicated schema endpoint — synthesise one from a models list probe
+  // Prefer the public /api/llm/schema endpoint (no auth required)
+  try {
+    const url = `${getBaseUrl()}/api/llm/schema`;
+    const res = await fetch(url);
+    if (res.ok) {
+      return res.json() as Promise<Record<string, unknown>>;
+    }
+  } catch {
+    // fall through to probe fallback
+  }
+
+  // Fallback: synthesise schema from a models list probe (requires auth)
   const models = await listModels();
   return {
     api_url: getBaseUrl(),
@@ -205,9 +219,10 @@ export async function getSchema(): Promise<Record<string, unknown>> {
       'GET  /api/models': 'List models',
       'POST /api/models': 'Create model',
       'GET  /api/models/:id': 'Get model',
-      'PATCH /api/models/:id': 'Update model',
+      'PUT  /api/models/:id': 'Update model',
       'DELETE /api/models/:id': 'Delete model',
       'POST /api/llm/generate-model': 'AI-generate model',
+      'GET  /api/llm/schema': 'API schema (public)',
     },
     model_types: { 1: 'Decision Making', 2: 'Performance Review' },
     current_model_count: models.length,

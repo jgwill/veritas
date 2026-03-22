@@ -62,7 +62,7 @@ function printModelDetail(rec: ApiModelRecord): void {
     console.log(chalk.bold(`\nElements (${elements.length}):`));
     for (const el of elements) {
       const state = rec.model_type === 2
-        ? ` [state:${el.ThreeFlag ?? '?'} trend:${el.TwoFlag ? '↑' : '↓'}]`
+        ? ` [acceptance:${el.TwoFlag ? 'acceptable ✓' : 'unacceptable ✗'} trend:${el.ThreeFlag > 0 ? '↑' : el.ThreeFlag < 0 ? '↓' : '→'}]`
         : '';
       console.log(`  ${chalk.green('•')} ${el.DisplayName || el.NameElement}${chalk.dim(state)}`);
       if (el.Description) console.log(`    ${chalk.dim(el.Description)}`);

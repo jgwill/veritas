@@ -385,6 +385,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     
     try {
       const token = localStorage.getItem('auth_token')
+      if (!token) {
+        set({ snapshots: [] })
+        return
+      }
       const response = await fetch(`/api/models/${model.Idug}/snapshots`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -394,6 +398,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (response.ok) {
         const data = await response.json()
         set({ snapshots: data.snapshots || [] })
+      } else if (response.status === 401) {
+        set({ snapshots: [] })
       }
     } catch (error) {
       console.error('Failed to fetch snapshots:', error)

@@ -209,9 +209,8 @@ export function registerMmotCommands(program: Command): void {
   mmot
     .command('evaluate <modelId>')
     .description('Run MMOT evaluation on a Performance Review model')
-    .option('--source <source>', 'Model source: api | local', 'api')
-    .option('--engine <engine>', 'LLM engine for enhanced eval: gemini | claude | copilot', 'gemini')
-    .option('--model <name>', 'LLM model name override')
+    .option('--engine <engine>', 'LLM engine for enhanced eval: gemini | claude | copilot | local (not yet implemented, heuristic used)', 'heuristic')
+    .option('--model <name>', 'LLM model name override (used when --engine is set; reserved for future use)')
     .option('--output-dir <path>', 'Output directory', '.mw/north/')
     .option('--phase <phase>', 'Specific phase: acknowledge | analyze | plan | feedback | full', 'full')
     .option('--json', 'Machine-readable JSON output')
@@ -222,6 +221,16 @@ export function registerMmotCommands(program: Command): void {
         const phase = opts.phase as Phase;
         if (!validPhases.includes(phase)) {
           throw new Error(`Invalid phase "${phase}". Must be one of: ${validPhases.join(', ')}`);
+        }
+
+        // Warn when a non-heuristic engine is requested (LLM-backed evaluation is not yet implemented)
+        if (opts.engine && opts.engine !== 'heuristic' && !opts.json) {
+          console.warn(
+            chalk.yellow(
+              `⚠ LLM-backed evaluation (--engine ${opts.engine}) is not yet implemented. ` +
+              `Falling back to heuristic evaluation.`,
+            ),
+          );
         }
 
         if (!opts.json) {
