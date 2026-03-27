@@ -20,13 +20,21 @@ export interface AuthUser {
 export async function getUserFromRequest(request: NextRequest | Request): Promise<AuthUser | null> {
   try {
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    console.log('[v0] Auth header present:', !!authHeader);
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[v0] No Bearer token found');
+      return null;
+    }
 
     const token = authHeader.substring(7);
+    console.log('[v0] Token prefix:', token.substring(0, 10), 'length:', token.length);
 
     // --- User API key path (vk_ prefix) ---
     if (token.startsWith('vk_')) {
       const keyHash = createHash('sha256').update(token).digest('hex');
+      console.log('[v0] API key hash:', keyHash.substring(0, 16) + '...');
+      
       const rows = await sql`
         SELECT u.id, u.email, u.name, u.display_name, ak.id as api_key_id
         FROM api_keys ak
@@ -34,11 +42,17 @@ export async function getUserFromRequest(request: NextRequest | Request): Promis
         WHERE ak.key_hash = ${keyHash} AND ak.is_active = true
       `;
       
-      if (rows.length === 0) return null;
+      console.log('[v0] API key lookup result rows:', rows.length);
+      
+      if (rows.length === 0) {
+        console.log('[v0] No matching API key found in database');
+        return null;
+      }
       
       // Update last_used_at in background
       sql`UPDATE api_keys SET last_used_at = NOW() WHERE id = ${rows[0].api_key_id}`.catch(() => {});
       
+      console.log('[v0] API key authenticated user:', rows[0].email);
       return rows[0] as AuthUser;
     }
 
