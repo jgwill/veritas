@@ -1,29 +1,13 @@
 import { neon } from '@neondatabase/serverless'
 import { NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/auth'
 
 const sql = neon(process.env.DATABASE_URL!)
-
-async function getUserFromToken(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null
-  }
-  
-  const token = authHeader.substring(7)
-  const sessions = await sql`
-    SELECT u.id, u.email, u.display_name
-    FROM sessions s
-    JOIN users u ON s.user_id = u.id
-    WHERE s.token = ${token} AND s.expires_at > NOW()
-  `
-  
-  return sessions.length > 0 ? sessions[0] : null
-}
 
 // GET - List all available templates (system templates + user's own templates)
 export async function GET(request: Request) {
   try {
-    const user = await getUserFromToken(request)
+    const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -45,7 +29,7 @@ export async function GET(request: Request) {
 // POST - Create a new template from an existing model
 export async function POST(request: Request) {
   try {
-    const user = await getUserFromToken(request)
+    const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

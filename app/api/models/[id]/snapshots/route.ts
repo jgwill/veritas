@@ -1,24 +1,8 @@
 import { neon } from '@neondatabase/serverless'
 import { NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/auth'
 
 const sql = neon(process.env.DATABASE_URL!)
-
-async function getUserFromToken(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null
-  }
-  
-  const token = authHeader.substring(7)
-  const sessions = await sql`
-    SELECT u.id, u.email, u.display_name
-    FROM sessions s
-    JOIN users u ON s.user_id = u.id
-    WHERE s.token = ${token} AND s.expires_at > NOW()
-  `
-  
-  return sessions.length > 0 ? sessions[0] : null
-}
 
 // GET - List all snapshots for a model
 export async function GET(
@@ -26,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromToken(request)
+    const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -62,7 +46,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromToken(request)
+    const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

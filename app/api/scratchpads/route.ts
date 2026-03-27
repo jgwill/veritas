@@ -1,29 +1,13 @@
 import { neon } from '@neondatabase/serverless';
 import { NextRequest, NextResponse } from 'next/server';
+import { getUserFromRequest } from '@/lib/auth';
 
 const sql = neon(process.env.DATABASE_URL!);
-
-async function getUserFromToken(request: NextRequest) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  const token = authHeader.substring(7);
-  const sessions = await sql`
-    SELECT u.id, u.email, u.display_name
-    FROM sessions s
-    JOIN users u ON s.user_id = u.id
-    WHERE s.token = ${token} AND s.expires_at > NOW()
-  `;
-  
-  return sessions.length > 0 ? sessions[0] : null;
-}
 
 // GET - Get scratchpads for a model or snapshot
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request);
+    const user = await getUserFromRequest(request);
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -65,7 +49,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new scratchpad
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request);
+    const user = await getUserFromRequest(request);
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
