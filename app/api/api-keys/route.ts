@@ -4,12 +4,12 @@ import { randomBytes, createHash } from 'crypto'
 
 const sql = neon(process.env.DATABASE_URL!)
 
-// Get user from session token (for API key management, we only allow session auth)
+// Get user from session token only (API keys cannot manage API keys)
 async function getUserFromSession(request: Request) {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
   
-  const token = authHeader.substring(7)
+  const token = authHeader.substring(7).trim()
   
   // Don't allow API keys to manage API keys
   if (token.startsWith('vk_')) return null
@@ -56,22 +56,16 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}))
     const name: string = body.name || 'API Key'
 
-    // Generate key: vk_<32 random hex bytes>
+    // Generate key: vk_<32 random hex bytes> = 67 chars total
     const rawKey = `vk_${randomBytes(32).toString('hex')}`
-    const keyPrefix = rawKey.substring(0, 10) // "vk_xxxxxx"
+    const keyPrefix = rawKey.substring(0, 10)
     const keyHash = createHash('sha256').update(rawKey).digest('hex')
-    
-    console.log('[v0] Creating API key for user:', user.id)
-    console.log('[v0] Key prefix:', keyPrefix)
-    console.log('[v0] Key hash (first 16):', keyHash.substring(0, 16))
 
     const rows = await sql`
       INSERT INTO api_keys (id, user_id, name, key_hash, key_prefix, is_active)
       VALUES (gen_random_uuid(), ${user.id}, ${name}, ${keyHash}, ${keyPrefix}, true)
       RETURNING id, name, key_prefix, is_active, created_at
     `
-    
-    console.log('[v0] API key created successfully:', rows[0]?.id)
 
     // Return the full key ONCE - it cannot be retrieved again
     return NextResponse.json({ 
