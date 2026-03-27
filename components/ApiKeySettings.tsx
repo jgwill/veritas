@@ -1,6 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAuthToken } from '../services/authService';
+
+interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  is_active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+}
 
 interface ApiKeySettingsProps {
   isOpen: boolean;
@@ -8,37 +18,94 @@ interface ApiKeySettingsProps {
 }
 
 export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ isOpen, onClose }) => {
-  const [copiedExample, setCopiedExample] = useState(false);
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+
+  const fetchKeys = async () => {
+    setLoading(true);
+    try {
+      const token = getAuthToken();
+      const res = await fetch('/api/api-keys', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setKeys(data.keys || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch keys:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchKeys();
+      setGeneratedKey(null);
+      setError(null);
+    }
+  }, [isOpen]);
+
+  const handleCreateKey = async () => {
+    setError(null);
+    try {
+      const token = getAuthToken();
+      const res = await fetch('/api/api-keys', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newKeyName || 'API Key' })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to create key');
+      }
+
+      const data = await res.json();
+      setGeneratedKey(data.key);
+      setNewKeyName('');
+      fetchKeys();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteKey = async (keyId: string) => {
+    if (!confirm('Are you sure you want to revoke this API key?')) return;
+    
+    try {
+      const token = getAuthToken();
+      await fetch(`/api/api-keys?id=${keyId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchKeys();
+    } catch (err) {
+      console.error('Failed to delete key:', err);
+    }
+  };
+
+  const handleCopyKey = async () => {
+    if (generatedKey) {
+      await navigator.clipboard.writeText(generatedKey);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
+    }
+  };
 
   if (!isOpen) return null;
 
   const generateUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/api/llm/generate-model` 
     : '/api/llm/generate-model';
-  
-  const schemaUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/api/llm/schema` 
-    : '/api/llm/schema';
-
-  const exampleCurl = `curl -X POST "${generateUrl}" \\
-  -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer YOUR_VERITAS_API_KEY" \\
-  -d '{
-    "topic": "Q2 Engineering Team Performance",
-    "model_type": 2,
-    "description": "Mid-year review of the core engineering team.",
-    "elements": [
-      { "name": "Code Quality", "state": 1, "trend": 1 },
-      { "name": "Delivery Velocity", "state": 0, "trend": 0 },
-      { "name": "Technical Debt", "state": -1, "trend": -1 }
-    ]
-  }'`;
-
-  const handleCopyExample = async () => {
-    await navigator.clipboard.writeText(exampleCurl);
-    setCopiedExample(true);
-    setTimeout(() => setCopiedExample(false), 2000);
-  };
 
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/70 z-50 flex items-center justify-center p-4">
@@ -58,70 +125,104 @@ export const ApiKeySettings: React.FC<ApiKeySettingsProps> = ({ isOpen, onClose 
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Setup Instructions */}
-          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 p-4">
-            <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Setup Instructions</h3>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700 dark:text-blue-300">
-              <li>
-                Go to your Vercel project settings and add an environment variable:
-                <code className="ml-2 bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded font-mono">VERITAS_API_KEY</code>
-              </li>
-              <li>
-                Generate a secure random key, e.g.: <code className="bg-blue-100 dark:bg-blue-800 px-2 py-0.5 rounded font-mono text-xs">openssl rand -hex 32</code>
-              </li>
-              <li>
-                Use this key as a Bearer token in your API requests
-              </li>
-            </ol>
-          </div>
-
-          {/* Endpoint Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-2">LLM Endpoint</h3>
-            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-3 font-mono text-sm text-gray-700 dark:text-gray-300">
-              POST /api/llm/generate-model
-            </div>
-          </div>
-
-          {/* Model Types */}
-          <div>
-            <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200 mb-2">Model Types</h3>
-            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <div className="flex items-start gap-3">
-                <code className="shrink-0 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded font-mono">model_type: 2</code>
-                <span>Performance Review — Evaluate elements with state (-1/0/1) and trend (-1/0/1)</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <code className="shrink-0 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded font-mono">model_type: 1</code>
-                <span>Decision Making — Pairwise comparison to build dominance hierarchy</span>
+          {/* Generated Key Alert */}
+          {generatedKey && (
+            <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 p-4">
+              <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">API Key Created</h3>
+              <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+                Copy this key now. You won't be able to see it again!
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-green-100 dark:bg-green-800 px-3 py-2 rounded font-mono text-sm break-all">
+                  {generatedKey}
+                </code>
+                <button
+                  onClick={handleCopyKey}
+                  className="shrink-0 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                >
+                  {copiedKey ? 'Copied!' : 'Copy'}
+                </button>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Example Request */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-tandt-dark dark:text-gray-200">Example Request</h3>
+          {/* Error Alert */}
+          {error && (
+            <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 p-4">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          )}
+
+          {/* Create New Key */}
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Create New API Key</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Key name (optional)"
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+              />
               <button
-                onClick={handleCopyExample}
-                className="text-xs text-tandt-primary hover:underline"
+                onClick={handleCreateKey}
+                className="px-4 py-2 bg-tandt-primary text-white rounded-lg hover:bg-tandt-primary/90 text-sm font-medium"
               >
-                {copiedExample ? 'Copied!' : 'Copy'}
+                Generate Key
               </button>
             </div>
-            <pre className="rounded-lg bg-gray-900 text-gray-100 p-4 text-xs overflow-x-auto leading-relaxed">
-              {exampleCurl}
-            </pre>
           </div>
 
-          {/* Schema Link */}
+          {/* Existing Keys */}
+          <div>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Your API Keys</h3>
+            {loading ? (
+              <p className="text-sm text-gray-500">Loading...</p>
+            ) : keys.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No API keys yet. Create one above.</p>
+            ) : (
+              <div className="space-y-2">
+                {keys.map((key) => (
+                  <div
+                    key={key.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">{key.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <code>{key.key_prefix}...</code>
+                        {' · '}
+                        Created {new Date(key.created_at).toLocaleDateString()}
+                        {key.last_used_at && ` · Last used ${new Date(key.last_used_at).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteKey(key.id)}
+                      className="px-3 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Usage Example */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Full OpenAPI schema:{' '}
-              <a href={schemaUrl} target="_blank" rel="noreferrer" className="text-tandt-primary hover:underline">
-                {schemaUrl}
-              </a>
-            </p>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Usage Example</h3>
+            <pre className="rounded-lg bg-gray-900 text-gray-100 p-4 text-xs overflow-x-auto leading-relaxed">
+{`curl -X POST "${generateUrl}" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '{
+    "topic": "Q2 Team Performance",
+    "model_type": 2,
+    "elements": [
+      { "name": "Code Quality", "state": 1, "trend": 1 }
+    ]
+  }'`}
+            </pre>
           </div>
         </div>
 
