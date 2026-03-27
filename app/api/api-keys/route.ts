@@ -60,12 +60,18 @@ export async function POST(request: Request) {
     const rawKey = `vk_${randomBytes(32).toString('hex')}`
     const keyPrefix = rawKey.substring(0, 10) // "vk_xxxxxx"
     const keyHash = createHash('sha256').update(rawKey).digest('hex')
+    
+    console.log('[v0] Creating API key for user:', user.id)
+    console.log('[v0] Key prefix:', keyPrefix)
+    console.log('[v0] Key hash (first 16):', keyHash.substring(0, 16))
 
     const rows = await sql`
       INSERT INTO api_keys (id, user_id, name, key_hash, key_prefix, is_active)
       VALUES (gen_random_uuid(), ${user.id}, ${name}, ${keyHash}, ${keyPrefix}, true)
       RETURNING id, name, key_prefix, is_active, created_at
     `
+    
+    console.log('[v0] API key created successfully:', rows[0]?.id)
 
     // Return the full key ONCE - it cannot be retrieved again
     return NextResponse.json({ 
