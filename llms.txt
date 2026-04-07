@@ -105,7 +105,7 @@ Package: `veritas-mcp` v0.1.0 — stdio transport, `@modelcontextprotocol/sdk`
 
 ### Configuration
 - `VERITAS_API_KEY` — Bearer token for API access
-- `VERITAS_API_URL` — API base (default: `https://veritas.sanctuaireagentique.com`)
+- `VERITAS_API_URL` — API base (default: `https://api.example.com`)
 - `VERITAS_TOOLS` — Comma-separated tool groups to enable (default: all)
 - `VERITAS_DISABLED_TOOLS` — Comma-separated tools to disable
 

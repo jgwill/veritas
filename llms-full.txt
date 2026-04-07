@@ -487,7 +487,7 @@ Sidebars (overlay panels):
       "args": ["tsx", "/path/to/veritas/mcp/src/index.ts"],
       "env": {
         "VERITAS_API_KEY": "vk_...",
-        "VERITAS_API_URL": "https://veritas.sanctuaireagentique.com"
+        "VERITAS_API_URL": "https://api.example.com"
       }
     }
   }
@@ -605,7 +605,7 @@ npm link  # Makes 'veritas' available globally
 
 # Required env vars
 export VERITAS_API_KEY="vk_..."
-export VERITAS_API_URL="https://veritas.sanctuaireagentique.com"  # default
+export VERITAS_API_URL="https://api.example.com"  # default
 ```
 
 ### Commands
@@ -1012,7 +1012,7 @@ function processModel(model: DigitalModel): DigitalModel {
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | Yes (app) | — | PostgreSQL connection string (Neon pooler) |
 | `VERITAS_API_KEY` | Yes (MCP/CLI) | — | Bearer token for API access (`vk_...` or `tandt_sk_*`) |
-| `VERITAS_API_URL` | No | `https://veritas.sanctuaireagentique.com` | API base URL |
+| `VERITAS_API_URL` | No | `https://api.example.com` | API base URL |
 | `VERITAS_REGISTRATION_OPEN` | No | `false` | Enable user self-registration |
 | `VERITAS_TOOLS` | No | `NETWORK_TOOLS,LOCAL_TOOLS` | MCP tool groups to enable |
 | `VERITAS_DISABLED_TOOLS` | No | — | Comma-separated MCP tools to disable |

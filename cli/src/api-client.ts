@@ -2,7 +2,7 @@
  * veritas API client — HTTP transport for the deployed veritas service.
  *
  * Configuration via environment variables:
- *   VERITAS_API_URL  — Base URL (default: https://veritas.sanctuaireagentique.com)
+ *   VERITAS_API_URL  — Base URL (default: process.env.VERITAS_API_URL || 'https://api.example.com')
  *   VERITAS_API_KEY  — Static UUID bearer token (required for all requests)
  */
 

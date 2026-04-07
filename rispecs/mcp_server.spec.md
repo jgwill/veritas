@@ -375,7 +375,7 @@ interface ToolError {
 ### Graceful Degradation
 
 - If `VERITAS_API_KEY` is not set, NETWORK_TOOLS return authentication errors but LOCAL_TOOLS remain functional
-- If `VERITAS_API_URL` is not set, defaults to `https://veritas.sanctuaireagentique.com`
+- If `VERITAS_API_URL` is not set, defaults to `https://api.example.com`
 - Network timeouts produce clear messages with the URL that was attempted
 
 ---

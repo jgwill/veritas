@@ -327,7 +327,7 @@ $ veritas schema --json
 # Required for API operations
 export VERITAS_API_KEY="your-uuid-token"
 
-# Optional: override API URL (default: https://veritas.sanctuaireagentique.com)
+# Optional: override API URL (default: https://api.example.com)
 export VERITAS_API_URL="https://custom-instance.example.com"
 ```
 

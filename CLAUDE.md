@@ -8,7 +8,7 @@ TandT (Twos and Threes) Digital Thinking Guidance is a React/TypeScript applicat
 * `https://llms.jgwill.com/llms-digital-decision-making.md` for Digital Decision
 * `https://llms.jgwill.com/llms-managerial-moment-of-truth.md` for MMOT and Performance Review.
 
-## `https://veritas.sanctuaireagentique.com`
+
 
 * main branch deployed on vercel.app that should work when we need it.
 
@@ -70,7 +70,7 @@ npm run preview
 # Required for AI features (optional - app works without)
 VERITAS_GEMINI_API_KEY=your_api_key_here
 VERITAS_REGISTRATION_OPEN will turn off registration, set "true" to enable it
-VERITAS_API_KEY  from .env is the variable used  for communicating with https://veritas.sanctuaireagentique.com online deployment
+VERITAS_API_KEY  from .env is the variable used  for communicating with https://api.example.com online deployment
 ```
 
 ## Directory Structure

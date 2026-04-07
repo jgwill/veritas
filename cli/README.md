@@ -35,7 +35,7 @@ The CLI automatically loads `VERITAS_*` variables from `.env` files in this orde
 ```bash
 # Option A: export directly
 export VERITAS_API_KEY="your-uuid-token-here"
-export VERITAS_API_URL="https://veritas.sanctuaireagentique.com"
+export VERITAS_API_URL="https://your-api-url.com"
 
 # Option B: put in .env (project or $HOME)
 echo 'VERITAS_API_KEY="your-uuid-token-here"' >> .env

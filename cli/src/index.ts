@@ -29,7 +29,7 @@ program
     'CLI for veritas TandT — Digital Thinking Guidance for Performance Review & Decision Making models.\n\n' +
     'Configure with environment variables:\n' +
     '  VERITAS_API_KEY   Bearer token (required)\n' +
-    '  VERITAS_API_URL   API base URL (default: https://veritas.sanctuaireagentique.com)',
+    '  VERITAS_API_URL   API base URL (default: https://api.example.com)',
   );
 
 // Register sub-commands

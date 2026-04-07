@@ -34,7 +34,7 @@ Users create **reliable programmatic access to the Veritas backend** where:
 
 ```typescript
 interface VeritasClientConfig {
-  baseUrl: string;       // Default: "https://veritas.sanctuaireagentique.com"
+  baseUrl: string;       // Default: "https://api.example.com"
   apiKey: string;        // Bearer token (from VERITAS_API_KEY env var)
   timeout?: number;      // Request timeout in ms (default: 30000)
 }
@@ -301,7 +301,7 @@ interface SchemaResponse {
 function createClient(): VeritasAPIClient {
   const apiKey = process.env.VERITAS_API_KEY;
   const baseUrl = process.env.VERITAS_API_URL
-    ?? "https://veritas.sanctuaireagentique.com";
+    ?? "https://api.example.com";
 
   if (!apiKey) {
     throw new VeritasAuthError(
@@ -399,7 +399,7 @@ The client retries on transient failures:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `VERITAS_API_KEY` | Yes | — | Static UUID token for Bearer authentication |
-| `VERITAS_API_URL` | No | `https://veritas.sanctuaireagentique.com` | Base URL of the Veritas API |
+| `VERITAS_API_URL` | No | `https://api.example.com` | Base URL of the Veritas API |
 
 ---
 
