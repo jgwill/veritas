@@ -1128,6 +1128,9 @@ veritas_import_model({ filePath: "./backup.json" })
 ```
 
 ### Cross-Repository Links
-- [Workspace llms.txt](https://jgwill.github.io/workspace/llms.txt)
+- [Workspace llms.txt](https://docs.workspace.jgwill.com/llms.txt)
+- [SMCraft — State Machine Craft](https://docs.smcraft.jgwill.com/llms.txt)
+- [Medicine Wheel Developer Suite](https://docs.medicine-wheel.jgwill.com/llms.txt)
+- [NarIntel — Narrative Intelligence](https://docs.narintel.jgwill.com/llms.txt)
 - [Veritas llms.txt](https://docs.veritas.jgwill.com/llms.txt)
 - [Veritas llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)

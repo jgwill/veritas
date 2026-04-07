@@ -183,7 +183,10 @@ Reading order: app → decision_making or performance_review → analysis_workfl
 
 - [llms.txt](https://docs.veritas.jgwill.com/llms.txt)
 - [llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)
-- [Workspace llms.txt](https://jgwill.github.io/workspace/llms.txt)
+- [Workspace llms.txt](https://docs.workspace.jgwill.com/llms.txt)
+- [SMCraft — State Machine Craft](https://docs.smcraft.jgwill.com/llms.txt): FSM patterns share structural isomorphism with Veritas tension charts
+- [Medicine Wheel Developer Suite](https://docs.medicine-wheel.jgwill.com/llms.txt): Ontology for Four Directions used in Veritas ceremonies
+- [NarIntel — Narrative Intelligence](https://docs.narintel.jgwill.com/llms.txt): Story analysis pipeline feeds Veritas model evaluation
 
 ## For LLMs
 
