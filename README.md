@@ -77,7 +77,6 @@ TandT is a direct software embodiment of the **Structural Thinking** principles 
 
 
 - **Sample Models**: See `samples/` for real-world JSON model examples.
-- **Ledgers**: See `codex/ledgers/` for detailed iteration logs and technical decisions.
 - **CreerSaVie**: For the philosophical and methodological foundation.
 
 ---
