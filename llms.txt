@@ -181,12 +181,10 @@ Reading order: app → decision_making or performance_review → analysis_workfl
 
 ## Cross-Repository Links
 
-- [llms.txt](https://docs.veritas.jgwill.com/llms.txt)
-- [llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)
-- [Workspace llms.txt](https://docs.workspace.jgwill.com/llms.txt)
-- [SMCraft — State Machine Craft](https://docs.smcraft.jgwill.com/llms.txt): FSM patterns share structural isomorphism with Veritas tension charts
-- [Medicine Wheel Developer Suite](https://docs.medicine-wheel.jgwill.com/llms.txt): Ontology for Four Directions used in Veritas ceremonies
-- [NarIntel — Narrative Intelligence](https://docs.narintel.jgwill.com/llms.txt): Story analysis pipeline feeds Veritas model evaluation
+- [Master LLM Index](https://llms.jgwill.com/llms-full.txt): Guidance portfolio — canonical MMOT and Structural Tension methodology
+- [RISE Framework](https://llms.jgwill.com/llms-rise-framework.txt): Specification methodology
+- [Medicine Wheel](https://docs.medicine-wheel.jgwill.com/llms.txt): Ontology-core defines StructuralTensionChart types — formal bridge proposal maps types bidirectionally between medicine-wheel and veritas
+- [SMCraft](https://docs.smcraft.jgwill.com/llms.txt): Produces Veritas-format evaluation artifacts (smcraft-evaluation.tandt.json) — data flows from smcraft into veritas for MMOT assessment
 
 ## For LLMs
 

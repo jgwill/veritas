@@ -1128,9 +1128,9 @@ veritas_import_model({ filePath: "./backup.json" })
 ```
 
 ### Cross-Repository Links
-- [Workspace llms.txt](https://docs.workspace.jgwill.com/llms.txt)
-- [SMCraft — State Machine Craft](https://docs.smcraft.jgwill.com/llms.txt)
-- [Medicine Wheel Developer Suite](https://docs.medicine-wheel.jgwill.com/llms.txt)
-- [NarIntel — Narrative Intelligence](https://docs.narintel.jgwill.com/llms.txt)
+- [Master LLM Index](https://llms.jgwill.com/llms-full.txt): Canonical MMOT and Structural Tension methodology
+- [RISE Framework](https://llms.jgwill.com/llms-rise-framework.txt): Specification methodology
+- [Medicine Wheel](https://docs.medicine-wheel.jgwill.com/llms.txt): StructuralTensionChart type definitions — formal bridge proposal
+- [SMCraft](https://docs.smcraft.jgwill.com/llms.txt): Veritas-format evaluation artifacts (smcraft-evaluation.tandt.json)
 - [Veritas llms.txt](https://docs.veritas.jgwill.com/llms.txt)
 - [Veritas llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)
