@@ -1,0 +1,195 @@
+# Veritas (TandT) — Digital Thinking Framework
+
+> Full-stack platform for structured, auditable decision-making and performance management. Built on Robert Fritz's Structural Thinking and Managerial Moment of Truth (MMOT) methodology. Two model types (Decision Making, Performance Review), three operating modes (Modeling, Analyzing, Structuring), with MCP server, CLI tool, and AI integration.
+
+- **Version:** 0.0.1
+- **Framework:** Next.js 16 + React 18 + TypeScript + Zustand + PostgreSQL (Neon) + Gemini AI
+- **Docs:** https://docs.veritas.jgwill.com
+- **Live:** https://veritas.sanctuaireagentique.com
+- **Repository:** https://github.com/jgwill/veritas
+- **License:** See LICENSE.md
+
+## Two Model Types
+
+### Type 1: Digital Decision Making
+Binary YES/NO decision via pairwise factor comparison. Users compare every pair of elements ("If you have X but not Y, is the answer YES?") to build a dominance hierarchy. The dominant element is the most mandatory factor. During analysis, each factor is evaluated as Acceptable (👍) or Unacceptable (👎). If any mandatory (dominant) factor is unacceptable, the decision is NO.
+
+### Type 2: Digital Performance Review
+State × Trend matrix for performance evaluation. Each element is assessed for acceptability (TwoFlag: acceptable/unacceptable) and trend (ThreeFlag: -1 declining, 0 stable, +1 improving). The system automatically prioritizes: Unacceptable+Declining = Critical, Unacceptable+Stable = Improve, Acceptable+Declining = Monitor, Acceptable+Improving = Success.
+
+## Three Operating Modes
+
+1. **Modeling** — Define elements, perform pairwise comparisons (Type 1), set up evaluation criteria
+2. **Analyzing** — Evaluate elements against reality. Type 1: binary acceptable/unacceptable. Type 2: state + trend assessment
+3. **Structuring** — Visualize results. Type 1: dominance chart + decision statement. Type 2: performance dashboard + prioritized action items
+
+## Core Interfaces
+
+```typescript
+interface DigitalModel {
+  Idug: string;                        // Unique model ID (UUID)
+  ModelName: string;                   // Machine name
+  DigitalTopic: string;                // Human-readable title
+  DigitalThinkingModelType: number;    // 1 = Decision, 2 = Performance Review
+  Model: DigitalElement[];             // Array of elements/factors
+  Decision: boolean;                   // Final YES/NO (Type 1)
+  Decided: boolean;                    // Has evaluation been performed
+  history?: HistoryEntry[];            // Version history (max 50)
+  Valid: boolean;
+}
+
+interface DigitalElement {
+  Idug: string;                        // Unique element ID
+  DisplayName: string;                 // Human-readable name
+  Description: string | null;
+  TwoFlag: boolean;                    // Acceptability state (true = acceptable)
+  TwoFlagAnswered: boolean;
+  ThreeFlag: number;                   // Trend: -1 declining, 0 stable, 1 improving
+  ThreeFlagAnswered: boolean;
+  DominanceFactor: number;             // Pairwise comparison score (Type 1)
+  ComparationTableData: Record<string, number>;  // Pairwise results
+  DominantElementItIS: boolean;
+}
+
+interface AnalysisSnapshot {
+  id: string;
+  model_id: string;
+  snapshot_date: string;
+  elements_data: DigitalElement[];     // Frozen state for historical comparison
+  summary_notes: string | null;
+}
+
+enum AppMode { Modeling, Analyzing, Structuring }
+```
+
+## Architecture
+
+### Stack
+- **Frontend:** Next.js 16 App Router, React 18, TypeScript, Tailwind CSS, Radix UI
+- **State:** Zustand 5 with Immer
+- **Database:** PostgreSQL via Neon Serverless (`@neondatabase/serverless`)
+- **AI:** Google Gemini (`@google/generative-ai`) — model generation, element suggestions, analysis summaries, conversational analyst, action suggestions
+- **Charts:** Recharts
+- **Auth:** Session-based + API key (`tandt_sk_*`) for programmatic access
+- **Deployment:** Vercel
+
+### API Routes (Next.js App Router)
+- `GET/POST /api/models` — List / create models
+- `GET/PUT/DELETE /api/models/[id]` — CRUD single model
+- `POST /api/llm/generate-model` — Generate model from elements
+- `GET /api/llm/schema` — OpenAPI schema discovery
+- `POST /api/auth/login` — Session login
+- `POST /api/auth/register` — User registration
+- `POST /api/auth/logout` — Session logout
+- `GET /api/auth/validate` — Session validation
+- `GET/POST /api/scratchpads` — Scratchpad notes
+- `GET/POST /api/templates` — Model templates
+- `GET/POST /api/api-keys` — API key management
+- `GET/POST /api/notes/[noteId]` — Notes per model
+
+## MCP Server (9 Tools)
+
+Package: `veritas-mcp` v0.1.0 — stdio transport, `@modelcontextprotocol/sdk`
+
+### Network Tools (API-backed)
+1. **veritas_list_models** — List all models for authenticated user
+2. **veritas_get_model** — Fetch complete DigitalModel by ID
+3. **veritas_generate_model** — Generate model via API (topic + elements)
+4. **veritas_update_model** — Update model name, description, or modelData
+5. **veritas_delete_model** — Permanently delete a model
+6. **veritas_export_model** — Export model to local JSON file
+7. **veritas_import_model** — Import model from local JSON file
+8. **veritas_get_schema** — Retrieve OpenAPI schema for LLM API
+
+### Local Tools
+9. **veritas_mmot_evaluate** — MMOT 4-step evaluation: Acknowledge → Analyze → Plan → Document. Loads from API or local file. Outputs to `.mw/north/`
+
+### Configuration
+- `VERITAS_API_KEY` — Bearer token for API access
+- `VERITAS_API_URL` — API base (default: `https://veritas.sanctuaireagentique.com`)
+- `VERITAS_TOOLS` — Comma-separated tool groups to enable (default: all)
+- `VERITAS_DISABLED_TOOLS` — Comma-separated tools to disable
+
+## CLI Tool
+
+Package: `veritas-cli` v0.1.0 — Commander.js + Chalk
+
+```
+veritas models list [--json]           # List all models
+veritas models get <id> [--json]       # Get model detail
+veritas models delete <id>             # Delete model
+veritas models export <id> [--output]  # Export to JSON
+veritas models import <file>           # Import from JSON
+veritas generate                       # Generate model (AI)
+veritas mmot evaluate <id>             # Run MMOT evaluation
+  --phase <phase>                      #   acknowledge|analyze|plan|feedback|full
+  --output-dir <path>                  #   Default: .mw/north/
+  --engine <engine>                    #   gemini|claude|copilot|local (future)
+  --json                               #   Machine-readable output
+veritas schema [--json]                # Show API schema
+```
+
+## Specifications (RISE Framework)
+
+12 specifications in `rispecs/`:
+
+| Spec | Description |
+|------|-------------|
+| `app.spec.md` | Application overview, three modes, core philosophy |
+| `decision_making_model.spec.md` | Type 1: pairwise comparison, dominance hierarchy, YES/NO |
+| `performance_review_model.spec.md` | Type 2: state × trend, automatic prioritization |
+| `analysis_workflow.spec.md` | Evaluation workflow for both types |
+| `visualization_dashboard.spec.md` | Charts, dashboards, action planning |
+| `model_persistence.spec.md` | Storage, history, import/export |
+| `model_generation.spec.md` | AI-powered model/element generation |
+| `mcp_server.spec.md` | MCP server architecture and 9 tools |
+| `cli_tool.spec.md` | CLI command structure and output modes |
+| `mmot_generation.spec.md` | Autonomous MMOT evaluation workflow |
+| `api_client.spec.md` | Shared typed HTTP client for MCP + CLI |
+
+Reading order: app → decision_making or performance_review → analysis_workflow → visualization → model_generation → persistence → api_client → mcp_server → cli_tool → mmot_generation
+
+## Key Decision Logic
+
+### Type 1 Decision Algorithm
+1. All elements undergo pairwise comparison: "If you have A but not B, is the answer still YES?"
+2. DominanceFactor = count of pairwise wins (how many elements this one dominates)
+3. Element with highest DominanceFactor is the dominant/most-mandatory factor
+4. During analysis: each element marked Acceptable or Unacceptable
+5. Decision = YES only if ALL dominant elements are Acceptable
+6. If any dominant element is Unacceptable → Decision = NO
+
+### Type 2 Priority Matrix
+| State \ Trend | Declining (-1) | Stable (0) | Improving (+1) |
+|---------------|---------------|------------|----------------|
+| Unacceptable  | CRITICAL      | IMPROVE    | MONITOR        |
+| Acceptable    | WATCH         | MAINTAIN   | SUCCESS        |
+
+### MMOT Four-Step Evaluation
+1. **Acknowledge** — Truth statement: "Expected X, delivered Y"
+2. **Analyze** — Element-by-element causal analysis + structural dynamics
+3. **Plan** — Corrective actions: URGENT (weak+declining), MONITOR (strong+declining), IMPROVE (weak+neutral)
+4. **Feedback** — Recommendation: RECOMMIT (≥70% strengths) / REDIRECT (40-70%) / PAUSE (<40%)
+
+## Lineage / KINSHIP
+
+- **Ancestors:** Robert Fritz's Structural Thinking, Managerial Moment of Truth methodology, CreerSaVie knowledge base
+- **Siblings:** coaia-narrative (stores charts veritas evaluates), coaia-visualizer (displays results), mia-code (CLI agent invoking veritas MCP)
+- **Related:** medicine-wheel (ontology-core), mcp-pde (upstream decomposition)
+- **Steward:** Guillaume (jgwill)
+- **Role:** MMOT evaluator — applies Managerial Moment of Truth to structural tension charts
+
+## Cross-Repository Links
+
+- [llms.txt](https://docs.veritas.jgwill.com/llms.txt)
+- [llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)
+- [Workspace llms.txt](https://jgwill.github.io/workspace/llms.txt)
+
+## For LLMs
+
+To work with Veritas programmatically:
+1. Use the MCP server tools (preferred) or REST API with a `tandt_sk_*` API key
+2. Type 2 models are most common for MMOT evaluation
+3. Use `veritas_generate_model` with topic + elements to create models
+4. Use `veritas_mmot_evaluate` for performance assessment
+5. The full TypeScript interfaces and API schema are in llms-full.txt

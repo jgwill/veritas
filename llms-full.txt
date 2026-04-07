@@ -1,0 +1,1133 @@
+# Veritas (TandT) — Complete AI Reference
+
+> Full-stack digital thinking platform for structured, auditable decision-making and performance management. Built on Robert Fritz's Structural Thinking and Managerial Moment of Truth (MMOT) methodology. This is the comprehensive reference for LLM agents working with the Veritas codebase.
+
+- **Version:** 0.0.1 (app), 0.1.0 (MCP + CLI)
+- **Framework:** Next.js 16 + React 18 + TypeScript + Zustand 5 + PostgreSQL (Neon) + Gemini AI
+- **Docs:** https://docs.veritas.jgwill.com
+- **Live:** https://veritas.sanctuaireagentique.com
+- **Repository:** https://github.com/jgwill/veritas
+
+---
+
+## 1. Architecture Overview
+
+### Data Flow
+
+```
+User describes goal
+  │
+  ├─ Manual: name + add elements
+  └─ AI: description → Gemini generates elements
+  │
+  ▼
+MODELING MODE (structure the thinking)
+  ├─ Type 1: pairwise comparisons → DominanceFactor emerges
+  └─ Type 2: define acceptable criteria per dimension
+  │
+  ▼
+AUTO-SAVE → PostgreSQL (Neon) via Next.js API routes
+  └─ HistoryEntry created (max 50 per model)
+  │
+  ▼
+ANALYZING MODE (apply model to reality)
+  ├─ Type 1: evaluate each factor → Acceptable/Unacceptable → Decision renders
+  └─ Type 2: evaluate state + trend → Priority matrix calculated
+  │
+  ▼
+STRUCTURING MODE (visualize patterns)
+  ├─ Type 1: dominance chart + decision statement + mandatory factor analysis
+  └─ Type 2: performance dashboard + prioritized action list + AI suggestions
+  │
+  ▼
+EXPORT / MCP / CLI
+  ├─ JSON export/import for sharing
+  ├─ MCP server (9 tools) for LLM agents
+  ├─ CLI for terminal workflows
+  └─ MMOT evaluation (local or API-backed)
+```
+
+### Directory Structure
+
+```
+veritas/
+├── app/                    # Next.js 16 App Router
+│   └── api/
+│       ├── models/         # Model CRUD (GET/POST, GET/PUT/DELETE by [id])
+│       ├── llm/            # AI endpoints (generate-model, schema)
+│       ├── auth/           # Authentication (login, register, logout, validate)
+│       ├── notes/          # Per-model notes
+│       ├── scratchpads/    # Scratchpad content
+│       ├── templates/      # Model templates
+│       └── api-keys/       # API key management
+├── components/             # React components
+│   ├── ModelListView.tsx   # Landing page — model browser
+│   ├── ModelingView.tsx    # Modeling mode UI
+│   ├── AnalyzingView.tsx   # Analysis mode UI
+│   ├── StructuringView.tsx # Dashboard/visualization
+│   ├── ComparisonModal.tsx # Pairwise comparison UI (Type 1)
+│   ├── ElementCard.tsx     # Element display card
+│   ├── Header.tsx          # App header with mode switcher
+│   ├── ConversationalAnalyst.tsx # AI chat panel
+│   ├── GeminiAssistant.tsx # AI element suggestion
+│   ├── HistoryPanel.tsx    # Version history sidebar
+│   ├── CreateNewModelModal.tsx
+│   ├── EditElementModal.tsx
+│   ├── AnalysisHistory.tsx # Snapshot comparison
+│   ├── Scratchpad.tsx      # Note-taking
+│   ├── ApiKeySettings.tsx  # API key management
+│   ├── UserSettings.tsx    # User preferences
+│   └── ui/                 # Radix UI primitives (shadcn)
+├── services/
+│   ├── modelService.ts     # Model CRUD via API routes
+│   ├── geminiService.ts    # Gemini AI integration (client-side)
+│   ├── authService.ts      # Auth state management (localStorage)
+│   └── db.ts               # Neon SQL client + DB types
+├── store.ts                # Zustand global state
+├── types.ts                # Core TypeScript interfaces
+├── constants.ts            # App constants
+├── mcp/                    # MCP server (separate package)
+│   ├── src/
+│   │   ├── index.ts        # Server entry + stdio transport
+│   │   ├── tools.ts        # 9 tool definitions + handlers
+│   │   ├── api-client.ts   # Typed HTTP client
+│   │   ├── types.ts        # MCP-specific types
+│   │   └── env.ts          # Environment loading
+│   └── package.json        # veritas-mcp v0.1.0
+├── cli/                    # CLI tool (separate package)
+│   ├── src/
+│   │   ├── index.ts        # Commander.js entry
+│   │   ├── commands/
+│   │   │   ├── models.ts   # models list|get|delete|export|import
+│   │   │   ├── generate.ts # AI model generation
+│   │   │   └── mmot.ts     # MMOT evaluation
+│   │   ├── api-client.ts   # Shared HTTP client
+│   │   └── env.ts          # Environment loading
+│   └── package.json        # veritas-cli v0.1.0
+├── rispecs/                # 12 RISE specifications
+├── samples/                # Example model JSON files
+├── scripts/                # SQL schema migration files
+└── package.json            # tandt-application v0.0.1
+```
+
+### Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Framework | Next.js 16.0.10 | App Router, API routes, SSR |
+| UI | React 18.3, Tailwind CSS 3.4, Radix UI | Components, styling, accessibility |
+| State | Zustand 5.0.2 + Immer 10.1 | Global state management |
+| Database | PostgreSQL via @neondatabase/serverless 1.0.2 | Cloud persistence |
+| AI | @google/generative-ai 0.21 (Gemini Pro) | Model generation, analysis |
+| Charts | Recharts 2.12 | Visualization in Structuring mode |
+| Auth | Session tokens + API keys (tandt_sk_*) | User + programmatic access |
+| MCP | @modelcontextprotocol/sdk 1.27 | LLM tool protocol |
+| CLI | Commander.js 12 + Chalk 5.3 | Terminal interface |
+| Deploy | Vercel | Hosting, serverless functions |
+
+---
+
+## 2. Core TypeScript Interfaces (Full)
+
+```typescript
+// types.ts — complete definitions
+
+export interface HistoryEntry {
+  id: string;                          // Unique ID (timestamp-based)
+  timestamp: string;                   // ISO 8601
+  description: string;                 // Human-readable change description
+  modelState: DigitalElement[];        // Snapshot of elements at this point
+}
+
+export interface AnalysisSnapshot {
+  id: string;
+  model_id: string;
+  snapshot_name: string | null;
+  snapshot_date: string;
+  elements_data: DigitalElement[];     // Frozen analysis state
+  summary_notes: string | null;
+  created_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ActionSuggestion {
+  area: string;
+  suggestion: string;
+}
+
+export interface DigitalElement {
+  SortNo: number;                      // Display order
+  TelescopedModel: null | any;         // Nested model reference (future)
+  ComparationCompleted: boolean;       // All pairwise comparisons done?
+  ComparationTableData: Record<string, number>;  // { otherElementIdug: 0|1 }
+  DominanceFactor: number;             // Count of pairwise wins
+  DominantElementItIS: boolean;        // Is this the most dominant?
+  Meta: any;                           // Legacy metadata from WinForms era
+  DtModified: string;                  // ISO date
+  DtCreated: string;                   // ISO date
+  Tlid: string;                        // Timeline ID (legacy)
+  NameElement: string;                 // Machine name (no spaces)
+  DisplayName: string;                 // Human-readable name
+  Description: string | null;          // What this element measures
+  TwoOnly: boolean;                    // Type 1 flag (only binary eval)
+  TwoFlag: boolean;                    // Acceptability: true = acceptable
+  TwoFlagAnswered: boolean;            // Has user evaluated this?
+  ThreeFlag: number;                   // Trend: -1 declining, 0 stable, 1 improving
+  ThreeFlagAnswered: boolean;          // Has user set trend?
+  Idug: string;                        // Unique element ID (UUID)
+  Status: number;                      // Element status code
+  Question: boolean;                   // Legacy question flag
+  evaluation?: 'accepted' | 'rejected' | 'neutral'; // Analysis mode state
+}
+
+export interface DigitalModel {
+  AutoSaveModel: boolean;
+  HasIssue: boolean;                   // Model has validation issues
+  Model: DigitalElement[];             // The elements array
+  Note: string | null;                 // Model description/notes
+  ModelName: string;                   // Machine name
+  DigitalThinkingModelType: number;    // 1 = Decision, 2 = Performance Review
+  DigitalTopic: string;                // Human-readable title
+  Decision: boolean;                   // Final YES/NO (Type 1 only)
+  Decided: boolean;                    // Evaluation performed?
+  Idug: string;                        // Unique model ID (UUID)
+  FileSuffix: string;                  // Legacy file suffix
+  Valid: boolean;                      // Model is complete/ready
+  FileId: string;                      // "{ModelName}__{Idug}"
+  TwoOnly: boolean;                    // Type 1 = true (binary only)
+  history?: HistoryEntry[];            // Version history (max 50)
+}
+
+export enum AppMode {
+  Modeling = 'Modeling',
+  Analyzing = 'Analyzing',
+  Structuring = 'Structuring'
+}
+
+export type ModelId = string;
+
+export interface ModelSummary {
+  id: ModelId;
+  name: string;
+  type: number;
+  description: string;
+}
+```
+
+### Database Types (services/db.ts)
+
+```typescript
+interface DbUser {
+  id: string; email: string; display_name: string | null;
+  created_at: string; updated_at: string;
+}
+
+interface DbModel {
+  id: string; user_id: string; template_id: string | null;
+  name: string; description: string | null; model_type: number;
+  model_data: any; is_archived: boolean;
+  created_at: string; updated_at: string;
+}
+
+interface DbModelTemplate {
+  id: string; name: string; description: string | null;
+  model_type: number; template_data: any; is_system: boolean;
+  created_by: string | null; created_at: string; updated_at: string;
+}
+
+interface DbAnalysisSnapshot {
+  id: string; model_id: string; user_id: string;
+  snapshot_name: string | null; snapshot_date: string;
+  elements_data: any; summary_notes: string | null; created_at: string;
+}
+
+interface DbScratchpadNote {
+  id: string; model_id: string; user_id: string;
+  title: string | null; content: string; element_id: string | null;
+  note_type: string; is_pinned: boolean;
+  created_at: string; updated_at: string;
+}
+
+interface DbSession {
+  id: string; user_id: string; token: string;
+  expires_at: string; created_at: string;
+}
+```
+
+---
+
+## 3. Model Types Deep Dive
+
+### Type 1: Decision Making — Complete Algorithm
+
+**Phase 1: Pairwise Comparison (Modeling Mode)**
+
+For N elements, there are N×(N-1)/2 unique pairs. For each pair (A, B):
+- Question: "If you have A but NOT B, is the answer still YES?"
+- If YES → A dominates B → `A.ComparationTableData[B.Idug] = 1`
+- If NO → B dominates A → `B.ComparationTableData[A.Idug] = 1`
+- `DominanceFactor = sum of all 1s in ComparationTableData`
+- `DominantElementItIS = true` for element with highest DominanceFactor
+
+**Phase 2: Evaluation (Analyzing Mode)**
+
+Each element evaluated: Acceptable (TwoFlag=true) or Unacceptable (TwoFlag=false).
+
+**Phase 3: Decision Rendering**
+
+```
+Decision = YES if and only if ALL elements where DominantElementItIS === true
+           have TwoFlag === true (acceptable)
+
+If ANY dominant element has TwoFlag === false → Decision = NO
+```
+
+**Example — Habitat Selection (from samples):**
+- 14 elements: "Calme la nuit", "Cuisine pratique", "Lumière naturelle", etc.
+- After pairwise comparison: "Cuisine pratique" has DominanceFactor=5 (highest, dominant)
+- If "Cuisine pratique" is Unacceptable → Decision = NO regardless of other factors
+
+### Type 2: Performance Review — Complete Algorithm
+
+**Phase 1: Element Definition (Modeling Mode)**
+
+Define performance dimensions. No pairwise comparison needed.
+
+**Phase 2: Evaluation (Analyzing Mode)**
+
+Each element assessed on two axes:
+- **TwoFlag** (State): true = Acceptable ✓, false = Unacceptable ✗
+- **ThreeFlag** (Trend): -1 = Declining ↓, 0 = Stable →, +1 = Improving ↑
+
+**Phase 3: Priority Matrix (Structuring Mode)**
+
+```
+Priority Matrix:
+┌──────────────┬─────────────────┬──────────────┬─────────────────┐
+│ State\Trend  │ Declining (-1)  │ Stable (0)   │ Improving (+1)  │
+├──────────────┼─────────────────┼──────────────┼─────────────────┤
+│ Unacceptable │ CRITICAL 🔴     │ IMPROVE 🟡   │ MONITOR 🟢      │
+│ Acceptable   │ WATCH ⚠️        │ MAINTAIN 🔵  │ SUCCESS ✅      │
+└──────────────┴─────────────────┴──────────────┴─────────────────┘
+
+Action Priority Order:
+1. CRITICAL (Unacceptable + Declining) — Immediate intervention
+2. WATCH (Acceptable + Declining) — Investigate root cause
+3. IMPROVE (Unacceptable + Stable) — Develop improvement strategy
+4. MONITOR (Unacceptable + Improving) — Track progress
+5. MAINTAIN (Acceptable + Stable) — Continue current approach
+6. SUCCESS (Acceptable + Improving) — Celebrate and replicate
+```
+
+**Example — Business Performance Review (from samples):**
+```json
+{
+  "ModelName": "ModelDigitalPerformanceReview",
+  "DigitalThinkingModelType": 2,
+  "Model": [
+    { "DisplayName": "Match between business offering and Market",
+      "TwoFlag": true, "ThreeFlag": 1 },      // Acceptable + Improving = SUCCESS
+    { "DisplayName": "Current Market Share",
+      "TwoFlag": true, "ThreeFlag": 0 },       // Acceptable + Stable = MAINTAIN
+    { "DisplayName": "Locus of Market Control",
+      "TwoFlag": true, "ThreeFlag": -1 },      // Acceptable + Declining = WATCH
+    { "DisplayName": "Regulatory environment",
+      "TwoFlag": true, "ThreeFlag": -1 },      // Acceptable + Declining = WATCH
+    { "DisplayName": "Capital",
+      "TwoFlag": true, "ThreeFlag": 0 },       // Acceptable + Stable = MAINTAIN
+    { "DisplayName": "Competition",
+      "TwoFlag": true, "ThreeFlag": 1 }        // Acceptable + Improving = SUCCESS
+  ]
+}
+```
+
+---
+
+## 4. API Routes Reference
+
+### Authentication
+All model routes require Bearer token (session token or `tandt_sk_*` API key).
+
+```
+POST /api/auth/register
+  Body: { email, password, displayName? }
+  Response: { user: { id, email, display_name }, token }
+
+POST /api/auth/login
+  Body: { email, password }
+  Response: { user: { id, email, display_name }, token }
+
+POST /api/auth/logout
+  Headers: Authorization: Bearer <token>
+
+GET /api/auth/validate
+  Headers: Authorization: Bearer <token>
+  Response: { user: { id, email, display_name } }
+
+GET /api/auth/registration-status
+  Response: { open: boolean }
+```
+
+### Models CRUD
+```
+GET /api/models
+  Headers: Authorization: Bearer <token>
+  Response: { models: [{ id, name, description, model_type, is_archived, template_id, created_at, updated_at }] }
+
+POST /api/models
+  Headers: Authorization: Bearer <token>
+  Body: { name, description?, modelType, modelData: { Model: DigitalElement[], history: [] }, templateId? }
+  Response: { model: { id, user_id, template_id, name, description, model_type, model_data, ... } }
+
+GET /api/models/[id]
+  Response: { model: { id, ..., model_data: { Model: DigitalElement[], history: HistoryEntry[] } } }
+
+PUT /api/models/[id]
+  Body: { name?, description?, modelData?, isArchived? }
+  Response: { model: { ... } }
+
+DELETE /api/models/[id]
+  Response: { success: true }
+```
+
+### LLM / AI Endpoints
+```
+POST /api/llm/generate-model
+  Headers: Authorization: Bearer <token>
+  Body: {
+    topic: string,              // Required. Model title.
+    model_type?: 1 | 2,        // Default: 2 (Performance Review)
+    description?: string,       // Optional notes
+    elements: [{                // 2-20 elements
+      name: string,             // Required
+      description?: string,
+      state?: -1 | 0 | 1,      // Type 2 only. Trend.
+      trend?: -1 | 0 | 1       // Type 2 only. Acceptance.
+    }]
+  }
+  Response: { model: { id, name, model_type, ... }, message: string }
+
+GET /api/llm/schema
+  Response: OpenAPI 3.1.0 schema (no auth required)
+```
+
+### Scratchpads, Templates, Notes, API Keys
+```
+GET/POST /api/scratchpads          # Model scratchpad notes
+GET/POST /api/templates            # Model templates
+GET/POST /api/api-keys             # tandt_sk_* key management
+GET/PUT/DELETE /api/notes/[noteId] # Per-model notes
+```
+
+---
+
+## 5. Component Architecture
+
+### Page Flow
+```
+ModelListView (landing page)
+  ├── CreateNewModelModal (manual or AI-generated)
+  │   └── GeminiAssistant (element suggestion)
+  │
+  └── [Select Model] → App with Header (mode switcher)
+      │
+      ├── ModelingView
+      │   ├── ElementCard[] (display/edit elements)
+      │   ├── ComparisonModal (Type 1 pairwise comparison)
+      │   └── EditElementModal (name, description)
+      │
+      ├── AnalyzingView
+      │   ├── ElementCard[] (with evaluation controls)
+      │   │   ├── Type 1: 👍/👎 buttons
+      │   │   └── Type 2: 👍/👎 + 📈/➖/📉 buttons
+      │   └── Decision/Summary display
+      │
+      └── StructuringView
+          ├── Type 1: Dominance bar chart (Recharts) + decision statement
+          └── Type 2: Performance dashboard + priority list
+              └── AI Action Suggestions (optional)
+
+Sidebars (overlay panels):
+  ├── HistoryPanel (version history, revert)
+  ├── ConversationalAnalyst (AI chat about model)
+  ├── AnalysisHistory (snapshot comparison)
+  ├── Scratchpad (notes)
+  ├── ApiKeySettings (API key management)
+  └── UserSettings (theme, preferences)
+```
+
+### Key Component Responsibilities
+
+**ModelListView.tsx** — Landing page. Lists available models as cards. Create, delete, import, export operations. Fetches from `/api/models`.
+
+**ModelingView.tsx** — Element management. Add/edit/remove elements. For Type 1: triggers ComparisonModal for pairwise comparisons. For Type 2: simplified view without comparison UI.
+
+**AnalyzingView.tsx** — Evaluation interface. Type 1: binary Acceptable/Unacceptable per element. Type 2: State (acceptable/unacceptable) + Trend (declining/stable/improving). Auto-saves after each evaluation. Shows running decision/summary.
+
+**StructuringView.tsx** — Results visualization. Type 1: Recharts bar chart of DominanceFactor per element, ranked list, decision statement. Type 2: Performance dashboard sorted by priority (Critical→Success), AI action suggestions button.
+
+**ComparisonModal.tsx** — Pairwise comparison workflow for Type 1. Presents pairs sequentially: "If you have A but NOT B, is the answer still YES?" Updates ComparationTableData and recalculates DominanceFactor.
+
+**ConversationalAnalyst.tsx** — AI chat panel. Creates Gemini chat session with model context. User asks natural language questions about their model.
+
+---
+
+## 6. MCP Server — Complete Tool Signatures
+
+### Server Configuration
+```json
+{
+  "mcpServers": {
+    "veritas": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/veritas/mcp/src/index.ts"],
+      "env": {
+        "VERITAS_API_KEY": "vk_...",
+        "VERITAS_API_URL": "https://veritas.sanctuaireagentique.com"
+      }
+    }
+  }
+}
+```
+
+### Tool Definitions
+
+**1. veritas_list_models**
+```
+Input: {}
+Output: [{ id, name, model_type, description, created_at, updated_at }]
+Description: List all TandT models for the authenticated user.
+```
+
+**2. veritas_get_model**
+```
+Input: { modelId: string }  // Required
+Output: Complete DigitalModel with all elements, flags, comparison data, history
+Description: Fetch a complete DigitalModel by ID.
+```
+
+**3. veritas_generate_model**
+```
+Input: {
+  topic: string,           // Required. Model title.
+  elements: [{             // Required. 2-20 elements.
+    name: string,          // Required
+    description?: string,
+    state?: -1|0|1,        // Type 2: trend
+    trend?: -1|0|1         // Type 2: acceptance (maps to TwoFlag)
+  }],
+  model_type?: number,     // 1=Decision, 2=Performance Review (default)
+  description?: string
+}
+Output: { model: { id, name, model_type, ... }, message: string }
+Description: Generate a new TandT model via server-side API.
+```
+
+**4. veritas_update_model**
+```
+Input: {
+  modelId: string,         // Required
+  name?: string,
+  description?: string,
+  modelData?: {
+    Model: DigitalElement[],
+    history?: HistoryEntry[]
+  }
+}
+Output: Updated model record
+Description: Update an existing model's name, description, or data.
+```
+
+**5. veritas_delete_model**
+```
+Input: { modelId: string }  // Required
+Output: { success: true }
+Description: Permanently delete a model by ID.
+```
+
+**6. veritas_export_model**
+```
+Input: {
+  modelId: string,         // Required
+  outputPath?: string      // Default: ./{ModelName}.json
+}
+Output: { path: string, message: string }
+Description: Export a model to a local JSON file.
+```
+
+**7. veritas_import_model**
+```
+Input: { filePath: string }  // Required. Path to model JSON.
+Output: { model: { id, name, ... }, message: string }
+Description: Import a model from a local JSON file into the API.
+```
+
+**8. veritas_get_schema**
+```
+Input: {}
+Output: OpenAPI 3.1.0 schema for /api/llm/* endpoints
+Description: Retrieve API schema for discovery.
+```
+
+**9. veritas_mmot_evaluate**
+```
+Input: {
+  modelId?: string,        // Model ID to fetch from API
+  filePath?: string,       // OR local path to model JSON
+  outputDir?: string,      // Default: .mw/north/
+  llmBinary?: string       // gemini|claude|copilot (default: gemini)
+}
+Output: MMOT evaluation with 4 phases + recommendation
+Description: Perform Managerial Moment of Truth 4-step evaluation.
+  1. Acknowledge — summarize state/trend, identify unmet expectations
+  2. Analyze — trace root causes for each concern
+  3. Plan — create advancing action plans
+  4. Document — structured report with recommendations
+```
+
+### Tool Filtering
+- `VERITAS_TOOLS` env: comma-separated groups to enable (NETWORK_TOOLS, LOCAL_TOOLS). Default: both.
+- `VERITAS_DISABLED_TOOLS` env: comma-separated tool names to disable.
+
+---
+
+## 7. CLI Command Reference
+
+### Installation & Configuration
+```bash
+# From the cli/ directory
+npm run build
+npm link  # Makes 'veritas' available globally
+
+# Required env vars
+export VERITAS_API_KEY="vk_..."
+export VERITAS_API_URL="https://veritas.sanctuaireagentique.com"  # default
+```
+
+### Commands
+
+```bash
+# Model Management
+veritas models list                    # Table view of all models
+veritas models list --json             # JSON array output
+veritas models get <modelId>           # Detailed model view with elements
+veritas models get <modelId> --json    # Full JSON output
+veritas models delete <modelId>        # Delete with confirmation
+veritas models export <modelId>        # Export to JSON file
+veritas models export <modelId> --output ./my-model.json
+veritas models import ./model.json     # Import from JSON file
+
+# AI Generation
+veritas generate                       # Interactive model generation
+
+# MMOT Evaluation
+veritas mmot evaluate <modelId>        # Full 4-phase evaluation
+veritas mmot evaluate <modelId> --phase acknowledge  # Single phase
+veritas mmot evaluate <modelId> --phase analyze
+veritas mmot evaluate <modelId> --phase plan
+veritas mmot evaluate <modelId> --phase feedback
+veritas mmot evaluate <modelId> --output-dir ./reports/
+veritas mmot evaluate <modelId> --json    # Machine-readable output
+veritas mmot evaluate <modelId> --engine gemini  # Future: LLM-backed eval
+
+# API Discovery
+veritas schema                         # Human-readable schema
+veritas schema --json                  # Full OpenAPI JSON
+```
+
+### MMOT Evaluation Output
+Evaluation outputs to `--output-dir` (default `.mw/north/`) as JSON:
+```json
+{
+  "model_id": "uuid",
+  "model_name": "Model Name",
+  "timestamp": "ISO 8601",
+  "phases": [
+    { "phase": "acknowledge", "content": "..." },
+    { "phase": "analyze", "content": "..." },
+    { "phase": "plan", "content": "..." },
+    { "phase": "feedback", "content": "..." }
+  ],
+  "summary": "Full text of all phases",
+  "recommendation": "recommit" | "redirect" | "pause"
+}
+```
+
+### MMOT Recommendation Logic
+```
+≥70% strengths AND ≤1 declining → RECOMMIT (continue current course)
+40-70% strengths → REDIRECT (focus on weak areas)
+<40% strengths → PAUSE (reassess strategy)
+```
+
+---
+
+## 8. Zustand Store Structure
+
+```typescript
+// store.ts — useAppStore
+
+interface AppState {
+  // Core state
+  mode: AppMode;                       // Modeling | Analyzing | Structuring
+  model: DigitalModel | null;          // Currently loaded model
+  availableModels: ModelSummary[];     // Model list for landing page
+  theme: 'light' | 'dark';
+  isLoading: boolean;
+  isCreatingModel: boolean;
+
+  // History
+  isHistoryPanelOpen: boolean;
+
+  // AI Chat
+  isChatAnalystOpen: boolean;
+  chatSession: ChatSession | null;     // Gemini chat instance
+
+  // AI Suggestions
+  actionSuggestions: ActionSuggestion[] | null;
+  isGeneratingSuggestions: boolean;
+  suggestionError: string | null;
+
+  // Snapshots
+  snapshots: AnalysisSnapshot[];
+  isSnapshotPanelOpen: boolean;
+  viewingSnapshot: AnalysisSnapshot | null;
+  comparingSnapshots: [AnalysisSnapshot | null, AnalysisSnapshot | null];
+  isCompareMode: boolean;
+
+  // Actions
+  setMode(mode: AppMode): void;
+  fetchAvailableModels(): Promise<void>;
+  loadModel(modelId: string): Promise<void>;
+  closeModel(): void;
+  saveModel(model: DigitalModel, description: string): Promise<void>;
+  updateElement(element: DigitalElement, description: string): void;
+  revertToVersion(historyId: string): Promise<void>;
+  createModel(config: CreateModelConfig): Promise<void>;
+  deleteModel(modelId: string): Promise<void>;
+  importModel(model: DigitalModel): Promise<void>;
+  exportModel(modelId: string): Promise<void>;
+  generateActionSuggestions(): Promise<void>;
+
+  // Snapshot actions
+  fetchSnapshots(): Promise<void>;
+  viewSnapshot(snapshot: AnalysisSnapshot): void;
+  enterCompareMode(s1: AnalysisSnapshot, s2: AnalysisSnapshot): void;
+  exitCompareMode(): void;
+}
+```
+
+### Key Store Behaviors
+
+- **saveModel**: Creates HistoryEntry with deep copy of elements, prepends to history (max 50), saves via API
+- **updateElement**: Finds element by Idug, replaces it, triggers saveModel
+- **loadModel**: Fetches from API, resets all evaluation state (TwoFlagAnswered=false, ThreeFlagAnswered=false), recalculates DominanceFactor for Type 1
+- **revertToVersion**: Restores Model array from a HistoryEntry's modelState snapshot
+
+---
+
+## 9. Database Schema
+
+### Primary Schema (scripts/001-create-schema.sql)
+
+```sql
+-- Users
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Models
+CREATE TABLE models (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  model_type INTEGER NOT NULL CHECK (model_type IN (1, 2)),
+  config JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Analysis Snapshots
+CREATE TABLE analysis_snapshots (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_id UUID NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  snapshot_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  data JSONB NOT NULL,
+  scratchpad TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Model Templates
+CREATE TABLE model_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  model_type INTEGER NOT NULL CHECK (model_type IN (1, 2)),
+  config JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Extended Schema (setup-database.sql)
+
+```sql
+-- User Models (instances of templates)
+CREATE TABLE user_models (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  template_id UUID REFERENCES model_templates(id) ON DELETE SET NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  type INTEGER NOT NULL CHECK (type IN (1, 2)),
+  config JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Scratchpads
+CREATE TABLE scratchpads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  model_id UUID NOT NULL REFERENCES user_models(id) ON DELETE CASCADE,
+  snapshot_id UUID REFERENCES analysis_snapshots(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  structuring_insights JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Additional Tables (migration scripts)
+- `sessions` — User session tokens
+- `api_keys` — `tandt_sk_*` programmatic access keys
+- `scratchpads` — Per-model notes with optional snapshot linkage
+- `model_templates` — System and user-created templates
+
+### JSONB model_data Structure
+The `models.model_data` (or `config`) column stores:
+```json
+{
+  "Model": [/* DigitalElement[] */],
+  "history": [/* HistoryEntry[] */]
+}
+```
+
+---
+
+## 10. RISE Specifications — All 12 Summaries
+
+### 1. app.spec.md — Application Overview
+Core philosophy: transform subjective thinking into systematic, auditable decision-making. Three modes (Modeling→Analyzing→Structuring). Two model types. Creative Orientation over problem-solving. Structural Tension as the driver of natural progression.
+
+### 2. decision_making_model.spec.md — Type 1: Decision Making
+Pairwise comparison builds dominance hierarchy. DominanceFactor = count of pairwise wins. During analysis, each factor evaluated Acceptable/Unacceptable. Decision = YES only if all dominant factors are acceptable. Mandatory factor logic prevents overlooking critical criteria.
+
+### 3. performance_review_model.spec.md — Type 2: Performance Review
+State × Trend evaluation. No dominance/pairwise comparison. Each element assessed for acceptability (binary) and trend (-1/0/+1). Priority matrix auto-calculates: Critical (unacceptable+declining) through Success (acceptable+improving). Designed for quarterly reviews.
+
+### 4. analysis_workflow.spec.md — Evaluation Workflow
+Entry via mode switcher or "Analyze" button. Resets all evaluation state on entry (fresh session). Type 1: sequential factor evaluation → decision renders. Type 2: state + trend per element → priority dashboard. Auto-save after each answer. Revision supported.
+
+### 5. visualization_dashboard.spec.md — Results & Visualization
+Type 1: Dominance distribution bar chart + ranked element list + decision statement with mandatory factor analysis. Type 2: Performance matrix heat map + prioritized action list sorted by urgency + AI-generated action suggestions.
+
+### 6. model_persistence.spec.md — Storage & History
+PostgreSQL persistence via Neon. Auto-save after every change. History tracking (max 50 versions per model). Revert to any previous version. JSON import/export for sharing and backup. Model organization by type and date.
+
+### 7. model_generation.spec.md — AI Integration
+Gemini AI generates models from natural language descriptions. Element suggestion during modeling. Analysis summaries explain decision drivers. Action suggestions for performance improvement. Conversational analyst chat panel. Graceful fallback with mock data when API unavailable.
+
+### 8. mcp_server.spec.md — MCP Server
+9 tools via stdio transport. Dual-mode: Network (API CRUD for models) + Local (MMOT evaluation). Tool groups filterable via env vars. Authentication via VERITAS_API_KEY. MMOT evaluates DigitalModel elements, outputs to .mw/north/.
+
+### 9. cli_tool.spec.md — CLI Tool
+Commander.js structure: `veritas models {list|get|delete|export|import}`, `veritas generate`, `veritas mmot evaluate`, `veritas schema`. Dual output: human (chalk) + machine (--json). Same capabilities as MCP tools via different interface.
+
+### 10. mmot_generation.spec.md — MMOT Generation Workflow
+Autonomous LLM cycle: Generate model → MMOT evaluate → Iterate. Four-step MMOT: Acknowledge → Analyze → Plan → Document. Bootstrap paradox: first evaluation is demonstration, not verdict. Evaluation creates NEW structural tension (advancing, not reactive).
+
+### 11. api_client.spec.md — API Client
+Typed HTTP client consumed by both MCP server and CLI. Single module for endpoint knowledge, auth, error handling, type mapping. Base URL: veritas.sanctuaireagentique.com. Bearer token auth. Error hierarchy with retry strategy.
+
+### 12. rispecs/README.md — Specification Index
+Reading order, dependency graph, data flow architecture, key concepts (structural tension, three modes, two types), RISE framework alignment. Each spec is autonomous — readable independently.
+
+---
+
+## 11. Sample Model JSON
+
+### Type 2 — Performance Review (Business)
+```json
+{
+  "AutoSaveModel": true,
+  "HasIssue": false,
+  "Model": [
+    {
+      "DisplayName": "Match between business offering and Market",
+      "Description": "How well products/services meet target market needs.",
+      "TwoFlag": true, "TwoFlagAnswered": true,
+      "ThreeFlag": 1, "ThreeFlagAnswered": true,
+      "DominanceFactor": 0, "DominantElementItIS": true,
+      "Idug": "a9bfea53-7917-487e-aa26-745307600f05"
+    },
+    {
+      "DisplayName": "Current Market Share",
+      "Description": "Percentage of total market currently controlled.",
+      "TwoFlag": true, "TwoFlagAnswered": true,
+      "ThreeFlag": 0, "ThreeFlagAnswered": true,
+      "Idug": "a831661e-1b23-4f0f-ba19-9d7d8f346548"
+    },
+    {
+      "DisplayName": "Locus of Market Control",
+      "Description": "Degree of influence over market prices and conditions.",
+      "TwoFlag": true, "TwoFlagAnswered": true,
+      "ThreeFlag": -1, "ThreeFlagAnswered": true,
+      "Idug": "651cc7fe-5bfe-46e8-b561-319e4c363718"
+    }
+  ],
+  "ModelName": "ModelDigitalPerformanceReview",
+  "DigitalThinkingModelType": 2,
+  "DigitalTopic": "Digital Performance Review Model",
+  "Decision": false, "Decided": true,
+  "Idug": "8a3d07cd-216c-44c7-8a0b-2cc5c9e02c55",
+  "Valid": true, "TwoOnly": false
+}
+```
+
+### Type 1 — Decision Making (Habitat Selection, French)
+```json
+{
+  "AutoSaveModel": true,
+  "HasIssue": true,
+  "Model": [
+    {
+      "DisplayName": "Calme la nuit",
+      "Description": "Bruits naturels et tranquilité.",
+      "TwoOnly": true, "TwoFlag": false, "TwoFlagAnswered": false,
+      "DominanceFactor": 4,
+      "ComparationTableData": { "703aec8f...": 0, "56ce826a...": 1, "a6aaf8a1...": 1, "93fd84e7...": 1, "733b92f8...": 1 },
+      "Idug": "8e83ba14-8d25-4691-982a-a875fe2a20f4"
+    },
+    {
+      "DisplayName": "Cuisine pratique",
+      "Description": "Spacieuse et fonctionnelle pour deux personnes.",
+      "TwoOnly": true, "TwoFlag": false, "TwoFlagAnswered": false,
+      "DominanceFactor": 5, "DominantElementItIS": true,
+      "Idug": "703aec8f-e2ae-4992-8eaa-621eb4b175fc"
+    }
+  ],
+  "ModelName": "habitav1b24042419",
+  "DigitalThinkingModelType": 1,
+  "DigitalTopic": "lieu habitat qui convient v1b",
+  "Decision": false, "Decided": false,
+  "Idug": "1d807fb4-5293-471e-85f6-4c8dad6b3648",
+  "TwoOnly": true
+}
+```
+
+---
+
+## 12. Decision Logic Algorithms
+
+### Type 1: Dominance Factor Calculation
+
+```typescript
+// After pairwise comparison, calculate dominance:
+function calculateDominance(elements: DigitalElement[]): DigitalElement[] {
+  return elements.map(element => {
+    const dominanceFactor = Object.values(element.ComparationTableData)
+      .filter(v => v === 1).length;
+    return { ...element, DominanceFactor: dominanceFactor };
+  });
+}
+
+// Identify dominant element (highest DominanceFactor):
+function findDominant(elements: DigitalElement[]): DigitalElement[] {
+  const maxDominance = Math.max(...elements.map(e => e.DominanceFactor));
+  return elements.map(e => ({
+    ...e,
+    DominantElementItIS: e.DominanceFactor === maxDominance
+  }));
+}
+```
+
+### Type 1: Decision Algorithm
+
+```typescript
+function renderDecision(model: DigitalModel): boolean {
+  // Decision = YES only if ALL dominant elements are acceptable
+  const dominantElements = model.Model.filter(e => e.DominantElementItIS);
+  return dominantElements.every(e => e.TwoFlag === true);
+}
+```
+
+### Type 2: Priority Classification
+
+```typescript
+function classifyElement(el: DigitalElement): string {
+  const acceptable = el.TwoFlag;
+  const trend = el.ThreeFlag;
+
+  if (!acceptable && trend < 0) return 'CRITICAL';
+  if (acceptable && trend < 0) return 'WATCH';
+  if (!acceptable && trend === 0) return 'IMPROVE';
+  if (!acceptable && trend > 0) return 'MONITOR';
+  if (acceptable && trend === 0) return 'MAINTAIN';
+  if (acceptable && trend > 0) return 'SUCCESS';
+  return 'UNKNOWN';
+}
+```
+
+### Model Processing on Load
+
+```typescript
+// When a model is loaded, the system:
+// 1. Resets all evaluation state (fresh analysis session)
+// 2. For Type 1: ensures comparison tables have all element IDs, recalculates DominanceFactor
+// 3. Initializes empty history if missing
+function processModel(model: DigitalModel): DigitalModel {
+  // Reset: TwoFlag=false, TwoFlagAnswered=false, ThreeFlag=0, ThreeFlagAnswered=false
+  // For Type 1: fill missing ComparationTableData entries, recalculate DominanceFactor
+  // Return processed model
+}
+```
+
+---
+
+## 13. Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes (app) | — | PostgreSQL connection string (Neon pooler) |
+| `VERITAS_API_KEY` | Yes (MCP/CLI) | — | Bearer token for API access (`vk_...` or `tandt_sk_*`) |
+| `VERITAS_API_URL` | No | `https://veritas.sanctuaireagentique.com` | API base URL |
+| `VERITAS_REGISTRATION_OPEN` | No | `false` | Enable user self-registration |
+| `VERITAS_TOOLS` | No | `NETWORK_TOOLS,LOCAL_TOOLS` | MCP tool groups to enable |
+| `VERITAS_DISABLED_TOOLS` | No | — | Comma-separated MCP tools to disable |
+| `VERITAS_ENV_FILE` | No | — | Custom .env file path for MCP server |
+| `VERITAS_GEMINI_API_KEY` | No | — | Server-side Gemini API key |
+
+Client-side Gemini: Users provide their own Gemini API key via UI settings (stored in localStorage as `VERITAS_USER_GEMINI_API_KEY`).
+
+---
+
+## 14. KINSHIP Relationships
+
+### Identity
+- **Name:** veritas (jgwill/veritas) — codename for TandT (Twos and Threes)
+- **Role:** MMOT evaluator — applies Managerial Moment of Truth to structural tension charts
+- **What it tends:** Honest assessment. The courage to say "not acceptable" when current reality is glossed over.
+- **Gifts:** MMOT evaluation framework, truth-and-trust scoring, accountability checks. MCP server (9 tools), CLI tool, MMOT evaluation engine.
+
+### Lineage
+- **Ancestors:**
+  - Robert Fritz's Managerial Moment of Truth
+  - Structural Tension methodology
+  - CreerSaVie knowledge base
+- **Siblings:**
+  - `coaia-narrative` — stores the charts veritas evaluates
+  - `coaia-visualizer` — displays evaluation results
+  - `mia-code` — CLI agent that can invoke veritas MCP for MMOT evaluation
+- **Related Hubs:**
+  - `medicine-wheel` — ontology-core defines the types veritas evaluates
+  - `mcp-pde` — upstream decomposition engine
+  - `.mw/west/` — directional home for validation/reflection artifacts
+
+### Steward
+Guillaume (jgwill) — sole steward
+
+### Change Log
+- [2026-03-21] KINSHIP.md upgraded. West-direction evaluator role formalized.
+- [2026-03-21] MCP server (9 tools), CLI tool, 4 new rispecs, .mw/ workspace created.
+
+---
+
+## 15. For LLMs
+
+### Quick Start — Create and Evaluate a Model
+
+```
+1. veritas_generate_model({
+     topic: "Q2 Engineering Team Review",
+     model_type: 2,
+     elements: [
+       { name: "Code Quality", state: 1, trend: 1 },
+       { name: "Delivery Speed", state: 0, trend: 0 },
+       { name: "Technical Debt", state: -1, trend: -1 },
+       { name: "Documentation", state: -1, trend: 0 },
+       { name: "Team Morale", state: 1, trend: 1 }
+     ]
+   })
+
+2. veritas_mmot_evaluate({ modelId: "<returned-id>" })
+
+3. Read the evaluation:
+   - Phase: acknowledge → truth statement about strengths vs weaknesses
+   - Phase: analyze → element-by-element assessment
+   - Phase: plan → URGENT/MONITOR/IMPROVE action items
+   - Phase: feedback → RECOMMIT/REDIRECT/PAUSE recommendation
+```
+
+### Key Concepts for Agents
+
+- **Type 2 is most common** for MMOT evaluation. Type 1 is for binary decisions.
+- **TwoFlag = acceptability** (boolean). ThreeFlag = trend (-1/0/+1). These are the two axes.
+- **Evaluation resets on load** — each analysis session starts fresh.
+- **History is immutable** — each save creates a new HistoryEntry snapshot.
+- **MMOT output goes to `.mw/north/`** by default (Medicine Wheel North = Reflection/Wisdom).
+- **Bootstrap paradox**: First evaluation of a new model is demonstration, not trusted verdict.
+- **Model lifecycle**: Create → Populate elements → Evaluate → Visualize → MMOT evaluate → Iterate.
+
+### Common Patterns
+
+**Create a Decision Model (Type 1):**
+```
+veritas_generate_model({
+  topic: "Should we migrate to Kubernetes?",
+  model_type: 1,
+  elements: [
+    { name: "Cost Reduction" },
+    { name: "Team Expertise" },
+    { name: "Migration Risk" },
+    { name: "Scalability Need" }
+  ]
+})
+// → Elements created, pairwise comparison needed via UI
+```
+
+**Inspect and Update a Model:**
+```
+veritas_get_model({ modelId: "uuid" })
+// → Full DigitalModel with all elements
+
+veritas_update_model({
+  modelId: "uuid",
+  modelData: {
+    Model: [/* updated DigitalElement array */]
+  }
+})
+```
+
+**Export for Backup / Sharing:**
+```
+veritas_export_model({ modelId: "uuid", outputPath: "./backup.json" })
+veritas_import_model({ filePath: "./backup.json" })
+```
+
+### Cross-Repository Links
+- [Workspace llms.txt](https://jgwill.github.io/workspace/llms.txt)
+- [Veritas llms.txt](https://docs.veritas.jgwill.com/llms.txt)
+- [Veritas llms-full.txt](https://docs.veritas.jgwill.com/llms-full.txt)
