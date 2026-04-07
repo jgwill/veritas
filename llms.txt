@@ -5,7 +5,6 @@
 - **Version:** 0.0.1
 - **Framework:** Next.js 16 + React 18 + TypeScript + Zustand + PostgreSQL (Neon) + Gemini AI
 - **Docs:** https://docs.veritas.jgwill.com
-- **Live:** https://veritas.sanctuaireagentique.com
 - **Repository:** https://github.com/jgwill/veritas
 - **License:** See LICENSE.md
 
