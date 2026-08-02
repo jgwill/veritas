@@ -6,11 +6,37 @@
 // document id injected into every process, per the stateloom imitation
 // blueprint (E8). No stateloom package is consumed; the shape is modeled.
 //
-// The parser tolerates a torn tail line: the store is rewritten whole by
-// saveGraph, so a mid-write read may end on a partial JSON line. Every line is
-// parsed independently and bad lines are skipped, never fatal.
+// WHERE THE SHAPE COMES FROM
+//
+// It is imported, not re-derived. `coaia-narrative/contract` is exported by the
+// package that performs the writes: entity kinds, the `${chartId}_...` naming
+// scheme, which metadata key holds the MMOT trail, and a torn-tail-tolerant
+// parser that classifies records using the writer's own predicates.
+//
+// This file used to carry its own copy of all of it as string literals. That is
+// the failure the import removes: when two copies drift, a renderer does not
+// break, it quietly renders LESS — a chart holding real work looks identical to
+// an empty one. Now a shape change arrives as a version bump we can see.
+//
+// Import ONLY the `/contract` subpath. The package root is the MCP server
+// bootstrap and starts a stdio server on import.
+//
+// What stays veritas's own: the env var, file I/O, and the VIEW below — how a
+// chart is presented on this surface is a rendering decision, not a store fact.
 
 import { promises as fs } from 'fs'
+import {
+  parseStore,
+  storeRevision as contractStoreRevision,
+  getChartEntity,
+  getDesiredOutcome,
+  getCurrentReality,
+  getWork,
+  getMmotBeats,
+  getMmotEvaluations,
+  metaString,
+  type MmotEvaluation,
+} from 'coaia-narrative/contract'
 
 export interface StcActionStep {
   id: string
@@ -21,12 +47,8 @@ export interface StcActionStep {
   updatedAt?: string
 }
 
-export interface StcMmotEvaluation {
-  phase: string
-  assessment: string
-  direction?: string
-  timestamp?: string
-}
+/** Re-exported from the contract so this surface has one vocabulary. */
+export type StcMmotEvaluation = MmotEvaluation
 
 export interface StcMmotBeat {
   name: string
@@ -43,49 +65,13 @@ export interface StcChartView {
   actionSteps: StcActionStep[]
   mmotEvaluations: StcMmotEvaluation[]
   mmotBeats: StcMmotBeat[]
-  /** Revision token derived from truth content (max metadata.updatedAt across
-   *  the chart's own entities) — never a file mtime (E1). */
+  /** Revision token derived from truth content — never a file mtime (E1). */
   revision: string
-}
-
-interface StoreEntity {
-  name: string
-  entityType: string
-  observations?: string[]
-  metadata?: Record<string, unknown>
-  type: string
 }
 
 export function storePath(): string | null {
   const p = process.env.VERITAS_STC_STORE
   return p && p.length > 0 ? p : null
-}
-
-/** Parse the JSONL store; last line wins per entity name. */
-async function readEntities(path: string): Promise<Map<string, StoreEntity>> {
-  const raw = await fs.readFile(path, 'utf8')
-  const entities = new Map<string, StoreEntity>()
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) continue
-    try {
-      const obj = JSON.parse(line)
-      if (obj && obj.type === 'entity' && typeof obj.name === 'string') {
-        entities.set(obj.name, obj as StoreEntity)
-      }
-    } catch {
-      // torn tail or foreign line — skip, never fatal
-    }
-  }
-  return entities
-}
-
-function meta(e: StoreEntity | undefined): Record<string, unknown> {
-  return (e && e.metadata) || {}
-}
-
-function metaStr(e: StoreEntity | undefined, key: string): string | undefined {
-  const v = meta(e)[key]
-  return typeof v === 'string' ? v : undefined
 }
 
 export async function parseChartStore(
@@ -98,115 +84,60 @@ export async function parseChartStore(
         'Point it at a coaia-narrative JSONL file.',
     )
   }
-  const entities = await readEntities(path)
 
-  const chart = entities.get(`${chartId}_chart`)
+  const store = parseStore(await fs.readFile(path, 'utf8'))
+
+  const chart = getChartEntity(store, chartId)
   if (!chart) return null
 
-  const involved: (StoreEntity | undefined)[] = [chart]
+  const desired = getDesiredOutcome(store, chartId)
+  const reality = getCurrentReality(store, chartId)
 
-  const desired = entities.get(`${chartId}_desired_outcome`)
-  const reality = entities.get(`${chartId}_current_reality`)
-  involved.push(desired, reality)
-
-  const actionSteps: StcActionStep[] = []
-  for (const e of entities.values()) {
-    if (e.entityType === 'action_step' && meta(e)['chartId'] === chartId) {
-      involved.push(e)
-      actionSteps.push({
-        id: e.name,
-        title: e.observations?.[0] ?? e.name,
-        completed: meta(e)['completionStatus'] === true,
-        dueDate: metaStr(e, 'dueDate'),
-        telescoped: false,
-        updatedAt: metaStr(e, 'updatedAt'),
-      })
-    }
-    // Telescoped children are full charts pointing back at this one.
-    if (
-      e.entityType === 'structural_tension_chart' &&
-      meta(e)['parentChart'] === chartId
-    ) {
-      involved.push(e)
-      const childId = metaStr(e, 'chartId') ?? e.name.replace(/_chart$/, '')
-      const childOutcome = entities.get(`${childId}_desired_outcome`)
-      actionSteps.push({
-        id: childId,
-        title: childOutcome?.observations?.[0] ?? childId,
-        completed: meta(e)['completionStatus'] === true,
-        dueDate: metaStr(e, 'dueDate'),
-        telescoped: true,
-        updatedAt: metaStr(e, 'updatedAt'),
-      })
-    }
-  }
+  // getWork joins flat action steps with telescoped child charts. Collecting only
+  // action_step entities — which this file used to do — shows an empty chart that
+  // is in fact holding real work, because add_action_step creates a child chart
+  // rather than an action_step entity. Most work in this store is telescoped.
+  const actionSteps: StcActionStep[] = getWork(store, chartId).map((w) => ({
+    id: w.id,
+    title: w.title,
+    completed: w.completed,
+    dueDate: w.dueDate,
+    telescoped: w.telescoped,
+    updatedAt: w.updatedAt,
+  }))
   actionSteps.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? ''))
 
-  const mmotBeats: StcMmotBeat[] = []
-  for (const e of entities.values()) {
-    if (
-      e.entityType === 'narrative_beat' &&
-      e.name.startsWith(`${chartId}_mmot_`)
-    ) {
-      involved.push(e)
-      mmotBeats.push({
-        name: e.name,
-        observations: e.observations ?? [],
-        createdAt: metaStr(e, 'createdAt'),
-      })
-    }
-  }
+  const mmotBeats: StcMmotBeat[] = getMmotBeats(store, chartId).map((e) => ({
+    name: e.name,
+    observations: e.observations ?? [],
+    createdAt: metaString(e, 'createdAt'),
+  }))
   mmotBeats.sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))
-
-  const rawEvals = meta(chart)['mmotEvaluations']
-  const mmotEvaluations: StcMmotEvaluation[] = Array.isArray(rawEvals)
-    ? rawEvals.map((ev) => ({
-        phase: String((ev as Record<string, unknown>)?.['phase'] ?? ''),
-        assessment: String((ev as Record<string, unknown>)?.['assessment'] ?? ''),
-        direction:
-          typeof (ev as Record<string, unknown>)?.['direction'] === 'string'
-            ? String((ev as Record<string, unknown>)['direction'])
-            : undefined,
-        timestamp:
-          typeof (ev as Record<string, unknown>)?.['timestamp'] === 'string'
-            ? String((ev as Record<string, unknown>)['timestamp'])
-            : undefined,
-      }))
-    : []
-
-  let revision = ''
-  for (const e of involved) {
-    const u = metaStr(e, 'updatedAt') ?? metaStr(e, 'createdAt') ?? ''
-    if (u > revision) revision = u
-  }
 
   return {
     chartId,
     desiredOutcome: desired?.observations?.[0] ?? '',
     currentReality: reality?.observations ?? [],
-    dueDate: metaStr(chart, 'dueDate'),
-    parentChart: metaStr(chart, 'parentChart'),
+    dueDate: metaString(chart, 'dueDate'),
+    parentChart: metaString(chart, 'parentChart'),
     actionSteps,
-    mmotEvaluations,
+    mmotEvaluations: getMmotEvaluations(chart),
     mmotBeats,
-    revision,
+    // Store-wide rather than chart-scoped, and deliberately so: two of the
+    // writer's mutations move no timestamp on the chart at all — a progress
+    // update stamps only the step, and a removal stamps nothing. The contract's
+    // token folds in record counts so a deletion still moves it. Coarser means
+    // at most one redundant refetch; the chart-scoped alternative means serving
+    // a deleted action step forever.
+    revision: contractStoreRevision(store),
   }
 }
 
-/** Cheap revision scan for the watch route: max updatedAt across the whole
- *  store. Coarser than per-chart (an unrelated chart bumps it), which costs at
- *  most one redundant client refetch — honest and simple. */
+/** Revision for the watch route. Reads the same token the view carries, so the
+ *  SSE change signal and the rendered payload can never disagree about whether
+ *  something moved. Called on fs.watch events, not in a tight poll, so a full
+ *  parse is the right trade for correctness — the previous regex scan looked
+ *  only at "updatedAt" and was blind to deletions in exactly the same way. */
 export async function storeRevision(path: string): Promise<string> {
-  const raw = await fs.readFile(path, 'utf8')
-  let revision = ''
-  for (const line of raw.split('\n')) {
-    // fast scan without full JSON parse
-    const m = line.match(/"updatedAt":"([^"]+)"/g)
-    if (!m) continue
-    for (const hit of m) {
-      const v = hit.slice(13, -1)
-      if (v > revision) revision = v
-    }
-  }
-  return revision
+  return contractStoreRevision(parseStore(await fs.readFile(path, 'utf8')))
 }
