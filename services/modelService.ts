@@ -134,7 +134,9 @@ export const getModel = async (modelId: ModelId): Promise<DigitalModel> => {
 export const saveModel = async (updatedModel: DigitalModel): Promise<void> => {
   try {
     const response = await fetch(`/api/models/${updatedModel.Idug}`, {
-      method: 'PATCH',
+      // PUT, not PATCH: the route exports GET/PUT/DELETE only. PATCH returned
+      // 405 while optimistic state made the UI look saved — a silent failure.
+      method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({
         name: updatedModel.DigitalTopic,
