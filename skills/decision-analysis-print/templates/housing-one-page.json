@@ -1,0 +1,19 @@
+{
+  "title": "Évaluer un lieu",
+  "candidate_label": "Lieu / contact",
+  "factors": [
+    {"id": "01", "name": "Fumée / cannabis", "description": "Aucune fumée, cannabis ou drogue ici ni infiltration des voisins."},
+    {"id": "02", "name": "Produits parfumés", "description": "Pas de parfums, diffuseurs, lessives ou nettoyants parfumés."},
+    {"id": "03", "name": "Litière (si chats)", "description": "Sans parfum, sans odeur perceptible, bien placée.", "not_applicable": "sans objet"},
+    {"id": "04", "name": "Calme", "description": "Pièce tranquille le jour et la nuit, voisins compris."},
+    {"id": "05", "name": "Ventilation", "description": "Fenêtres ouvrables, air renouvelé, pas d’odeur persistante."},
+    {"id": "06", "name": "Espace", "description": "Pièce utilisable d’environ 9 × 14 pi pour vivre et travailler."},
+    {"id": "07", "name": "Climatisation", "description": "Présente ou installation permise si nécessaire."},
+    {"id": "08", "name": "Coût total", "description": "Loyer, charges, dépôt et frais compatibles avec mon budget."},
+    {"id": "09", "name": "Disponibilité", "description": "Entrée possible dès octobre ou au plus tard le 1er novembre."},
+    {"id": "10", "name": "Durée / entente", "description": "Durée, obligations et conditions écrites acceptables."},
+    {"id": "11", "name": "Nature", "description": "Parc ou espace vert accessible selon le trajet réel."},
+    {"id": "12", "name": "Commerces", "description": "Épicerie et pharmacie accessibles selon le trajet réel."},
+    {"id": "13", "name": "Transport collectif", "description": "Bus/train et retour praticables, aussi en hiver."}
+  ]
+}

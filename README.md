@@ -1,5 +1,7 @@
 # TandT – Digital Thinking Framework
 
+> **Agents creating decision sheets:** start with [`AGENTS.md`](./AGENTS.md) and the in-repository [`decision-analysis-print` skill](./skills/decision-analysis-print/SKILL.md). It includes a tested one-page renderer, a housing example, and the field-trial lessons; it is a standalone aid, not yet an integrated application export.
+
 TandT (Twos and Threes from Robert Fritz) is a comprehensive digital thinking and decision-making framework, not just a web application. It is designed to facilitate **structured, auditable, and extensible evaluation methodologies** for both individual and organizational scenarios. TandT is deeply rooted in the principles of **Structural Thinking** as developed in the CreerSaVie knowledge base, enabling users to move from subjective intuition to objective, systematic analysis.
 
 ---
