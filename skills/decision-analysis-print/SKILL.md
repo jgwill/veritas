@@ -39,7 +39,7 @@ Pairwise questions concern priorities before any candidate is evaluated. Log the
 
 ## Worked example and proof
 
-See [`references/housing-field-trial.md`](references/housing-field-trial.md) for a September 2026 iterative print exercise. To reproduce the final one-page layout with the example factors (ReportLab and DejaVuSans required):
+Follow-up product proposal: [jgwill/veritas#22](https://github.com/jgwill/veritas/issues/22). See [`references/housing-field-trial.md`](references/housing-field-trial.md) for a September 2026 iterative print exercise. To reproduce the final one-page layout with the example factors (ReportLab and DejaVuSans required):
 
 ```bash
 uv run --with reportlab python skills/decision-analysis-print/scripts/render.py \

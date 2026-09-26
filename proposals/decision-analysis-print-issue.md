@@ -1,6 +1,6 @@
-# Issue draft — Type 1 evaluation sheet and model-to-reality handoff
+# Type 1 evaluation sheet and model-to-reality handoff
 
-**Status:** proposed issue for `jgwill/veritas`; not yet published through GitHub. The authoring runtime had SSH push access but `gh auth status` reported no authenticated GitHub host. Do not invent an issue number.
+**Filed issue:** [jgwill/veritas#22](https://github.com/jgwill/veritas/issues/22). First phase shipped in `768c9cc`: in-repo skill, standalone renderer, example, and tests. This issue tracks possible application integration, not an existing broken export.
 
 ## User need
 
